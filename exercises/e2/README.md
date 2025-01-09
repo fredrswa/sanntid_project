@@ -53,7 +53,6 @@ The server will respond to any message you send to it. Try sending a message to 
 - You are free to mess with the people around you by using the same port as them, but they may not appreciate it.
 - It may be easier to use two sockets: one for sending and one for receiving. You might also find it is easier if these two are separated into their own threads.
 
-
 1.2: TCP
 --------
 

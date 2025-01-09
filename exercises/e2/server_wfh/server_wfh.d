@@ -110,7 +110,7 @@ void TCPReceiver(shared Socket ssocket, MessageFormat msgFmt){
     writefcln(Color.tcp_info, "\nTCP\t%s\nDisconnected\n    :%s <|> %s\n", Clock.currTime, port, sock.remoteAddress);
     sock.shutdown(SocketShutdown.BOTH);
     sock.close();
-}
+}IP
 
 
 enum MessageFormat {
@@ -138,15 +138,10 @@ void sendFmt(Socket sock, MessageFormat msgFmt, const char[] str){
 
 
 void UDPEchoer(string localIP, string bcastIP, const ushort recvPort, const ushort sendPort){
-    auto sendSock = new UdpSocket();
-    sendSock.setOption(SocketOptionLevel.SOCKET, SocketOption.BROADCAST, 1);
-    sendSock.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, 1);
+    auto sendSock = new Udp;
+    pthread_mutex_init(&lock, NULL);
 
-
-    auto recvSock = new UdpSocket();
-    recvSock.setOption(SocketOptionLevel.SOCKET, SocketOption.BROADCAST, 1);
-    recvSock.setOption(SocketOptionLevel.SOCKET, SocketOption.REUSEADDR, 1);
-    recvSock.bind(new InternetAddress(recvPort));
+    pthread_create(&increment, NULL, incrnetAddress(recvPort));
 
     char[]  buf         = new char[](bufferSize);
     Address remoteAddr  = new UnknownAddress;
