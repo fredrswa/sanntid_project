@@ -1,0 +1,1 @@
+/home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/exercises/e2/exercise2/target/debug/exercise2: /home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/exercises/e2/exercise2/src/main.rs
