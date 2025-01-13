@@ -1,0 +1,7 @@
+/home/marius/Documents/NTNU/TTK4145/Sanntid13/exercises/e2/exercise2_1_2/target/debug/deps/libfutures_sink-140504a081023950.rmeta: /home/marius/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-sink-0.3.31/src/lib.rs
+
+/home/marius/Documents/NTNU/TTK4145/Sanntid13/exercises/e2/exercise2_1_2/target/debug/deps/libfutures_sink-140504a081023950.rlib: /home/marius/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-sink-0.3.31/src/lib.rs
+
+/home/marius/Documents/NTNU/TTK4145/Sanntid13/exercises/e2/exercise2_1_2/target/debug/deps/futures_sink-140504a081023950.d: /home/marius/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-sink-0.3.31/src/lib.rs
+
+/home/marius/.cargo/registry/src/index.crates.io-6f17d22bba15001f/futures-sink-0.3.31/src/lib.rs:

@@ -3,29 +3,53 @@
 package main
 
 import (
-    . "fmt"
-    "runtime"
-    "time"
+	. "fmt"
+	"runtime"
+	"sync"
 )
 
 var i = 0
+var a_mutex sync.Mutex
 
-func incrementing() {
-    //TODO: increment i 1000000 times
+func incrementing(i_channel chan int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for j := 0; j < 1000000; j++ {
+		i_channel <- 1
+	}
 }
 
-func decrementing() {
-    //TODO: decrement i 1000000 times
+func decrementing(i_channel chan int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for j := 0; j < 100000; j++ {
+		i_channel <- -1
+	}
 }
 
 func main() {
-    // What does GOMAXPROCS do? What happens if you set it to 1?
-    runtime.GOMAXPROCS(2)    
-	
-    // TODO: Spawn both functions as goroutines
-	
-    // We have no direct way to wait for the completion of a goroutine (without additional synchronization of some sort)
-    // We will do it properly with channels soon. For now: Sleep.
-    time.Sleep(500*time.Millisecond)
-    Println("The magic number is:", i)
+	// What does GOMAXPROCS do? What happens if you set it to 1?
+	runtime.GOMAXPROCS(2)
+
+	//Creates a channel where you can send and receive values (make(chan int, x) creates a channel with a buffer size of x)
+	i_channel := make(chan int)
+
+	//Creates a waitgroup which is used to wait for both functions to finish
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	//Spawn both functions as goroutines
+	go incrementing(i_channel, &wg)
+	go decrementing(i_channel, &wg)
+
+	//Wait for both functions to finish
+	go func() {
+		wg.Wait()
+		close(i_channel)
+	}()
+
+	//Sum up the values. Continuesly receive values from the channel
+	for val := range i_channel {
+		i += val
+	}
+
+	Println("The magic number is:", i)
 }
