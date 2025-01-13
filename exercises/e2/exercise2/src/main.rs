@@ -2,6 +2,10 @@ use tokio::net::UdpSocket;
 use tokio::runtime::Runtime;
 use std::io; 
 
+const localIP: &str= "10.24.84.235";
+const serverIP: &str= "{localIP}:20000";
+const receivIP: &str= "{localIP}:20001";
+
 // Asynchronous function to handle receiving and responding
 async fn udp_receive(socket: &UdpSocket) -> io::Result<()> {
     let mut buffer = [0; 1024]; // Buffer to hold the incoming data
@@ -29,12 +33,18 @@ async fn udp_send(socket: &UdpSocket, addr: &str, message: &[u8]) -> io::Result<
 // Main entry point
 #[tokio::main]
 async fn main() {
-    // Bind the UDP socket to the local address
-    let socket = UdpSocket::bind("10.100.23.22:20001").await.unwrap();
+    // Create a new UDP socket
+    let socket = UdpSocket::bind(receivIP).await.unwrap();
 
-    // Example of sending a message
-    udp_send(&socket, "10.100.23.22:20000", b"Hello, world!").await.unwrap();
+    // Create a new runtime
+    let mut rt = Runtime::new().unwrap();
 
-    // Example of receiving and responding to a message
-    udp_receive(&socket).await.unwrap();
+    // Spawn a new task to handle receiving and responding
+    rt.spawn(udp_receive(&socket));
+
+    // Create a new message to send
+    let message = b"Hello, world!";
+
+    // Send the message to the server
+    udp_send(&socket, serverIP, message).await.unwrap();
 }
