@@ -5,9 +5,10 @@ use std::error::Error;
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     // Bind the listener to the address
-    let listener = TcpListener::bind("10.100.23.22:33546").await?;
+    let ip = "10.100.23.23:33545";
+    let listener = TcpListener::bind(ip).await?;
 
-    println!("Server listening on 10.100.23.22:33546");
+    println!("Server listening on {}", ip);
 
     loop {
         // Accept an incoming connection

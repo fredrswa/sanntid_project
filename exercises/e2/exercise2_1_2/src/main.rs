@@ -44,7 +44,7 @@ fn read_user_input() -> String {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     
-    let mut stream = init_stream("192.168.1.223:33546").await;
+    let mut stream = init_stream("10.100.23.23:33546").await;
 
     loop{
         // Read user input

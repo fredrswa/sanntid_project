@@ -75,7 +75,7 @@ The IP address of the TCP server will be the same as the address the UDP server 
 The server will send you a welcome-message when you connect, and after that it will echo anything you say back to you (as long as your message ends with `'\0'`). Try sending and receiving a few messages.
 
 ### Accepting connections:
-Tell the server to connect back to you, by sending a message of the form `Connect to: #.#.#.#:#\0` (IP of your machine and port you are listening to). You can find your own address by running `ifconfig` in the terminal - the first three bytes should be the same as the server's IP.
+Tell the server to connect back to you, by sending a message of the form ` (IP of your machine and port you are listening to). You can find your own address by running `ifconfig` in the terminal - the first three bytes should be the same as the server's IP.
  
 This new connection will behave the same way on the server-side, so you can send messages and receive echoes in the same way as before. You can even have it "Connect to" recursively (but please be nice... And no, the server will refuse requests to connect to itself).
 
@@ -87,15 +87,34 @@ Before proceeding with any code related to a network module, think about how you
 
  - Guarantees about elevators:
    - What should happen if one of the nodes loses its network connection?
+    1. The others must take over the dead nodes tasks
+    2. Nodes must send "alive" confimation periodically (timeout e.g. 5 sec)
+    3. How would the dead nodes reconnect?
+    4. The dead node must continue performing its assigned tasks
+
    - What should happen if one of the nodes loses power for a brief moment?
+    1. Recovery protocol for dead node.
+       1. Return power
+       2. Reinitialize previous state
+    2. Node must be reconnected (see above)
+    3.  
+   
    - What should happen if some unforeseen event causes the elevator to never reach its destination, but communication remains intact?
+    1. Timeout -> task gets reasigned to another elevator
+    2. 
    
  - Guarantees about orders:
    - Do all your nodes need to "agree" on a call for it to be accepted? In that case, how is a faulty node handled? 
+    1. Depends on network topology, there needs to be some degree of synchronization?
    - How can you be sure that a remote node "agrees" on an call?
+    1. Using master-slave one gets an affirmation. Using peer-to-peer ?  
    - How do you handle losing packets between the nodes?
+    1. Using TCP, get affirmation from receiver. Using UDP, resend continously, add affirmation?
+    2. 
    - Do you share the entire state of the current calls, or just the changes as they occur?
+    1. Less overhead only sending changes, periodically send entire state?
      - For either one: What should happen when an elevator re-joins after having been offline?
+   - 1. Send entire state to assure elevators agree
 
 Pencil and paper is encouraged! Drawing a diagram/graph of the message pathways between nodes (elevators) will aid in visualizing complexity. Drawing the order of messages through time will let you more easily see what happens when communication fails.
      

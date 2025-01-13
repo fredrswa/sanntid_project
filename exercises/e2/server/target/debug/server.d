@@ -1,1 +1,1 @@
-/home/student/Desktop/Sanntid\ Mandag\ G13/Sanntid13/exercises/e2/server/target/debug/server: /home/student/Desktop/Sanntid\ Mandag\ G13/Sanntid13/exercises/e2/server/src/main.rs
+/home/student/Documents/Gruppe12_TTK4145/Sanntid13/exercises/e2/server/target/debug/server: /home/student/Documents/Gruppe12_TTK4145/Sanntid13/exercises/e2/server/src/main.rs
