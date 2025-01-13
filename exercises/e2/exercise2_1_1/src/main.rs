@@ -33,7 +33,7 @@ async fn udp_send(socket: &UdpSocket, addr: &str, message: &[u8]) -> io::Result<
 #[tokio::main]
 async fn main() {
     // Bind the UDP socket to the local address
-    let socket = match UdpSocket::bind("192.168.1.223:20001").await{
+    let socket = match UdpSocket::bind("10.100.23.23:20001").await{
         Ok(socket) => socket,
         Err(e) => {
             println!("Failed to bind socket: \"{}\"", e);
@@ -42,7 +42,7 @@ async fn main() {
     };
 
     // Example of sending a message
-    udp_send(&socket, "192.168.1.223:20000", b"Hello, world!").await.unwrap();
+    udp_send(&socket, "10.100.23.23:20000", b"Hello, world!").await.unwrap();
 
     // Example of receiving and responding to a message
     udp_receive(&socket).await.unwrap();

@@ -54,9 +54,7 @@ The server will respond to any message you send to it. Try sending a message to 
 - It may be easier to use two sockets: one for sending and one for receiving. You might also find it is easier if these two are separated into their own threads.
 
 1.2: TCP
---------
-
-There are three common ways to format a message: (Though there are probably others)
+--------es must send "alive" confimation periodicallyrmat a message: (Though there are probably others)
  - 1: Always send fixed-sized messages
  - 2: Send the message size with each message (as part of a fixed-size header)
  - 3: Use some kind of marker to signify the end of a message
@@ -125,6 +123,7 @@ Pencil and paper is encouraged! Drawing a diagram/graph of the message pathways 
      - Is a slave becoming a master a part of the network module?
    - In the case of a peer-to-peer configuration:
      - Who decides the order assignment?
+   - 1. Who knows?
      - What happens if someone presses the same button on two panels at once? Is this even a problem?
      
  - Technical implementation and module boundary:
