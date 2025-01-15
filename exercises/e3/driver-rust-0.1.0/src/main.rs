@@ -5,17 +5,27 @@ use crossbeam_channel as cbc;
 
 use driver_rust::elevio;
 use driver_rust::elevio::elev as e;
-
+ 
+//Main returns standard I/O Result
+//T is of type () meaning no meaningful value
+//Used mainly to enable the return of std::io::Error in case of failure
 fn main() -> std::io::Result<()> {
     let elev_num_floors = 4;
+    //Initialize new elevator using TCP
     let elevator = e::Elevator::init("localhost:15657", elev_num_floors)?;
     println!("Elevator started:\n{:#?}", elevator);
 
     let poll_period = Duration::from_millis(25);
 
+    //Spawns a thread for each polling function
+    //cbc::unbounded is a channel that can be used to send and receive messages (unbounded means no limit)
+    //Functions mostly the same as channels in go
     let (call_button_tx, call_button_rx) = cbc::unbounded::<elevio::poll::CallButton>();
     {
+        //creates new instance of the elevator in order to pass ownership to the thread
         let elevator = elevator.clone();
+        //spawns a thread
+        //Thread loop over pulling function, then sleeps for the poll period
         spawn(move || elevio::poll::call_buttons(elevator, call_button_tx, poll_period));
     }
 
@@ -43,7 +53,10 @@ fn main() -> std::io::Result<()> {
     }
 
     loop {
+        //select the first case that is ready -> receives a message
         cbc::select! {
+            //recv is used to receive from a channel, blocking until a message is received
+            //value received in assingned to a
             recv(call_button_rx) -> a => {
                 let call_button = a.unwrap();
                 println!("{:#?}", call_button);
