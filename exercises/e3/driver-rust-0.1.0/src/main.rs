@@ -5,10 +5,7 @@ use crossbeam_channel as cbc;
 
 use driver_rust::elevio;
 use driver_rust::elevio::elev as e;
- 
-//Main returns standard I/O Result
-//T is of type () meaning no meaningful value
-//Used mainly to enable the return of std::io::Error in case of failure
+
 fn main() -> std::io::Result<()> {
     let elev_num_floors = 4; // number of floors in elevator
     let elevator = e::Elevator::init("localhost:15657", elev_num_floors)?; // initialize elevator
@@ -16,12 +13,11 @@ fn main() -> std::io::Result<()> {
 
     let poll_period = Duration::from_millis(25); // polling period, time between each poll
 
-    let (call_button_tx, call_button_rx) = cbc::unbounded::<elevio::poll::CallButton>();
+    let (call_button_tx, call_button_rx) = cbc::unbounded::<elevio::poll::CallButton>(); // channel for call button
     {
-        //creates new instance of the elevator in order to pass ownership to the thread
         let elevator = elevator.clone();
-        spawn(move || elevio::poll::call_buttons(elevator, call_button_tx, poll_period));
-    }
+        spawn(move || elevio::poll::call_buttons(elevator, call_button_tx, poll_period)); //spawn is being used to create a new thread
+    } //this is the call button thread
 
     let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>();
     {
@@ -46,10 +42,10 @@ fn main() -> std::io::Result<()> {
         elevator.motor_direction(dirn); // the elevator will go down
     }
 
-    loop {
-        cbc::select! {
-            recv(call_button_rx) -> a => {
-                let call_button = a.unwrap();
+    loop { // loop that listens to the different channels
+        cbc::select! { // select is used to listen to multiple channels at the same time
+            recv(call_button_rx) -> a => { //a is a constant that is used to store the value that is received from the channel
+                let call_button = a.unwrap(); //unwrap is used to get the value from the constant a
                 println!("{:#?}", call_button);
                 elevator.call_button_light(call_button.floor, call_button.call, true); //turns on the light of the call button that is pressed
             },
