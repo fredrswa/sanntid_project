@@ -5,11 +5,14 @@ use std::time;
 use super::elev;
 
 #[derive(Debug)]
+//struct for call button, with floor and call(up/down) as parameters
 pub struct CallButton {
     pub floor: u8,
     pub call: u8,
 }
 
+//chanel to send the call button
+//checks if the call button is pressed in any of the floors
 pub fn call_buttons(elev: elev::Elevator, ch: cbc::Sender<CallButton>, period: time::Duration) {
     let mut prev = vec![[false; 3]; elev.num_floors.into()];
     loop {
@@ -26,6 +29,9 @@ pub fn call_buttons(elev: elev::Elevator, ch: cbc::Sender<CallButton>, period: t
     }
 }
 
+//prev is holdign the previous value of the floor sensor
+//checking which floor the elevator is on, updating the value of the floor sensor if it has changed since prev
+
 pub fn floor_sensor(elev: elev::Elevator, ch: cbc::Sender<u8>, period: time::Duration) {
     let mut prev = u8::MAX;
     loop {
@@ -39,6 +45,8 @@ pub fn floor_sensor(elev: elev::Elevator, ch: cbc::Sender<u8>, period: time::Dur
     }
 }
 
+//checks if the stop button is pressed
+//change the status trough the channel if it has changed
 pub fn stop_button(elev: elev::Elevator, ch: cbc::Sender<bool>, period: time::Duration) {
     let mut prev = false;
     loop {
@@ -51,6 +59,7 @@ pub fn stop_button(elev: elev::Elevator, ch: cbc::Sender<bool>, period: time::Du
     }
 }
 
+//checks if the obstruction button is pressed, sendign the status through the channel if it has changed
 pub fn obstruction(elev: elev::Elevator, ch: cbc::Sender<bool>, period: time::Duration) {
     let mut prev = false;
     loop {
