@@ -6,17 +6,28 @@ use std::net::TcpStream;
 use std::sync::*;
 
 #[derive(Clone, Debug)]
-// elevator has one socket so that th tcp connection can be shared between the threads, the threads is the different functions that are being called
+// elevator has one socket so that the tcp connection can be shared between the threads, the threads is the different functions that are being called
 //defines number of floors
 pub struct Elevator {
     socket: Arc<Mutex<TcpStream>>,
     pub num_floors: u8,
+    
+    //added members, might be misplaced
+    pub floor: u8,
+    pub dirn: u8,
+    pub requests: Vec<Vec<u8>>
 }
 //have to define N_BUTTONS, to use it in the request file
 
-pub const EB_Moving: u8 = 1;
-pub const EB_DoorOpen: u8 = 2;
-pub const EB_Idle: u8 = 3;
+enum Button{
+    B_HALLUP: u8,
+    B_HALLDOWN: u8,
+    B_CAB: u8,
+}
+
+pub const EB_MOVING: u8 = 1;
+pub const EB_DOOROPEN: u8 = 2;
+pub const EB_IDLE: u8 = 3;
 
 pub const HALL_UP: u8 = 0;
 pub const HALL_DOWN: u8 = 1;
@@ -32,9 +43,12 @@ impl Elevator {
         Ok(Self {
             socket: Arc::new(Mutex::new(TcpStream::connect(addr)?)),
             num_floors,
+            dirn: DIRN_STOP, 
+            floor: 0, //PROBABLY NOT RIGHT!
+            requests: vec![vec![0; num_floors as usize]; 3],
         })
     }
-    //addr: address of th TCP server
+    //addr: address of the TCP server
 
     //setting the motor direction, call this function to set the direction of the motor
     pub fn motor_direction(&self, dirn: u8) {
