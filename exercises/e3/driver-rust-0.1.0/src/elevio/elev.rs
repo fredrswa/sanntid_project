@@ -10,28 +10,39 @@ use std::sync::*;
 //defines number of floors
 pub struct Elevator {
     socket: Arc<Mutex<TcpStream>>,
-    pub num_floors: u8,
+    pub num_floors: usize,
     
     //added members, might be misplaced
-    pub floor: u8,
+    pub floor: usize,
     pub dirn: u8,
-    pub requests: Vec<Vec<u8>>
+    pub requests: Vec<Vec<bool>>
 }
 //have to define N_BUTTONS, to use it in the request file
 
-enum Button{
-    B_HALLUP: u8,
-    B_HALLDOWN: u8,
-    B_CAB: u8,
+pub enum Button{
+    BHallup,
+    BHalldown,
+    BCab,
+}
+
+impl PartialEq for Button {
+    fn eq(&self, other: &Button) -> bool {
+        match (self, other) {
+            (Button::BHallup, Button::BHallup) => true,
+            (Button::BHalldown, Button::BHalldown) => true,
+            (Button::BCab, Button::BCab) => true,
+            _ => false
+        }
+    }
 }
 
 pub const EB_MOVING: u8 = 1;
 pub const EB_DOOROPEN: u8 = 2;
 pub const EB_IDLE: u8 = 3;
 
-pub const HALL_UP: u8 = 0;
-pub const HALL_DOWN: u8 = 1;
-pub const CAB: u8 = 2;
+pub const HALL_UP: Button = Button::BHallup;
+pub const HALL_DOWN: Button = Button::BHalldown;
+pub const CAB: Button = Button::BCab;
 
 pub const DIRN_DOWN: u8 = u8::MAX;
 pub const DIRN_STOP: u8 = 0;
@@ -39,13 +50,13 @@ pub const DIRN_UP: u8 = 1;
 
 impl Elevator {
     //initializing the elevator
-    pub fn init(addr: &str, num_floors: u8) -> Result<Elevator> {
+    pub fn init(addr: &str, num_floors: usize) -> Result<Elevator> {
         Ok(Self {
             socket: Arc::new(Mutex::new(TcpStream::connect(addr)?)),
             num_floors,
             dirn: DIRN_STOP, 
             floor: 0, //PROBABLY NOT RIGHT!
-            requests: vec![vec![0; num_floors as usize]; 3],
+            requests: vec![vec![false; num_floors]; 3],
         })
     }
     //addr: address of the TCP server

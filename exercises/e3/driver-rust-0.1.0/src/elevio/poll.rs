@@ -18,9 +18,9 @@ pub fn call_buttons(elev: elev::Elevator, ch: cbc::Sender<CallButton>, period: t
     loop {
         for f in 0..elev.num_floors {
             for c in 0..3 {
-                let v = elev.call_button(f, c);
+                let v = elev.call_button(f as u8, c);
                 if v && prev[f as usize][c as usize] != v {
-                    ch.send(CallButton { floor: f, call: c }).unwrap();
+                    ch.send(CallButton { floor: f as u8, call: c }).unwrap();
                 }
                 prev[f as usize][c as usize] = v;
             }
