@@ -16,6 +16,7 @@ pub struct Elevator {
     pub floor: usize,
     pub dirn: u8,
     pub requests: Vec<Vec<bool>>
+    pub behaviour: ElevatorBehaviour,
 }
 //have to define N_BUTTONS, to use it in the request file
 
@@ -36,13 +37,21 @@ impl PartialEq for Button {
     }
 }
 
+pub const HALL_UP: Button = Button::BHallup;
+pub const HALL_DOWN: Button = Button::BHalldown;
+pub const CAB: Button = Button::BCab;
+
+pub enum ElevatorBehaviour{
+    EbIdle,
+    EbDoorOpen,
+    EbMoving,
+}
+  
 pub const EB_MOVING: u8 = 1;
 pub const EB_DOOROPEN: u8 = 2;
 pub const EB_IDLE: u8 = 3;
 
-pub const HALL_UP: Button = Button::BHallup;
-pub const HALL_DOWN: Button = Button::BHalldown;
-pub const CAB: Button = Button::BCab;
+
 
 pub const DIRN_DOWN: u8 = u8::MAX;
 pub const DIRN_STOP: u8 = 0;

@@ -14,7 +14,7 @@ pub fn requests_above(e: &Elevator) -> bool {
 
 //Checks if there are any requests below the current floor
 pub fn requests_below(e: &Elevator) -> bool {
-    for f in 0..e.num_floors {
+    for f in e.floor..0 {
         for btn in 0..3 {
             if e.call_button(f as u8, btn) {
                 return true;
