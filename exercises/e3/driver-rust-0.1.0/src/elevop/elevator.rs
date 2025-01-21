@@ -2,16 +2,16 @@ use crate::elevio::elev::*;
 use super::timer::*;
 
 
-fn eb_to_string(eb: ElevatorBehaviour) -> String{
+pub fn eb_to_string(eb: ElevatorBehaviour) -> String{
   match eb {
-    EbIdle => return "EB_Idle".to_string(),
-    EbDoorOpen => return "EB_DoorOpen".to_string(),
-    EbMoving => return "EB_Moving".to_string(),
+    EB_IDLE => return "EB_IDLE".to_string(),
+    EB_DOOROPEN => return "EB_DOOROPEN".to_string(),
+    EB_MOVING => return "EB_MOVING".to_string(),
     _ => return "EB_UNDEFINED".to_string()
   }
 }
 
-fn elevio_dirn_to_string(dirn: u8) -> String{
+pub fn elevio_dirn_to_string(dirn: u8) -> String{
   match dirn {
     DIRN_UP => return "DIRN_UP".to_string(),
     DIRN_DOWN => return "DIRN_DOWN".to_string(),
@@ -20,27 +20,36 @@ fn elevio_dirn_to_string(dirn: u8) -> String{
   }
 }
 
-fn elevator_print(e: Elevator){
+pub fn elevio_button_to_string(btn: Button) -> String{
+  match btn {
+    Button::BHallup => return "BHALLUP".to_string(),
+    Button::BHalldown => return "BHALLDOWN".to_string(),
+    Button::BCab => return "BCAB".to_string(),
+    _ => return "BUTTON_UNDEFINED".to_string()
+  }
+}
+
+pub fn elevator_print(elevator: Elevator){
   println!("  +--------------------+\n");
   println!(
       "|floor = {}| \n 
       |dirn  = {}|\n 
       |behav = {}|\n",
-      e.floor,
-      elevio_dirn_to_string(e.dirn),
-      eb_to_string(e.behaviour)
+      elevator.floor,
+      elevio_dirn_to_string(elevator.dirn),
+      eb_to_string(elevator.behaviour)
   );
   println!("  +--------------------+\n");
   println!("  |  | up  | dn  | cab |\n");
-  for f in e.num_floors-1..0{
-      println!("  | {}", f);
+  for floor in elevator.num_floors-1..0{
+      println!("  | {}", floor);
       for btn in 1..3 {
-          if (f == e.num_floors-1 && btn == HALL_UP)  || 
-             (f == 0 && btn == HALL_DOWN) 
+          if (floor == elevator.num_floors-1 && btn == HALL_UP as usize)  || 
+             (floor == 0 && btn == HALL_DOWN as usize) 
           {
               println!("|     ");
           } else {
-              if e.requests[f][btn] {
+              if elevator.requests[floor][btn] {
                 println!("|  #  ")
               } else {
                 println!("|  -  ")
@@ -52,13 +61,15 @@ fn elevator_print(e: Elevator){
   println!("  +--------------------+\n");
 }
 
-fn elevator_uninitialized() -> Elevator {
+
+//CREATING UNINITIALIZED STRUCT IS STRONGLY DISCOURAGED IN RUST!
+pub fn elevator_uninitialized() -> Elevator {
   return Elevator {
     socket: Arc::new(Mutex::new(TcpStream::connect(addr)?)),
     num_floors: 4,
     floor: 0,
     dirn: DIRN_STOP,
-    behaviour: EbIdle,
     requests: vec![vec![false; 3]; 8],
+    behaviour: ElevatorBehaviour::EbIdle,
   };
 }

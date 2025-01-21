@@ -36,7 +36,7 @@ pub fn requests_here(e: &Elevator) -> bool {
 
 pub struct DirnBehaviourPair {
     pub dirn: u8,
-    pub behaviour: u8,
+    pub behaviour: ElevatorBehaviour,
 }
 
 
@@ -115,7 +115,7 @@ pub fn requests_should_clear_immediately(e: &Elevator, btn_floor: usize, btn_typ
 
 //Clears all requests at current floor
 //Returns elevator?? (Might be useful in rust pga. ownership)
-fn requests_clear_at_current_floor(e: &mut Elevator) -> Elevator {
+pub fn requests_clear_at_current_floor(e: &mut Elevator) -> Elevator {
     match e.dirn {
         DIRN_UP => {
             if !requests_above(e) && !e.requests[e.floor][HALL_UP as usize] {

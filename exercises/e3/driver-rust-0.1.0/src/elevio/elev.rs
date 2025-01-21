@@ -11,11 +11,9 @@ use std::sync::*;
 pub struct Elevator {
     socket: Arc<Mutex<TcpStream>>,
     pub num_floors: usize,
-    
-    //added members, might be misplaced
     pub floor: usize,
     pub dirn: u8,
-    pub requests: Vec<Vec<bool>>
+    pub requests: Vec<Vec<bool>>,
     pub behaviour: ElevatorBehaviour,
 }
 //have to define N_BUTTONS, to use it in the request file
@@ -41,17 +39,16 @@ pub const HALL_UP: Button = Button::BHallup;
 pub const HALL_DOWN: Button = Button::BHalldown;
 pub const CAB: Button = Button::BCab;
 
+#[derive(Clone, Debug, PartialEq)]
 pub enum ElevatorBehaviour{
     EbIdle,
     EbDoorOpen,
     EbMoving,
 }
-  
-pub const EB_MOVING: u8 = 1;
-pub const EB_DOOROPEN: u8 = 2;
-pub const EB_IDLE: u8 = 3;
 
-
+pub const EB_MOVING: ElevatorBehaviour = ElevatorBehaviour::EbMoving;
+pub const EB_DOOROPEN: ElevatorBehaviour = ElevatorBehaviour::EbDoorOpen;
+pub const EB_IDLE: ElevatorBehaviour = ElevatorBehaviour::EbIdle;
 
 pub const DIRN_DOWN: u8 = u8::MAX;
 pub const DIRN_STOP: u8 = 0;
@@ -59,13 +56,14 @@ pub const DIRN_UP: u8 = 1;
 
 impl Elevator {
     //initializing the elevator
-    pub fn init(addr: &str, num_floors: usize) -> Result<Elevator> {
+    pub fn init(addr: &str, num_floors: usize, floor: usize, dirn: u8, ) -> Result<Elevator> {
         Ok(Self {
             socket: Arc::new(Mutex::new(TcpStream::connect(addr)?)),
             num_floors,
-            dirn: DIRN_STOP, 
-            floor: 0, //PROBABLY NOT RIGHT!
+            floor: floor, //PROBABLY NOT RIGHT!
+            dirn: dirn, 
             requests: vec![vec![false; num_floors]; 3],
+            behaviour: EB_IDLE,
         })
     }
     //addr: address of the TCP server
@@ -79,8 +77,8 @@ impl Elevator {
     //uses TCP connection to send the direction to the elevator
 
     //setting the call button light, call this function to set the light of the call button
-    pub fn call_button_light(&self, floor: u8, call: u8, on: bool) {
-        let buf = [2, call, floor, on as u8];
+    pub fn call_button_light(&self, floor: usize, call: u8, on: bool) {
+        let buf = [2, call, floor as u8, on as u8];
         let mut sock = self.socket.lock().unwrap();
         sock.write(&buf).unwrap();
     }
