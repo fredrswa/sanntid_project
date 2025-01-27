@@ -1,13 +1,12 @@
-use crate::elevio::elev::*;
-use super::timer::*;
+#![allow(dead_code)]
 
+use crate::elevio::elev::*;
 
 pub fn eb_to_string(eb: ElevatorBehaviour) -> String{
   match eb {
     EB_IDLE => return "EB_IDLE".to_string(),
     EB_DOOROPEN => return "EB_DOOROPEN".to_string(),
     EB_MOVING => return "EB_MOVING".to_string(),
-    _ => return "EB_UNDEFINED".to_string()
   }
 }
 
@@ -25,19 +24,18 @@ pub fn elevio_button_to_string(btn: Button) -> String{
     Button::BHallup => return "BHALLUP".to_string(),
     Button::BHalldown => return "BHALLDOWN".to_string(),
     Button::BCab => return "BCAB".to_string(),
-    _ => return "BUTTON_UNDEFINED".to_string()
   }
 }
 
-pub fn elevator_print(elevator: Elevator){
+pub fn elevator_print(elevator: &mut Elevator){
   println!("  +--------------------+\n");
   println!(
       "|floor = {}| \n 
       |dirn  = {}|\n 
       |behav = {}|\n",
       elevator.floor,
-      elevio_dirn_to_string(elevator.dirn),
-      eb_to_string(elevator.behaviour)
+      elevio_dirn_to_string(elevator.dirn.clone()),
+      eb_to_string(elevator.behaviour.clone())
   );
   println!("  +--------------------+\n");
   println!("  |  | up  | dn  | cab |\n");
@@ -63,7 +61,7 @@ pub fn elevator_print(elevator: Elevator){
 
 
 //CREATING UNINITIALIZED STRUCT IS STRONGLY DISCOURAGED IN RUST!
-pub fn elevator_uninitialized() -> Elevator {
+/* pub fn elevator_uninitialized() -> Elevator {
   return Elevator {
     socket: Arc::new(Mutex::new(TcpStream::connect(addr)?)),
     num_floors: 4,
@@ -72,4 +70,4 @@ pub fn elevator_uninitialized() -> Elevator {
     requests: vec![vec![false; 3]; 8],
     behaviour: ElevatorBehaviour::EbIdle,
   };
-}
+} */

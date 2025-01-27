@@ -4,14 +4,19 @@ use std::time::*;
 use crossbeam_channel as cbc;
 
 use driver_rust::elevio;
+use driver_rust::elevio::elev::Button;
 use driver_rust::elevio::elev as e;
+use driver_rust::elevop::fsm as fsm;
+
+static NUM_FLOORS: usize = 4;
+static NUM_BUTTONS: usize = 3;
+
 
 //Main returns standard I/O Result
 //T is of type () meaning no meaningful value
 //Used mainly to enable the return of std::io::Error in case of failure
 fn main() -> std::io::Result<()> {
-    let elev_num_floors = 4; // Number of floors in elevator
-    let elevator = e::Elevator::init("localhost:15657", elev_num_floors)?; //Initialize new elevator using TCP
+    let elevator = e::Elevator::init("localhost:15657", NUM_FLOORS, NUM_BUTTONS)?; //Initialize new elevator using TCP
     println!("Elevator started:\n{:#?}", elevator);
 
     let poll_period = Duration::from_millis(25); // polling period, time between each poll
@@ -49,12 +54,51 @@ fn main() -> std::io::Result<()> {
         elevator.motor_direction(dirn); // the elevator will go down
     }
 
-    loop { //Loop that listens to the different channels
+    fsm::fsm_on_init_between_floors(&mut elevator.clone());
+
+    let mut button: e::Button;
+    loop {
+        cbc::select! {
+            recv(call_button_rx) -> cb_message => {
+                let call_button = cb_message.unwrap(); //Unwrap is used to get the value from the constant a
+                println!("{:#?}", call_button);
+                match call_button.call {
+                    0 => button = e::Button::BHallup,
+                    1 => button = e::Button::BHalldown,
+                    _ => button = e::Button::BCab
+                }
+                fsm::fsm_on_request_button_press(&mut elevator.clone(), call_button.floor as usize, button);
+            }
+            recv(floor_sensor_rx) -> fs_message => {
+                let floor = fs_message.unwrap();
+                println!("Floor: {:#?}", floor);
+                fsm::fsm_on_floor_arrival(&mut elevator.clone(), floor as usize);
+            }
+            recv(stop_button_rx) -> sb_message => {
+                let stop = sb_message.unwrap();
+                println!("Stop button: {:#?}", stop);
+
+                
+            }
+            recv(obstruction_rx) -> ob_message => {
+                let obstr = ob_message.unwrap();
+                println!("Obstruction: {:#?}", obstr);
+                elevator.motor_direction(e::DIRN_STOP);
+            }
+
+
+        }
+        fsm::set_all_lights(&mut elevator.clone());
+        fsm::fsm_on_door_timeout(&mut elevator.clone());
+    }
+
+
+    /* loop { //Loop that listens to the different channels
         cbc::select! { //Select is used to listen to multiple channels at the same time
             recv(call_button_rx) -> a => { //a is a constant that is used to store the value that is received from the channel
                 let call_button = a.unwrap(); //Unwrap is used to get the value from the constant a
                 println!("{:#?}", call_button);
-                elevator.call_button_light(call_button.floor, call_button.call, true); //Turns on the light of the call button that is pressed
+                elevator.call_button_light(call_button.floor as usize, call_button.call, true); //Turns on the light of the call button that is pressed
             },
             recv(floor_sensor_rx) -> a => {
                 let floor = a.unwrap();
@@ -62,7 +106,7 @@ fn main() -> std::io::Result<()> {
                 dirn =
                     if floor == 0 {
                         e::DIRN_UP
-                    } else if floor == (elev_num_floors as u8 - 1) {
+                    } else if floor == (elevator.num_floors as u8 - 1) {
                         e::DIRN_DOWN
                     } else {
                         dirn
@@ -72,9 +116,9 @@ fn main() -> std::io::Result<()> {
             recv(stop_button_rx) -> a => {
                 let stop = a.unwrap();
                 println!("Stop button: {:#?}", stop);
-                for f in 0..elev_num_floors {
+                for f in 0..elevator.num_floors {
                     for c in 0..3 {
-                        elevator.call_button_light(f as u8, c, false);
+                        elevator.call_button_light(f as usize, c, false);
                     }
                 }
             },
@@ -84,5 +128,5 @@ fn main() -> std::io::Result<()> {
                 elevator.motor_direction(if obstr { e::DIRN_STOP } else { dirn });
             },
         }
-    }
+    } */
 }

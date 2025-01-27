@@ -13,12 +13,12 @@ pub struct CallButton {
 
 //chanel to send the call button
 //checks if the call button is pressed in any of the floors
-pub fn call_buttons(elev: elev::Elevator, ch: cbc::Sender<CallButton>, period: time::Duration) {
-    let mut prev = vec![[false; 3]; elev.num_floors.into()];
+pub fn call_buttons(elevator: elev::Elevator, ch: cbc::Sender<CallButton>, period: time::Duration) {
+    let mut prev = vec![[false; 3]; elevator.num_floors.into()];
     loop {
-        for f in 0..elev.num_floors {
+        for f in 0..elevator.num_floors {
             for c in 0..3 {
-                let v = elev.call_button(f as u8, c);
+                let v = elevator.call_button(f as u8, c);
                 if v && prev[f as usize][c as usize] != v {
                     ch.send(CallButton { floor: f as u8, call: c }).unwrap();
                 }

@@ -18,6 +18,7 @@ pub struct Elevator {
 }
 //have to define N_BUTTONS, to use it in the request file
 
+#[derive(Clone, Debug)]
 pub enum Button{
     BHallup,
     BHalldown,
@@ -56,13 +57,13 @@ pub const DIRN_UP: u8 = 1;
 
 impl Elevator {
     //initializing the elevator
-    pub fn init(addr: &str, num_floors: usize, floor: usize, dirn: u8, ) -> Result<Elevator> {
+    pub fn init(addr: &str, num_floors: usize, num_buttons: usize) -> Result<Elevator> {
         Ok(Self {
             socket: Arc::new(Mutex::new(TcpStream::connect(addr)?)),
             num_floors,
-            floor: floor, //PROBABLY NOT RIGHT!
-            dirn: dirn, 
-            requests: vec![vec![false; num_floors]; 3],
+            floor: 0, //PROBABLY NOT RIGHT!
+            dirn: DIRN_STOP, 
+            requests: vec![vec![false; num_floors]; num_buttons],
             behaviour: EB_IDLE,
         })
     }

@@ -1,8 +1,9 @@
+#![allow(dead_code)]
 
 use std::sync::Mutex; //Mutex is used to lock the variable so that only one thread can access it at a time
 use std::time::{Duration, Instant}; // Duration is used to specify the time, Instant is used to get the current time
 use lazy_static::lazy_static; // handle static variables safely
-// lazy_sttaic gjør så variabelen ikke blir initialisert før den blir brukt for første gang
+// lazy_static gjør så variabelen ikke blir initialisert før den blir brukt for første gang
 //nødvendig ved bruk av tråder
 
 //må legge til dette i Cargo.toml for å bruke lazy_static
@@ -41,7 +42,7 @@ pub fn timer_stop() {
 // check if the timer has timed out
 pub fn timer_timed_out() -> bool {
     let active = {
-        let active_lock = TIMER_ACTIVE.lock().expect("Kunne ikke låse TIMER_ACTIVE");
+        let active_lock = TIMER_ACTIVE.lock().expect("Could not lock TIMER_ACTIVE");
         *active_lock
     };
 
@@ -50,7 +51,7 @@ pub fn timer_timed_out() -> bool {
     }
 
     let end_time = {
-        let end_time_lock = TIMER_END_TIME.lock().expect("could not lock TIMER_END_TIME");
+        let end_time_lock = TIMER_END_TIME.lock().expect("Could not lock TIMER_END_TIME");
         *end_time_lock
     };
 
@@ -64,12 +65,12 @@ pub fn timer_timed_out() -> bool {
 // resets the timer by setting the end time to None and the active flag to false'
 pub fn timer_reset() {
     {
-        let mut end_time_lock = TIMER_END_TIME.lock().expect("Kunne ikke låse TIMER_END_TIME");
+        let mut end_time_lock = TIMER_END_TIME.lock().expect("Could not lock TIMER_END_TIME");
         *end_time_lock = None;
     }
 
     {
-        let mut active_lock = TIMER_ACTIVE.lock().expect("Kunne ikke låse TIMER_ACTIVE");
+        let mut active_lock = TIMER_ACTIVE.lock().expect("Could not lock TIMER_ACTIVE");
         *active_lock = false;
     }
 }

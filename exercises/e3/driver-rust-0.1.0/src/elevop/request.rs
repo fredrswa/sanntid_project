@@ -1,10 +1,12 @@
+#![allow(dead_code)]
+
 use crate::elevio::elev::*;
 
 //Checks if there are any requests above the current floor
-pub fn requests_above(e: &Elevator) -> bool {
-    for f in (e.floor + 1)..e.num_floors {
+pub fn requests_above(elevator: &Elevator) -> bool {
+    for floor in (elevator.floor + 1)..elevator.num_floors {
         for btn in 0..3 { // A HALL_UP, HALL_DOWN, og CAB, can also write: for &btn in &[HALL_UP, HALL_DOWN, CAB]
-            if e.call_button(f as u8, btn) {
+            if elevator.call_button(floor as u8, btn) {
                 return true; //request found
             }
         }
@@ -13,10 +15,10 @@ pub fn requests_above(e: &Elevator) -> bool {
 }
 
 //Checks if there are any requests below the current floor
-pub fn requests_below(e: &Elevator) -> bool {
-    for f in e.floor..0 {
+pub fn requests_below(elevator: &Elevator) -> bool {
+    for f in elevator.floor..0 {
         for btn in 0..3 {
-            if e.call_button(f as u8, btn) {
+            if elevator.call_button(f as u8, btn) {
                 return true;
             }
         }
@@ -25,9 +27,9 @@ pub fn requests_below(e: &Elevator) -> bool {
 }
 
 //Checks if there are any requests at the current floor
-pub fn requests_here(e: &Elevator) -> bool {
+pub fn requests_here(elevator: &Elevator) -> bool {
     for btn in 0..3 {
-        if e.call_button(e.floor as u8, btn) {
+        if elevator.call_button(elevator.floor as u8, btn) {
             return true;
         }
     }
@@ -41,25 +43,25 @@ pub struct DirnBehaviourPair {
 
 
 //Chooses the direction and sets the associated behaviour
-pub fn requests_choose_direction(e: &Elevator) -> DirnBehaviourPair {
-    match e.dirn {
+pub fn requests_choose_direction(elevator: &Elevator) -> DirnBehaviourPair {
+    match elevator.dirn {
         DIRN_UP => {
-            if requests_above(e) {
+            if requests_above(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_UP, behaviour: EB_MOVING }
-            } else if requests_here(e) {
+            } else if requests_here(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_DOWN, behaviour: EB_DOOROPEN }
-            } else if requests_below(e) {
+            } else if requests_below(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_DOWN, behaviour: EB_MOVING }
             } else {
                 return DirnBehaviourPair { dirn: DIRN_STOP, behaviour: EB_IDLE }
             }
         }
         DIRN_DOWN => {
-            if requests_below(e) {
+            if requests_below(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_DOWN, behaviour: EB_MOVING }
-            } else if requests_here(e) {
+            } else if requests_here(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_UP, behaviour: EB_DOOROPEN }
-            } else if requests_above(e) {
+            } else if requests_above(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_UP, behaviour: EB_MOVING }
             } else {
                 return DirnBehaviourPair { dirn: DIRN_STOP, behaviour: EB_IDLE }
@@ -67,11 +69,11 @@ pub fn requests_choose_direction(e: &Elevator) -> DirnBehaviourPair {
         }
 
         DIRN_STOP => {
-            if requests_here(e) {
+            if requests_here(elevator) {
                 return DirnBehaviourPair { dirn: DIRN_STOP, behaviour: EB_DOOROPEN }
-            } else if requests_above(e){
+            } else if requests_above(elevator){
                 return DirnBehaviourPair { dirn: DIRN_UP, behaviour: EB_MOVING }
-            } else if requests_below(e){
+            } else if requests_below(elevator){
                 return DirnBehaviourPair { dirn: DIRN_DOWN, behaviour: EB_MOVING }
             } else {
                 return DirnBehaviourPair { dirn: DIRN_STOP, behaviour: EB_IDLE }
@@ -86,28 +88,28 @@ pub fn requests_choose_direction(e: &Elevator) -> DirnBehaviourPair {
 
 
 //When is this function used?
-pub fn requests_should_stop(e: &Elevator) -> bool {
-    match e.dirn {
+pub fn requests_should_stop(elevator: &Elevator) -> bool {
+    match elevator.dirn {
         DIRN_DOWN => {
-            e.requests[e.floor][HALL_DOWN as usize] || 
-            e.requests[e.floor][CAB as usize] || 
-            !requests_below(e)
+            elevator.requests[elevator.floor][HALL_DOWN as usize] || 
+            elevator.requests[elevator.floor][CAB as usize] || 
+            !requests_below(elevator)
         },
         DIRN_UP => {
-            e.requests[e.floor][HALL_UP as usize] || 
-            e.requests[e.floor][CAB as usize] || 
-            !requests_above(e)
+            elevator.requests[elevator.floor][HALL_UP as usize] || 
+            elevator.requests[elevator.floor][CAB as usize] || 
+            !requests_above(elevator)
         },
         DIRN_STOP => return true, // Always stop if the direction is Stop
         _ => return false
     }
 }
 
-pub fn requests_should_clear_immediately(e: &Elevator, btn_floor: usize, btn_type: Button) -> bool {
-    e.floor == btn_floor && (
-        (e.dirn == DIRN_UP   && btn_type == Button::BHallup)    ||
-        (e.dirn == DIRN_DOWN && btn_type == Button::BHalldown)  ||
-        e.dirn == DIRN_STOP ||
+pub fn requests_should_clear_immediately(elevator: &Elevator, btn_floor: usize, btn_type: Button) -> bool {
+    elevator.floor == btn_floor && (
+        (elevator.dirn == DIRN_UP   && btn_type == Button::BHallup)    ||
+        (elevator.dirn == DIRN_DOWN && btn_type == Button::BHalldown)  ||
+        elevator.dirn == DIRN_STOP ||
         btn_type == Button::BCab
     )
 }
@@ -115,29 +117,29 @@ pub fn requests_should_clear_immediately(e: &Elevator, btn_floor: usize, btn_typ
 
 //Clears all requests at current floor
 //Returns elevator?? (Might be useful in rust pga. ownership)
-pub fn requests_clear_at_current_floor(e: &mut Elevator) -> Elevator {
-    match e.dirn {
+pub fn requests_clear_at_current_floor(elevator: &mut Elevator) -> Elevator {
+    match elevator.dirn {
         DIRN_UP => {
-            if !requests_above(e) && !e.requests[e.floor][HALL_UP as usize] {
-                e.requests[e.floor][HALL_DOWN as usize] = false;
+            if !requests_above(elevator) && !elevator.requests[elevator.floor][HALL_UP as usize] {
+                elevator.requests[elevator.floor][HALL_DOWN as usize] = false;
             }
-            e.requests[e.floor][HALL_UP as usize] = false;
+            elevator.requests[elevator.floor][HALL_UP as usize] = false;
         }
 
         DIRN_DOWN => {
-            if !requests_below(e) && !e.requests[e.floor][HALL_DOWN as usize] {
-                e.requests[e.floor][HALL_UP as usize] = false;
+            if !requests_below(elevator) && !elevator.requests[elevator.floor][HALL_DOWN as usize] {
+                elevator.requests[elevator.floor][HALL_UP as usize] = false;
             }
-            e.requests[e.floor][HALL_DOWN as usize] = false;
+            elevator.requests[elevator.floor][HALL_DOWN as usize] = false;
         }
 
         DIRN_STOP => {}
 
         _ => {
-            e.requests[e.floor][HALL_UP as usize] = false;
-            e.requests[e.floor][HALL_DOWN as usize] = false;
+            elevator.requests[elevator.floor][HALL_UP as usize] = false;
+            elevator.requests[elevator.floor][HALL_DOWN as usize] = false;
         }
     }
 
-    e.clone()
+    elevator.clone()
 }
