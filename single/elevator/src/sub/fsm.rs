@@ -1,0 +1,138 @@
+
+#![allow(dead_code)]
+use std::thread::*;
+use std::time::*;
+
+use driver_rust::elevio::elev::{self, Elevator};
+
+
+use super::config::*;
+use super::requests::*;
+
+
+#[derive(Clone)]
+pub struct FSM {
+    pub elevator: Elevator,
+    pub current_floor: u8,
+    pub behavior: Behavior,
+    pub motor_direction: u8,
+    pub clear_requests: ClearRequestVariant,
+    pub requests: [[bool; NUM_BUTTONS as usize]; NUM_FLOORS as usize],
+}
+impl FSM {
+    pub fn new(elevator: Elevator) -> Self {
+        FSM {
+            elevator,
+            current_floor: 0,
+            behavior: Behavior::Idle,
+            motor_direction: elev::DIRN_STOP,
+            clear_requests: ClearRequestVariant::ClearAll,
+            requests: [[false; NUM_BUTTONS as usize]; NUM_FLOORS as usize],
+        }
+    }
+    pub fn set_all_lights(&self, on: bool) {
+        for floor in 0..NUM_FLOORS {
+            for button in 0..NUM_BUTTONS {
+                self.elevator.call_button_light(floor, button, on);
+            }
+        }
+    }
+    pub fn init_between_floors(&mut self) {
+        self.elevator.motor_direction(elev::DIRN_DOWN);
+        self.behavior = Behavior::Moving;
+    }
+    pub fn fsm_on_request_button_press(&mut self, btn_floor: u8, btn_type: ButtonType) {
+        match self.behavior {
+            Behavior::DoorOpen => {
+                if requests_should_clear_immediatly(self) {
+                    sleep(Duration::from_secs(3));
+                } else {
+                    self.requests[btn_floor as usize][btn_type as usize] = true;
+                }
+            }
+            Behavior::Moving => {
+                self.requests[btn_floor as usize][btn_type as usize] = true;
+            }
+            Behavior::Idle => {
+                self.requests[btn_floor as usize][btn_type as usize] = true;
+                let pair: DirnBehaviorPair = requests_choose_direction(self);
+                self.motor_direction = pair.direction;
+                self.behavior = pair.behavior;
+                match pair.behavior {
+                    Behavior::DoorOpen => {
+                        self.elevator.door_light(true);
+                        sleep(Duration::from_secs(3));
+                        requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
+                    },
+                    Behavior::Moving => {
+                        self.elevator.motor_direction(pair.direction);
+                    },
+                    Behavior::Idle => {
+                        self.elevator.motor_direction(elev::DIRN_STOP);
+                    }
+                }
+            }
+        }
+        self.set_all_lights(false);
+    }
+    pub fn on_floor_arrival(&mut self, new_floor: u8) {
+        self.current_floor = new_floor;
+        self.elevator.floor_indicator(new_floor);
+
+        match self.behavior {
+            Behavior::Moving => {
+                if requests_should_stop(self) {
+                    self.elevator.motor_direction(elev::DIRN_STOP);
+                    self.elevator.door_light(true);
+                    sleep(Duration::from_secs(3));
+                    requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
+                    let pair: DirnBehaviorPair = requests_choose_direction(self);
+                    self.motor_direction = pair.direction;
+                    self.behavior = pair.behavior;
+                    match pair.behavior {
+                        Behavior::DoorOpen => {
+                            self.elevator.door_light(true);
+                            sleep(Duration::from_secs(3));
+                            requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
+                        },
+                        Behavior::Moving => {
+                            self.elevator.motor_direction(pair.direction);
+                        },
+                        Behavior::Idle => {
+                        }
+                    }
+                }
+            }
+            _=> {
+            }
+        }
+
+    }
+    pub fn fsm_on_door_timout(&mut self) {
+        match self.behavior {
+            Behavior::DoorOpen => {
+                requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
+                let pair: DirnBehaviorPair = requests_choose_direction(self);
+                self.motor_direction = pair.direction;
+                self.behavior = pair.behavior;
+                match pair.behavior {
+                    Behavior::DoorOpen => {
+                        self.elevator.door_light(true);
+                        sleep(Duration::from_secs(3));
+                        requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
+                    },
+                    Behavior::Moving => {
+                        self.elevator.motor_direction(pair.direction);
+                    },
+                    Behavior::Idle => {
+                        self.elevator.motor_direction(elev::DIRN_STOP);
+                    }
+                }
+            }
+            _ => {
+            }
+        }
+    }
+}
+
+
