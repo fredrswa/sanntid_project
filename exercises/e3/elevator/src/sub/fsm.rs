@@ -30,22 +30,26 @@ impl FSM {
             requests: [[false; NUM_BUTTONS as usize]; NUM_FLOORS as usize],
         }
     }
-    pub fn set_all_lights(&self, on: bool) {
+    pub fn set_all_lights(&self) {
         for floor in 0..NUM_FLOORS {
             for button in 0..NUM_BUTTONS {
-                self.elevator.call_button_light(floor, button, on);
+                self.elevator.call_button_light(floor, button, self.requests[floor as usize][button as usize]);
             }
         }
     }
+
     pub fn init_between_floors(&mut self) {
         self.elevator.motor_direction(elev::DIRN_DOWN);
+        self.motor_direction = elev::DIRN_DOWN;
         self.behavior = Behavior::Moving;
     }
     pub fn fsm_on_request_button_press(&mut self, btn_floor: u8, btn_type: ButtonType) {
         match self.behavior {
             Behavior::DoorOpen => {
                 if requests_should_clear_immediatly(self) {
+                    requests_clear_at_current_floor(self, ClearRequestVariant::ClearInDirection); //KA SKJER HER?
                     sleep(Duration::from_secs(3));
+
                 } else {
                     self.requests[btn_floor as usize][btn_type as usize] = true;
                 }
@@ -73,7 +77,7 @@ impl FSM {
                 }
             }
         }
-        self.set_all_lights(false);
+        self.set_all_lights();
     }
     pub fn on_floor_arrival(&mut self, new_floor: u8) {
         self.current_floor = new_floor;

@@ -1,4 +1,3 @@
-
 #![allow(dead_code)]
 
 use std::thread::*;
@@ -51,6 +50,9 @@ pub fn run() -> std::io::Result<()> {
         let elevator = fsm1.elevator.clone();
         spawn(move || elevio::poll::obstruction(elevator, obstruction_tx, poll_period));
     }
+    
+    fsm1.init_between_floors();
+
     loop {
         cbc::select!{
             recv(call_button_rx) -> msg => {
