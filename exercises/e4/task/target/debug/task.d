@@ -1,0 +1,1 @@
+/Users/synne/Library/CloudStorage/OneDrive-NTNU/Dokumenter/heis_2/sanntid13/exercises/e4/task/target/debug/task: /Users/synne/Library/CloudStorage/OneDrive-NTNU/Dokumenter/heis_2/sanntid13/exercises/e4/task/src/lib.rs /Users/synne/Library/CloudStorage/OneDrive-NTNU/Dokumenter/heis_2/sanntid13/exercises/e4/task/src/main.rs
