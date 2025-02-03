@@ -1,9 +1,30 @@
-# Sanntid13
+# Sanntid Group 12 V25
 
-for rust practice https://github.com/rust-lang/rustlings
+Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid) at NTNU.
 
+---
 
-other rust projects https://github.com/TTK4145-Students-2023/project-group-27
-Preliminary Design Report: https://www.overleaf.com/4749789321fvtnpjxxpbwz#4961e8
-Project Report: https://www.overleaf.com/5739239789ynrjtfbssxtf#0212be
+## Elevator
+  
+It includes:
+- Feature 1
+- Feature 2
+- Feature 3
 
+---
+
+## Links
+
+- **Project Repository**: [GitHub Repo](https://github.com/fredrswa/Sanntid13)
+
+---
+
+## Images
+
+### Screenshot 1
+![Screenshot of the Project](https://via.placeholder.com/800x400.png?text=Project+Screenshot)
+
+### Screenshot 2
+![Another Screenshot](https://via.placeholder.com/800x400.png?text=Another+Screenshot)
+
+---

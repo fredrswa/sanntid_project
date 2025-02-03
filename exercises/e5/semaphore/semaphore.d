@@ -31,16 +31,36 @@ class Resource(T) {
             sem = new Semaphore(0);
         }
     }
-    
     T allocate(int priority){
+        mtx.wait();
+        if(busy){
+            numWaiting[priority]++;
+            mtx.post();
+            sems[priority].wait();
+            mtx.wait();
+            numWaiting[priority]--;
+        }
+        busy = true;
+        mtx.post();
         return value;
     }
-    
-    void deallocate(T v){
-        value = v;
+    void deallocate() {
+        mtx.wait();
+        busy = false;
+        foreach(ref sem; sems){
+            if(numWaiting[0]){
+                sem.post();
+                break;
+            } else if(numWaiting[1]){
+                sem.post();
+                break;
+            }
+        }
+        mtx.post();
     }
-}
 
+
+}
 
 
 

@@ -1,7 +1,7 @@
 use std::net::UdpSocket;
 use std::process::Command;
 use std::thread;
-use std::time::{Duration, Instant}; //bruker ikke instant enda, vet ikke om det er nødvendig
+use std::time::Duration; //bruker ikke instant enda, vet ikke om det er nødvendig
 
 fn main() {
     let args: Vec<String> = std::env::args().collect(); // Collects the arguments from the command line and stores them in a vector
@@ -45,6 +45,7 @@ fn child_process() {
     // Socket to receive data from the primary process
     let socket = UdpSocket::bind("127.0.0.1:34255").expect("Could not bind socket");
 
+
     // Set a timeout for the socket to ckeck if the parent is still alive ( 3 sec)
     socket.set_read_timeout(Some(Duration::from_secs(3))).expect("Failed to set read timeout");
 
@@ -77,17 +78,34 @@ fn child_process() {
     }
 }
 
+
 fn start_as_primary(last_count: i32) {
-    //settign up a new socket to send data to the backup process
-    let socket = UdpSocket::bind("127.0.0.1:34254").expect("Could not bind socket");
-    socket.connect("127.0.0.1:34255").expect("Could not connect to backup");
+    println!("Taking over as primary from count {}", last_count);
 
-    let mut count = last_count + 1; // Continue counting from the last count, +1 to not repeat the last count
+    // starting new backup process before taking over as primary
+    let _ = Command::new(std::env::current_exe().unwrap())
+        .arg("child")
+        .spawn()
+        .expect("Failed to spawn new backup process");
+
+    // Vwaiting for the backup to start
+    thread::sleep(Duration::from_secs(1)); 
+
+    // Creating a new socket to send data to the new backup
+    let socket = UdpSocket::bind("127.0.0.1:34254").expect("Could not bind socket as new primary");
+    socket.connect("127.0.0.1:34255").expect("Could not connect to new backup");
+
+    // Counting and sending data to the new backup
+    let mut count = last_count + 1;
+
+    // Loop to send data to the new backup
     loop {
-        println!("Parent counting: {}", count);
-        socket.send(&count.to_string().as_bytes()).expect("Failed to send data");
+        println!("Primary counting: {}", count);
+        match socket.send(&count.to_string().as_bytes()) {
+            Ok(_) => {},
+            Err(e) => println!("Failed to send data: {:?}", e),
+        }
         count += 1;
-
         thread::sleep(Duration::from_secs(1));
     }
 }
