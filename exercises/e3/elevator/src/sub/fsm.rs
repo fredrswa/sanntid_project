@@ -83,27 +83,12 @@ impl FSM {
             Behavior::Moving => {
                 if requests_should_stop(self) {
                     self.elevator.motor_direction(elev::DIRN_STOP);
+                    self.motor_direction = elev::DIRN_STOP;
                     self.elevator.door_light(true);
-                    sleep(Duration::from_secs(3));
-                    requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
-                    let pair: DirnBehaviorPair = requests_choose_direction(self);
-                    self.motor_direction = pair.direction;
-                    self.behavior = pair.behavior;
-                    match pair.behavior {
-                        Behavior::DoorOpen => {
-                            self.elevator.door_light(true);
-                            sleep(Duration::from_secs(3));
-                            requests_clear_at_current_floor(self, ClearRequestVariant::ClearAll);
-                        },
-                        Behavior::Moving => {
-                            self.elevator.motor_direction(pair.direction);
-                        },
-                        Behavior::Idle => {
-                        }
-                    }
-                }
-            }
+                    requests_clear_at_current_floor(fsm, clear_variant);
+                },
             _=> {
+
             }
         }
 
