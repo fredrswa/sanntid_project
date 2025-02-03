@@ -31,7 +31,6 @@ class Resource(T) {
             sem = new Semaphore(0);
         }
     }
-    
     T allocate(int priority){
         mtx.wait();
         if(busy) {
