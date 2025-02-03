@@ -35,17 +35,29 @@ type Resource struct {
 }
 
 func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack chan Resource) {
-
-	res := Resource{}
+	res := Resource{} // Holds the resource; initially empty
 
 	for {
+		// Try to send to high-priority first
 		select {
 		case takeHigh <- res:
-			//fmt.Printf("[resource manager]: resource taken (high)\n")
-		case takeLow <- res:
-			//fmt.Printf("[resource manager]: resource taken (low)\n")
-		case res = <-giveBack:
-			//fmt.Printf("[resource manager]: resource returned\n")
+			res = Resource{} // Resource is taken, clear it
+		default:
+			// If high-priority is not ready, try low-priority
+			select {
+			case takeLow <- res:
+				res = Resource{} // Resource is taken, clear it
+			default:
+				// If neither is ready, wait for any of the three actions
+				select {
+				case takeHigh <- res:
+					res = Resource{} // Resource is taken, clear it
+				case takeLow <- res:
+					res = Resource{} // Resource is taken, clear it
+				case res = <-giveBack:
+					// Resource is returned, now available again
+				}
+			}
 		}
 	}
 }
