@@ -43,19 +43,30 @@ type ResourceRequest struct {
     channel     chan Resource
 }
 
-func resourceManager(askFor chan ResourceRequest, giveBack chan Resource){
+func resourceManager(askFor chan ResourceRequest, giveBack chan Resource) {
 
-    res     := Resource{}
-    //busy    := false
-    //queue   := PriorityQueue{}
+    res := Resource{}
+    busy := false
+    queue := PriorityQueue{}
 
     for {
         select {
         case request := <-askFor:
-            //fmt.Printf("[resource manager]: received request: %+v\n", request)
-            request.channel <- res
+            queue.Insert(request, request.priority)
+            if !busy {
+                nextRequest := queue.Front().(ResourceRequest)
+                queue.PopFront()
+                nextRequest.channel <- res
+                busy = true
+            }
         case res = <-giveBack:
-            //fmt.Printf("[resource manager]: resource returned\n")
+            busy = false
+            if !queue.Empty() {
+                nextRequest := queue.Front().(ResourceRequest)
+                queue.PopFront()
+                nextRequest.channel <- res
+                busy = true
+            }
         }
     }
 }
@@ -154,19 +165,28 @@ type PriorityQueue struct {
         priority    int
     }
 }
-func (pq *PriorityQueue) Insert(value interface{}, priority int){
-    pq.queue = append(pq.queue, struct{val interface{}; priority int}{value, priority})
+
+func (pq *PriorityQueue) Insert(value interface{}, priority int) {
+    pq.queue = append(pq.queue, struct{ val interface{}; priority int }{value, priority})
     sort.SliceStable(pq.queue, func(i, j int) bool {
         return pq.queue[i].priority > pq.queue[j].priority
     })
 }
+
 func (pq *PriorityQueue) Front() interface{} {
+    if pq.Empty() {
+        return nil
+    }
     return pq.queue[0].val
 }
-func (pq *PriorityQueue) PopFront(){
-    pq.queue = pq.queue[1:]
+
+func (pq *PriorityQueue) PopFront() {
+    if !pq.Empty() {
+        pq.queue = pq.queue[1:]
+    }
 }
-func(pq *PriorityQueue) Empty() bool {
+
+func (pq *PriorityQueue) Empty() bool {
     return len(pq.queue) == 0
 }
 
