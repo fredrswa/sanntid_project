@@ -2,67 +2,64 @@ package main
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
-const tick = time.Millisecond * 33
+const tick = time.Millisecond * 100
 
 // --- RESOURCE ROUTINE --- //
-/*
-You will modify the resourceManager routine so that it... works...
-(You know the drill by now...)
-
-Note: The code in `main` does not contain checks that the final execution order is correct.
-
-Hints:
- - Remember that you can do things outside the `select` too:
-    ```Go
-    for {
-        select {
-            cases...
-        }
-        other stuff...
-    }
-    ```
- - You should not need a `busy` boolean (or any other variables for that matter).
-   But you might find it useful when experimenting...
- - `select` can have a `default` case.
- - You will need to completely restructure the existing code, not just extend it
-*/
-
-type Resource struct {
-	value []int // Resource type is []int. Each user appends its own id when executing.
-}
-
+//
+// This version of resourceManager holds the resource in an internal variable
+// and “disables” the request channels (by setting them to nil) while the resource is checked out.
+// It always prioritizes high–priority requests.
 func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack chan Resource) {
-	res := Resource{} // Holds the resource; initially empty
+	var res Resource // our single managed resource
+
+	// When resource is available we want both channels enabled.
+	sendHigh := takeHigh
+	sendLow := takeLow
 
 	for {
-		// Try to send to high-priority first
 		select {
-		case takeHigh <- res:
-			res = Resource{} // Resource is taken, clear it
+		// Try high–priority first.
+		case sendHigh <- res:
+			// Resource handed out. Disable both channels until it is returned.
+			sendHigh, sendLow = nil, nil
+
+		// Also accept a resource being returned.
+		case r := <-giveBack:
+			res = r
+			// Re-enable the channels.
+			sendHigh, sendLow = takeHigh, takeLow
+
+		// If no high–priority request is waiting then try low–priority.
 		default:
-			// If high-priority is not ready, try low-priority
 			select {
-			case takeLow <- res:
-				res = Resource{} // Resource is taken, clear it
-			default:
-				// If neither is ready, wait for any of the three actions
-				select {
-				case takeHigh <- res:
-					res = Resource{} // Resource is taken, clear it
-				case takeLow <- res:
-					res = Resource{} // Resource is taken, clear it
-				case res = <-giveBack:
-					// Resource is returned, now available again
-				}
+			case sendLow <- res:
+				sendHigh, sendLow = nil, nil
+			case r := <-giveBack:
+				res = r
+				sendHigh, sendLow = takeHigh, takeLow
 			}
+		}
+
+		// When the resource is out (both channels nil) then wait for it to be returned.
+		if sendHigh == nil && sendLow == nil {
+			r := <-giveBack
+			res = r
+			sendHigh, sendLow = takeHigh, takeLow
 		}
 	}
 }
 
-// --- RESOURCE USERS -- //
+// --- RESOURCE TYPE --- //
+
+type Resource struct {
+	value []int // Each user appends its own id when executing.
+}
+
+// --- RESOURCE USERS --- //
 
 type ResourceUserConfig struct {
 	id        int
@@ -71,8 +68,12 @@ type ResourceUserConfig struct {
 	execution int
 }
 
-func resourceUser(cfg ResourceUserConfig, take chan Resource, giveBack chan Resource) {
+var wg sync.WaitGroup
 
+func resourceUser(cfg ResourceUserConfig, take chan Resource, giveBack chan Resource) {
+	defer wg.Done()
+
+	// Wait until the scheduled release time.
 	time.Sleep(time.Duration(cfg.release) * tick)
 
 	executionStates[cfg.id] = waiting
@@ -80,6 +81,7 @@ func resourceUser(cfg ResourceUserConfig, take chan Resource, giveBack chan Reso
 
 	executionStates[cfg.id] = executing
 
+	// Simulate execution.
 	time.Sleep(time.Duration(cfg.execution) * tick)
 	res.value = append(res.value, cfg.id)
 	giveBack <- res
@@ -87,14 +89,70 @@ func resourceUser(cfg ResourceUserConfig, take chan Resource, giveBack chan Reso
 	executionStates[cfg.id] = done
 }
 
+// --- EXECUTION LOGGING --- //
+
+type ExecutionState rune
+
+const (
+	none      ExecutionState = ' '       // blank
+	waiting   ExecutionState = '\u2592'  // ▒
+	executing ExecutionState = '\u2593'  // ▓
+	done      ExecutionState = '\u2580'  // ▀
+)
+
+var executionStates []ExecutionState
+
+// executionLogger prints the state of all users every tick. It now listens for a stop signal.
+func executionLogger(stop chan struct{}, loggerWg *sync.WaitGroup) {
+	defer loggerWg.Done()
+
+	// Print header.
+	fmt.Printf("  id:")
+	for id := range executionStates {
+		fmt.Printf("%3d", id)
+	}
+	fmt.Println()
+
+	t := 0
+	for {
+		select {
+		case <-stop:
+			return
+		default:
+			grid := ' '
+			if t%5 == 0 {
+				grid = '\u2500'
+			}
+			fmt.Printf("%04d : ", t)
+			for id, state := range executionStates {
+				fmt.Printf("%c%c%c", state, grid, grid)
+				// Reset a completed (done) state so we see the change.
+				if state == done {
+					executionStates[id] = none
+				}
+			}
+			fmt.Println()
+			t++
+			time.Sleep(tick)
+		}
+	}
+}
+
+// --- MAIN --- //
+
 func main() {
+	// Channels for resource requests and returns.
 	takeLow := make(chan Resource)
 	takeHigh := make(chan Resource)
 	giveBack := make(chan Resource)
+
+	// Launch the resource manager.
 	go resourceManager(takeLow, takeHigh, giveBack)
 
+	// There are 10 execution states (user IDs from 0 to 9).
 	executionStates = make([]ExecutionState, 10)
 
+	// Define resource user configurations.
 	cfgs := []ResourceUserConfig{
 		{0, 0, 1, 1},
 		{1, 0, 3, 1},
@@ -120,7 +178,14 @@ func main() {
 		{5, 1, 30, 2},
 	}
 
-	go executionLogger()
+	// Launch the execution logger.
+	loggerStop := make(chan struct{})
+	var loggerWg sync.WaitGroup
+	loggerWg.Add(1)
+	go executionLogger(loggerStop, &loggerWg)
+
+	// Launch all resource users.
+	wg.Add(len(cfgs))
 	for _, cfg := range cfgs {
 		if cfg.priority == 1 {
 			go resourceUser(cfg, takeHigh, giveBack)
@@ -129,50 +194,22 @@ func main() {
 		}
 	}
 
-	// (no way to join goroutines, hacking it with sleep)
-	time.Sleep(time.Duration(45) * tick)
+	// Wait until all resource users are done.
+	wg.Wait()
 
-	executionOrder := <-takeHigh
-	fmt.Println("Execution order:", executionOrder)
-}
+	// Give a short delay before stopping the logger.
+	time.Sleep(2 * tick)
+	close(loggerStop)
+	loggerWg.Wait()
 
-// --- EXECUTION LOGGING --- //
-
-type ExecutionState rune
-
-const (
-	none      ExecutionState = '\u0020'
-	waiting                  = '\u2592'
-	executing                = '\u2593'
-	done                     = '\u2580'
-)
-
-var executionStates []ExecutionState
-
-func executionLogger() {
-	time.Sleep(tick / 2)
-	t := 0
-
-	fmt.Printf("  id:")
-	for id, _ := range executionStates {
-		fmt.Printf("%3d", id)
-	}
-	fmt.Printf("\n")
-
-	for {
-		grid := ' '
-		if t%5 == 0 {
-			grid = '\u2500'
-		}
-		fmt.Printf("%04d : ", t)
-		for id, state := range executionStates {
-			fmt.Printf("%c%c%c", state, grid, grid)
-			if state == done {
-				executionStates[id] = none
-			}
-		}
-		fmt.Printf("\n")
-		t++
-		time.Sleep(tick)
+	// Optionally, retrieve and print the final execution order from the resource.
+	// (In this design the final execution order is stored in the resource’s value.)
+	select {
+	case finalRes := <-takeHigh:
+		fmt.Println("Final execution order:", finalRes.value)
+	case finalRes := <-takeLow:
+		fmt.Println("Final execution order:", finalRes.value)
+	default:
+		fmt.Println("Final execution order not available.")
 	}
 }
