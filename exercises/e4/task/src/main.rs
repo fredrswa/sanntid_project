@@ -24,7 +24,7 @@ fn parent_process() {
         .expect("Failed to spawn backup process"); // expect is used to handle the error
 
     // Creating a socket to send data to the backup process
-    let socket = UdpSocket::bind("127.0.0.1:34254").expect("Could not bind socket");
+    let socket = UdpSocket::bind("127.0.0.1:34254").expect("Could not bind socket as primary");
     socket.connect("127.0.0.1:34255").expect("Could not connect to backup");
 
     let mut count = 1;
@@ -43,10 +43,10 @@ fn child_process() {
     println!("Starting as backup");
 
     // Socket to receive data from the primary process
-    let socket = UdpSocket::bind("127.0.0.1:34255").expect("Could not bind socket");
+    let socket = UdpSocket::bind("127.0.0.1:34255").expect("Could not bind socket as backup");
 
 
-    // Set a timeout for the socket to ckeck if the parent is still alive ( 3 sec)
+    // Set a timeout for the socket to check if the parent is still alive (3 sec)
     socket.set_read_timeout(Some(Duration::from_secs(3))).expect("Failed to set read timeout");
 
     let mut buffer = [0; 1024];
@@ -73,6 +73,7 @@ fn child_process() {
                 // Become primary
                 start_as_primary(last_count);
                 break;
+                
             }
         }
     }

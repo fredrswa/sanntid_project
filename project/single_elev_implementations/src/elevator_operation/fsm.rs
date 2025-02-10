@@ -34,9 +34,13 @@ pub fn set_all_lights(elevator: &mut Elevator) {
   }
 }
 
-pub fn fsm_on_request_button_press(elevator: &mut Elevator, timer: &Timer, btn_floor: usize, btn_type: ButtonType) {
+pub fn fsm_on_request_button_press(elevator: &mut Elevator, timer: &mut Timer, btn_floor: usize, btn_type: ButtonType) {
   match elevator.behaviour {
     ElevatorBehaviour::DoorOpen => {
+      if elevator.blocked {
+        timer.start();
+      }
+
       if requests_should_clear_immediately(elevator, btn_floor, btn_type) {
         elevator.door_light(true);
         requests_clear_at_current_floor(elevator);
@@ -75,7 +79,8 @@ pub fn fsm_on_request_button_press(elevator: &mut Elevator, timer: &Timer, btn_f
   set_all_lights(elevator);
 }
 
-pub fn fsm_on_floor_arrival(elevator: &mut Elevator, timer: &Timer, new_floor: usize){
+pub fn fsm_on_floor_arrival(elevator: &mut Elevator, timer: &mut Timer, new_floor: usize) {
+  
   elevator.floor = new_floor;
   elevator.floor_indicator(new_floor as u8);
 
@@ -90,31 +95,35 @@ pub fn fsm_on_floor_arrival(elevator: &mut Elevator, timer: &Timer, new_floor: u
         elevator.behaviour = ElevatorBehaviour::DoorOpen;
       }
     }
-    ElevatorBehaviour::DoorOpen => {}
-    ElevatorBehaviour::Idle => {}
+    ElevatorBehaviour::DoorOpen => {println!("ERROR");}
+    ElevatorBehaviour::Idle => {println!("ERROR");}
   }
 }
 
-pub fn fsm_on_door_timeout(elevator: &mut Elevator, timer: &Timer) {
+pub fn fsm_on_door_timeout(elevator: &mut Elevator, timer: &mut Timer) {
   match elevator.behaviour {
     ElevatorBehaviour::DoorOpen => {
-      let db_pair: DirnBehaviourPair = requests_choose_direction(elevator);
-      elevator.dirn = db_pair.dirn;
-      elevator.behaviour = db_pair.behaviour;
+      if elevator.blocked {
+        timer.start();
+      } else {
+        let db_pair: DirnBehaviourPair = requests_choose_direction(elevator);
+        elevator.dirn = db_pair.dirn;
+        elevator.behaviour = db_pair.behaviour;
 
-      requests_clear_at_current_floor(elevator);
-      set_all_lights(elevator);
-      
-      match elevator.behaviour {
-        ElevatorBehaviour::DoorOpen => {
-          timer.start();
-        }
-        ElevatorBehaviour::Moving => {
-          elevator.door_light(false);
-          elevator.motor_direction(elevator.dirn.clone() as u8);
-        }
-        ElevatorBehaviour::Idle => {
-          elevator.door_light(false);
+        requests_clear_at_current_floor(elevator);
+        set_all_lights(elevator);
+        
+        match elevator.behaviour {
+          ElevatorBehaviour::DoorOpen => {
+            timer.start();
+          }
+          ElevatorBehaviour::Moving => {
+            elevator.door_light(false);
+            elevator.motor_direction(elevator.dirn.clone() as u8);
+          }
+          ElevatorBehaviour::Idle => {
+            elevator.door_light(false);
+          }
         }
       }
     }

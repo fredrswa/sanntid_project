@@ -32,6 +32,8 @@ impl fmt::Debug for ButtonType {
   }
 }
 
+
+
 #[derive(PartialEq, Clone)]
 pub enum ElevatorBehaviour{
   Idle,
@@ -48,6 +50,17 @@ impl fmt::Debug for ElevatorBehaviour {
     }
   }
 }
+
+impl fmt::Display for ElevatorBehaviour {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      ElevatorBehaviour::Idle => write!(f, "Idle"),
+      ElevatorBehaviour::DoorOpen => write!(f, "Door Open"),
+      ElevatorBehaviour::Moving => write!(f, "Moving"),
+    }
+  }
+}
+
 
 #[derive(PartialEq, Clone)]
 pub enum Dirn{
