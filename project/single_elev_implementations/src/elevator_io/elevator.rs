@@ -13,6 +13,7 @@ pub struct Elevator {
   pub dirn: Dirn,
   pub requests: Vec<Vec<bool>>,
   pub behaviour: ElevatorBehaviour,
+  pub blocked: bool,
 }
 
 impl Elevator {
@@ -24,6 +25,7 @@ impl Elevator {
       dirn: Dirn::DirnStop,
       requests: vec![vec![false; num_buttons]; num_floors],
       behaviour: ElevatorBehaviour::Idle,
+      blocked: false,
     })
   }
 
