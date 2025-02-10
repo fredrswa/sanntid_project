@@ -31,7 +31,8 @@ func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack cha
 		case r := <-giveBack:
 			res = r
 			// Re-enable the channels.
-			sendHigh, sendLow = takeHigh, takeLow
+			sendLow = takeLow
+			sendHigh = takeHigh
 
 		// If no high–priority request is waiting then try low–priority.
 		default:
@@ -48,7 +49,8 @@ func resourceManager(takeLow chan Resource, takeHigh chan Resource, giveBack cha
 		if sendHigh == nil && sendLow == nil {
 			r := <-giveBack
 			res = r
-			sendHigh, sendLow = takeHigh, takeLow
+			sendHigh = takeHigh
+			sendLow = takeLow
 		}
 	}
 }
@@ -154,29 +156,29 @@ func main() {
 
 	// Define resource user configurations.
 	cfgs := []ResourceUserConfig{
-		{0, 0, 1, 1},
-		{1, 0, 3, 1},
-		{2, 1, 5, 1},
-
-		{0, 1, 10, 2},
-		{1, 0, 11, 1},
-		{2, 1, 11, 1},
-		{3, 0, 11, 1},
-		{4, 1, 11, 1},
-		{5, 0, 11, 1},
-		{6, 1, 11, 1},
-		{7, 0, 11, 1},
-		{8, 1, 11, 1},
-
-		{0, 1, 25, 3},
-		{6, 0, 26, 2},
-		{7, 0, 26, 2},
-		{1, 1, 26, 2},
-		{2, 1, 27, 2},
-		{3, 1, 28, 2},
-		{4, 1, 29, 2},
-		{5, 1, 30, 2},
-	}
+        {0, 0, 1, 1},
+        {1, 0, 3, 1},
+        {2, 1, 5, 1},
+        
+        {0, 1, 10, 2},
+        {1, 0, 11, 1},
+        {2, 1, 11, 1},
+        {3, 0, 11, 1},
+        {4, 1, 11, 1},
+        {5, 0, 11, 1},
+        {6, 1, 11, 1},
+        {7, 0, 11, 1},
+        {8, 1, 11, 1},
+        
+        {0, 1, 25, 3},
+        {6, 0, 26, 2},
+        {7, 0, 26, 2},
+        {1, 1, 26, 2},
+        {2, 1, 27, 2},
+        {3, 1, 28, 2},
+        {4, 1, 29, 2},
+        {5, 1, 30, 2},
+    }
 
 	// Launch the execution logger.
 	loggerStop := make(chan struct{})

@@ -1,1 +1,1 @@
-/home/student/Documents/Gruppe12_TTK4145/Sanntid13/exercises/e4/task/target/debug/task: /home/student/Documents/Gruppe12_TTK4145/Sanntid13/exercises/e4/task/src/lib.rs /home/student/Documents/Gruppe12_TTK4145/Sanntid13/exercises/e4/task/src/main.rs
+/home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/exercises/e4/task/target/debug/task: /home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/exercises/e4/task/src/lib.rs /home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/exercises/e4/task/src/main.rs

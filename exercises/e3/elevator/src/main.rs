@@ -1,8 +1,8 @@
 
 
 
-use elevator::sub;
+use elevator::elevator;
 
 fn main() -> std::io::Result<()> {
-    sub::run()
+    elevator::run()
 }
