@@ -1,19 +1,19 @@
+/*
+? When code has not been checked or not implemented use:
+! Implemented
+? When code matches working model use:
+* Implemented
+*/
+
+
 #![allow(dead_code)]
-
-
+use driver_rust::elevio::elev;
+use crate::fsm::fsm::FSM;
 
 use super::config::*;
 
 
-use driver_rust::elevio::elev;
-use crate::sub::fsm::FSM;
-
-pub struct DirnBehaviorPair {
-    pub direction: u8,
-    pub behavior: Behavior,
-}
-
-
+// ! Implemented
 pub fn requests_above(fsm: &FSM) -> bool {
     for floor in (fsm.current_floor + 1)..NUM_FLOORS {
         for button in 0..NUM_BUTTONS {
@@ -25,6 +25,8 @@ pub fn requests_above(fsm: &FSM) -> bool {
     false
 }
 
+
+// ! Implemented
 pub fn requests_below(fsm: &FSM) -> bool {
     for floor in 0..fsm.current_floor {
         for button in 0..NUM_BUTTONS {
@@ -36,6 +38,7 @@ pub fn requests_below(fsm: &FSM) -> bool {
     false
 }
 
+// ! Implemented
 pub fn requests_choose_direction(fsm: &FSM) -> DirnBehaviorPair {
     match fsm.motor_direction {
         elev::DIRN_UP => {
@@ -101,6 +104,7 @@ pub fn requests_choose_direction(fsm: &FSM) -> DirnBehaviorPair {
     }
 }
 
+// ! Implemented
 pub fn requests_should_stop(fsm: &FSM) -> bool {
     match fsm.motor_direction {
         elev::DIRN_UP => {
@@ -129,7 +133,10 @@ pub fn requests_should_stop(fsm: &FSM) -> bool {
         }
     }
 }
-pub fn requests_should_clear_immediatly(fsm: &FSM) -> bool {
+
+
+// ! Implemented
+pub fn requests_should_clear_immediately(fsm: &FSM) -> bool {
     match fsm.clear_requests {
         ClearRequestVariant::ClearAll => {
             return true;
@@ -161,6 +168,7 @@ pub fn requests_should_clear_immediatly(fsm: &FSM) -> bool {
     }
 }
 
+// ! Implemented
 pub fn requests_clear_at_current_floor(fsm: &mut FSM, clear_variant: ClearRequestVariant) {
     match clear_variant {
         ClearRequestVariant::ClearAll => {

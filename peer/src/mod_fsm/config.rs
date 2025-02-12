@@ -6,7 +6,7 @@ pub const DOOR_OPEN_TIME: u64 = 3000;
 
 use std::u8;
 
-use driver_rust::elevio::elev::{self, Elevator};
+//use driver_rust::elevio::elev::{self, Elevator};
 
 #[derive(Copy, Clone)]
 pub enum Behavior {
@@ -34,4 +34,8 @@ pub fn call_to_button_type(call: u8) -> ButtonType {
         2 => ButtonType::Cab,
         _ => panic!("Invalid button type"),
     }
+}
+pub struct DirnBehaviorPair {
+    pub direction: u8,
+    pub behavior: Behavior,
 }

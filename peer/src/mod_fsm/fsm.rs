@@ -1,13 +1,12 @@
 
 #![allow(dead_code)]
 use std::thread::*;
-use std::time::*;
-
 use driver_rust::elevio::elev::{self, Elevator};
 
 
 use super::config::*;
 use super::requests::*;
+use super::timer::Timer;
 
 
 #[derive(Clone)]
@@ -56,7 +55,7 @@ impl FSM {
         self.behavior = Behavior::Moving;
     }
     // ! Not Implemented
-    pub fn fsm_on_request_button_press(&mut self, btn_floor: u8, btn_type: ButtonType) {
+    pub fn fsm_on_request_button_press(&mut self, timer: &mut Timer, btn_floor: u8, btn_type: ButtonType) {
         match self.behavior {
             Behavior::DoorOpen => {
                 if self.door_blocked {
