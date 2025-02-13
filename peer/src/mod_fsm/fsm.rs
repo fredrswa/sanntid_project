@@ -26,38 +26,46 @@ pub struct ElevatorSystem {
 
 impl fmt::Display for ElevatorSystem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ElevatorSystem {{\n  elevator: {:?},\n  requests: {:?},\n  status: {:?}\n}}",
-            self.elevator, self.requests, self.status
-        )
+       
+        write!(f, "     ")?;
+        println!("\tHU, \tHD, \tCab");
+        
+        write!(f, "\n")?;
+        for (floor, row) in self.requests.iter().enumerate().rev() {
+            write!(f, "F{}\t: ", floor + 1)?;
+            for &request in row.iter() {
+            write!(f, "{}\t ", if request { "X" } else { " " })?;
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
     }
 }
 
 impl ElevatorSystem {
     pub fn new(addr: &str) -> ElevatorSystem {
         ElevatorSystem {
-            elevator: Elevator::init(addr, NUM_FLOORS).unwrap(),
+            elevator: Elevator::init(addr, NUM_FLOORS as u8).unwrap(),
             requests: [[false; NUM_BUTTONS as usize]; NUM_FLOORS as usize],
             status: Status::new(),
         }
     }
     
     pub fn init(&mut self) {
-        loop {
-            self.status.curr_floor = self.elevator.floor_sensor().unwrap_or(u8::MAX) as u8;
-            match self.status.curr_floor {
-                255 => {
-                    self.init_between_floors();
-                }
-                _=> {
-                    self.elevator.motor_direction(Dirn::Stop as u8);
-                    self.status.curr_dirn = Dirn::Stop;
-                    self.status.behavior = Behavior::Idle;
-                    break;
-                }
+        self.status.curr_floor = self.elevator.floor_sensor().unwrap_or(u8::MAX) as usize;
+        println!("Floor {}", self.status.curr_floor);
+        match self.status.curr_floor {
+            255 => {
+                println!("Started Between Floors");
+                self.init_between_floors();
             }
-        }
+            _ => {
+                println!("Started At Floor");
+                self.elevator.motor_direction(Dirn::Stop as u8);
+                self.status.curr_dirn = Dirn::Stop;
+                self.status.behavior = Behavior::Moving;
+            }
+        } 
     }
 
     pub fn init_between_floors(&mut self) {
@@ -69,7 +77,7 @@ impl ElevatorSystem {
     pub fn set_all_lights(&mut self){
         for floor in 0..NUM_FLOORS {
             for btn in 0..NUM_BUTTONS {
-                self.elevator.call_button_light(floor, btn, self.requests[floor as usize][btn as usize]);
+                self.elevator.call_button_light(floor as u8, btn as u8, self.requests[floor as usize][btn as usize]);
             }
         }
     }
@@ -119,18 +127,20 @@ impl ElevatorSystem {
     }
 
 
-    pub fn on_floor_arrival(&mut self, timer: &mut Timer, new_floor: u8, ) {
+    pub fn on_floor_arrival(&mut self, timer: &mut Timer, new_floor: usize) {
         self.status.curr_floor = new_floor;
-        self.elevator.floor_indicator(new_floor);
+        self.elevator.floor_indicator(new_floor as u8);
 
         match self.status.behavior {
             Behavior::Moving => {
-                requests_clear_at_current_floor(self);
-                self.elevator.motor_direction(Dirn::Stop as u8);
-                self.elevator.door_light(true);
-                timer.start();
-                self.set_all_lights();
-                self.status.behavior = Behavior::DoorOpen;
+                if requests_should_stop(self) {
+                    requests_clear_at_current_floor(self);
+                    self.elevator.motor_direction(Dirn::Stop as u8);
+                    self.elevator.door_light(true);
+                    timer.start();
+                    self.set_all_lights();
+                    self.status.behavior = Behavior::DoorOpen;
+                }
             },
             Behavior::DoorOpen => {panic!("on_floor_arrival: incorrect behavior! \n Should be Moving, is DoorOpen")},
             Behavior::Idle => {panic!("on_floor_arrival: incorrect behavior! \n Should be Moving, is Idle")},
@@ -193,6 +203,7 @@ pub fn test_script_elevator_system() {
         let elevator = es.elevator.clone();
         spawn(move || sensor_polling::obstruction(elevator, obstruction_tx, poll_period)); 
     }
+    es.init();
     loop {
         cbc::select! {
             recv(call_button_rx) -> cb_message => {
@@ -203,7 +214,7 @@ pub fn test_script_elevator_system() {
 
             recv(floor_sensor_rx) -> fs_message => {
                 let floor = fs_message.unwrap();
-                es.on_floor_arrival(&mut timer, floor);
+                es.on_floor_arrival(&mut timer, floor as usize);
             }
 
             recv(obstruction_rx) -> ob_message => {
@@ -213,9 +224,6 @@ pub fn test_script_elevator_system() {
                 }
                 es.status.door_blocked = obs;                    
             }
-
-            default => {}
-            
         }
         if timer.is_expired() && !es.status.door_blocked {
             es.on_door_timeout(&mut timer);

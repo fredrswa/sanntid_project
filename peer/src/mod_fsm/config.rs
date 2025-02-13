@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-pub const NUM_FLOORS: u8 = 4;
-pub const NUM_BUTTONS: u8 = 3;
+pub const NUM_FLOORS: usize = 4;
+pub const NUM_BUTTONS: usize = 3;
 pub const DOOR_OPEN_S: u64 = 3;
 
 use std::u8;
@@ -50,7 +50,7 @@ pub struct DirnBehaviorPair {
 }
 #[derive(Clone)]
 pub struct Status {
-    pub curr_floor: u8,
+    pub curr_floor: usize,
     pub curr_dirn: Dirn,
     pub behavior: Behavior,
     pub door_blocked: bool,    
@@ -59,7 +59,7 @@ pub struct Status {
 impl Status {
     pub fn new() -> Status {
         Status {
-            curr_floor: u8::MAX,
+            curr_floor: 0,
             curr_dirn: Dirn::Stop,
             behavior: Behavior::Idle,
             door_blocked: false,

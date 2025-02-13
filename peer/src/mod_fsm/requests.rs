@@ -3,9 +3,9 @@ use crate::mod_fsm::config::*;
 use crate::mod_fsm::fsm::ElevatorSystem;
 
 pub fn requests_above(es: &ElevatorSystem) -> bool {
-  for floor in (es.status.curr_floor + 1)..NUM_FLOORS {
+  for floor in (es.status.curr_floor as usize + 1)..NUM_FLOORS {
     for button in 0..NUM_BUTTONS {
-      if es.requests[floor as usize][button as usize] {
+      if es.requests[floor][button] {
         return true;
       }
     }
@@ -14,9 +14,9 @@ pub fn requests_above(es: &ElevatorSystem) -> bool {
 }
 
 pub fn requests_below(es: &ElevatorSystem) -> bool {
-  for floor in 0..es.status.curr_floor {
+  for floor in 0..es.status.curr_floor as usize {
     for button in 0..NUM_BUTTONS {
-      if es.requests[floor as usize][button as usize] {
+      if es.requests[floor][button] {
         return true;
       }
     }
@@ -26,7 +26,7 @@ pub fn requests_below(es: &ElevatorSystem) -> bool {
 
 pub fn requests_here(es: &ElevatorSystem) -> bool {
   for button in 0..NUM_BUTTONS {
-    if es.requests[es.status.curr_floor as usize][button as usize] {
+    if es.requests[es.status.curr_floor as usize][button] {
       return true;
     }
   }
@@ -74,20 +74,20 @@ pub fn requests_choose_direction(es: &ElevatorSystem) -> DirnBehaviorPair {
 }
 
 pub fn requests_should_stop(es: &ElevatorSystem) -> bool {
-  match es.status.curr_dirn {
-    Dirn::Down => {
-      es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] || 
-      es.requests[es.status.curr_floor as usize][ButtonType::Cab as usize] || 
-      !requests_below(es)
-    }
-    Dirn::Stop => {return true;}
-    Dirn::Up => {
-      es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] || 
-      es.requests[es.status.curr_floor as usize][ButtonType::Cab as usize] || 
-      !requests_above(es)
+    match es.status.curr_dirn {
+      Dirn::Down => {
+        es.requests[es.status.curr_floor][ButtonType::HallDown as usize] || 
+        es.requests[es.status.curr_floor][ButtonType::Cab as usize] || 
+        !requests_below(es)
+      }
+      Dirn::Stop => {return true;}
+      Dirn::Up => {
+        es.requests[es.status.curr_floor][ButtonType::HallUp as usize] || 
+        es.requests[es.status.curr_floor][ButtonType::Cab as usize] || 
+        !requests_above(es)
+      }
     }
   }
-}
 
 pub fn requests_should_clear_immediately(es: &ElevatorSystem, btn_floor: usize, btn_type: ButtonType) -> bool {
   es.status.curr_floor as usize == btn_floor && (
