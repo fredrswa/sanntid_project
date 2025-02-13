@@ -1,198 +1,120 @@
-/*
-? When code has not been checked or not implemented use:
-! Implemented
-? When code matches working model use:
-* Implemented
-*/
 
+use crate::mod_fsm::config::*;
+use crate::mod_fsm::fsm::ElevatorSystem;
 
-#![allow(dead_code)]
-use driver_rust::elevio::elev;
-use crate::fsm::fsm::FSM;
-
-use super::config::*;
-
-
-// ! Implemented
-pub fn requests_above(fsm: &FSM) -> bool {
-    for floor in (fsm.current_floor + 1)..NUM_FLOORS {
-        for button in 0..NUM_BUTTONS {
-            if fsm.requests[floor as usize][button as usize] {
-                return true;
-            }
-        }
+pub fn requests_above(es: &ElevatorSystem) -> bool {
+  for floor in (es.status.curr_floor + 1)..NUM_FLOORS {
+    for button in 0..NUM_BUTTONS {
+      if es.requests[floor as usize][button as usize] {
+        return true;
+      }
     }
-    false
+  }
+  return false;
 }
 
-
-// ! Implemented
-pub fn requests_below(fsm: &FSM) -> bool {
-    for floor in 0..fsm.current_floor {
-        for button in 0..NUM_BUTTONS {
-            if fsm.requests[floor as usize][button as usize] {
-                return true;
-            }
-        }
+pub fn requests_below(es: &ElevatorSystem) -> bool {
+  for floor in 0..es.status.curr_floor {
+    for button in 0..NUM_BUTTONS {
+      if es.requests[floor as usize][button as usize] {
+        return true;
+      }
     }
-    false
+  }
+  return false;
 }
 
-// ! Implemented
-pub fn requests_choose_direction(fsm: &FSM) -> DirnBehaviorPair {
-    match fsm.motor_direction {
-        elev::DIRN_UP => {
-            if requests_above(fsm) {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_UP,
-                    behavior: Behavior::Moving,
-                };
-            } else if requests_below(fsm) {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_DOWN,
-                    behavior: Behavior::Moving,
-                };
-            } else {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_STOP,
-                    behavior: Behavior::Idle,
-                };
-            }
-        }
-        elev::DIRN_DOWN => {
-            if requests_below(fsm) {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_DOWN,
-                    behavior: Behavior::Moving,
-                };
-            } else if requests_above(fsm) {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_UP,
-                    behavior: Behavior::Moving,
-                };
-            } else {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_STOP,
-                    behavior: Behavior::Idle,
-                };
-            }
-        }
-        elev::DIRN_STOP => {
-            if requests_above(fsm) {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_UP,
-                    behavior: Behavior::Moving,
-                };
-            } else if requests_below(fsm) {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_DOWN,
-                    behavior: Behavior::Moving,
-                };
-            } else {
-                return DirnBehaviorPair {
-                    direction: elev::DIRN_STOP,
-                    behavior: Behavior::Idle,
-                };
-            }
-        }
-        _ => {
-            return DirnBehaviorPair {
-            direction: elev::DIRN_STOP,
-            behavior: Behavior::Idle,
-            };
-        }
+pub fn requests_here(es: &ElevatorSystem) -> bool {
+  for button in 0..NUM_BUTTONS {
+    if es.requests[es.status.curr_floor as usize][button as usize] {
+      return true;
     }
+  }
+  return false;
 }
 
-// ! Implemented
-pub fn requests_should_stop(fsm: &FSM) -> bool {
-    match fsm.motor_direction {
-        elev::DIRN_UP => {
-            if fsm.requests[fsm.current_floor as usize][ButtonType::Hallup as usize] || fsm.requests[fsm.current_floor as usize][ButtonType::Cab as usize] {
-                return true;
-            } else if !requests_above(fsm) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        elev::DIRN_DOWN => {
-            if fsm.requests[fsm.current_floor as usize][ButtonType::Halldown as usize] || fsm.requests[fsm.current_floor as usize][ButtonType::Cab as usize] {
-                return true;
-            } else if !requests_below(fsm) {
-                return true;
-            } else {
-                return false;
-            }
-        }
-        elev::DIRN_STOP => {
-            return true;
-        }
-        _ => {
-            return false;
-        }
+pub fn requests_choose_direction(es: &ElevatorSystem) -> DirnBehaviorPair {
+  match es.status.curr_dirn {
+    Dirn::Down => {
+      if requests_below(es) {
+        return DirnBehaviorPair { direction: Dirn::Down, behavior: Behavior::Moving }
+      } else if requests_here(es) {
+        return DirnBehaviorPair { direction: Dirn::Up, behavior: Behavior::DoorOpen }
+      } else if requests_above(es) {
+        return DirnBehaviorPair { direction: Dirn::Up, behavior: Behavior::Moving }
+      } else {
+        return DirnBehaviorPair { direction: Dirn::Stop, behavior: Behavior::Idle }
+      }
     }
+
+    Dirn::Stop  => {
+      if requests_here(es) {
+        return DirnBehaviorPair { direction: Dirn::Stop, behavior: Behavior::DoorOpen }
+      } else if requests_above(es){
+        return DirnBehaviorPair { direction: Dirn::Up, behavior: Behavior::Moving }
+      } else if requests_below(es){
+        return DirnBehaviorPair { direction: Dirn::Down, behavior: Behavior::Moving }
+      } else {
+        return DirnBehaviorPair { direction: Dirn::Stop, behavior: Behavior::Idle }
+      }
+    }
+
+    Dirn::Up  => {
+      if requests_above(es) {
+        return DirnBehaviorPair { direction: Dirn::Up, behavior: Behavior::Moving }
+      } else if requests_here(es) {
+        return DirnBehaviorPair { direction: Dirn::Down, behavior: Behavior::DoorOpen }
+      } else if requests_below(es) {
+        return DirnBehaviorPair { direction: Dirn::Down, behavior: Behavior::Moving }
+      } else {
+        return DirnBehaviorPair { direction: Dirn::Stop, behavior: Behavior::Idle }
+      }
+    }
+  }
 }
 
-
-// ! Implemented
-pub fn requests_should_clear_immediately(fsm: &FSM) -> bool {
-    match fsm.clear_requests {
-        ClearRequestVariant::ClearAll => {
-            return true;
-        }
-        ClearRequestVariant::ClearInDirection => {
-            match fsm.motor_direction {
-                elev::DIRN_UP => {
-                    if !requests_above(fsm) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-                elev::DIRN_DOWN => {
-                    if !requests_below(fsm) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                }
-                elev::DIRN_STOP => {
-                    return true;
-                }
-                _ => {
-                    return false;
-                }
-            }
-        }
+pub fn requests_should_stop(es: &ElevatorSystem) -> bool {
+  match es.status.curr_dirn {
+    Dirn::Down => {
+      es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] || 
+      es.requests[es.status.curr_floor as usize][ButtonType::Cab as usize] || 
+      !requests_below(es)
     }
+    Dirn::Stop => {return true;}
+    Dirn::Up => {
+      es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] || 
+      es.requests[es.status.curr_floor as usize][ButtonType::Cab as usize] || 
+      !requests_above(es)
+    }
+  }
 }
 
-// ! Implemented
-pub fn requests_clear_at_current_floor(fsm: &mut FSM, clear_variant: ClearRequestVariant) {
-    match clear_variant {
-        ClearRequestVariant::ClearAll => {
-            for button in 0..NUM_BUTTONS {
-                fsm.requests[fsm.current_floor as usize][button as usize] = false;
-            }
-        },
-        ClearRequestVariant::ClearInDirection => {
-            match fsm.motor_direction {
-                elev::DIRN_UP => {
-                    fsm.requests[fsm.current_floor as usize][ButtonType::Hallup as usize] = false;
-                    fsm.requests[fsm.current_floor as usize][ButtonType::Cab as usize] = false;
-                },
-                elev::DIRN_DOWN => {
-                    fsm.requests[fsm.current_floor as usize][ButtonType::Halldown as usize] = false;
-                    fsm.requests[fsm.current_floor as usize][ButtonType::Cab as usize] = false;
-                },
-                elev::DIRN_STOP => {
-                    for button in 0..NUM_BUTTONS {
-                        fsm.requests[fsm.current_floor as usize][button as usize] = false;
-                    }
-                },
-                _ => {},
-            }
-        }
+pub fn requests_should_clear_immediately(es: &ElevatorSystem, btn_floor: usize, btn_type: ButtonType) -> bool {
+  es.status.curr_floor as usize == btn_floor && (
+      (es.status.curr_dirn as usize == Dirn::Up   as usize   && btn_type as usize == ButtonType::HallUp   as usize)  ||
+      (es.status.curr_dirn as usize == Dirn::Down as usize   && btn_type as usize == ButtonType::HallDown as usize)  ||
+      es.status.curr_dirn  as usize == Dirn::Stop as usize ||
+      btn_type as usize == ButtonType::Cab as usize
+  )
+}
+
+pub fn requests_clear_at_current_floor(es: &mut ElevatorSystem) {
+  es.requests[es.status.curr_floor as usize][ButtonType::Cab as usize] = false;
+  match es.status.curr_dirn {
+    Dirn::Down => {
+      if !requests_below(es) && !es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] {
+        es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] = false;
+      }
+      es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] = false;
     }
+    
+    Dirn::Up => {
+      if !requests_above(es) && !es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] {
+        es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] = false;
+      }
+      es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] = false;
+    }
+
+    Dirn::Stop => {}
+  }
 }
