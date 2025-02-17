@@ -15,16 +15,51 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
     - Testing module:
         - Automate testing environment??
     - Assigner: 
+        - Inputs (new_order, JSON[state] for each elevator)
+        - Function: 
+            - Calculate which elevator takes an order
+        - Outputs (take_order: bool)
+        - 
         - Get running
         - Create test script (use [repo](https://github.com/TTK4145/Project-resources))
     - Network:
+        - Inputs (JSON[state], heartbeat)
+        - Function:
+          -  Rx/Tx states
+          -  Rx/Tx heartbeat
+          -  Heartbeat procedure (what?)
+        - Outputs (JSON[state], heartbeat)
+        -  
         - Create test script
         - Figure out a package that contains info. (or use more threads).
         - What type of info do we want the network module to receive
+    - IO/Server
+        - Input (Elevator/Light instructions)
+        - Function:
+            - Launch and port assignment
+            - Communicate with more than one elevator (TCP handler)
+            - Heartbeat
+            - Method for relaunching
+        - Outputs (Orders)
     - FSM/IO:
+        - Inputs (Orders)
+        - Function:
+            - Operate elevator
+              - Elevator logic
+        - Outputs (Elevator/Light instructions)
+        - 
         - Reconsider default statement in main loop
         - Maybe be more consistent with forcing u8, lots of recasting.
         - Modularise single elevator into modules IO and FSM in peer module.
+    - Brain/Coordinator
+      - Inputs (?)
+      - Function:
+        - Run on startup
+        - Initalizes all peer modules
+        - Connect to IO/Server
+        - "Route" traffic between modules
+        - 
+      - Outputs (?)
 2. main.rs:
     - A way too coordinate modules
     - Open channels between them

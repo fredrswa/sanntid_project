@@ -24,7 +24,7 @@ fn udp_send(socket: &UdpSocket, addr: &str, message: &[u8]) -> io::Result<()> {
 }
 
 pub fn test_script_network_module() {
-    let socket = match UdpSocket::bind("10.100.23.23:20002") {
+    let socket = match UdpSocket::bind("10.100.23.23:20003") {
         Ok(socket) => socket,
         Err(e) => {
             println!("Failed to bind socket: \"{}\"", e);
@@ -40,11 +40,12 @@ pub fn test_script_network_module() {
         });
     }
 
-    udp_send(&socket, "10.100.23.23:20000", b"Listening: ID:2");
-
+    udp_send(&socket, "10.100.23.23:20001", b"Listening: ID:2");
+    udp_send(&socket, "10.100.23.23:20002", b"Listening: ID:2");
     loop {
         thread::sleep(std::time::Duration::from_millis(200));
-        udp_send(&socket, "10.100.23.23:20000",b"Heartbeat 2");
+        udp_send(&socket, "10.100.23.23:20001",b"Heartbeat 3");
+        udp_send(&socket, "10.100.23.23:20002",b"Heartbeat 3");
     }
     tx.send("Stop receiving".to_string()).unwrap();
 }
