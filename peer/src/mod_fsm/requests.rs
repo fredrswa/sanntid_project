@@ -86,7 +86,6 @@ pub fn requests_should_stop(es: &ElevatorSystem) -> bool {
         es.requests[es.status.curr_floor][ButtonType::Cab as usize] || 
         !requests_above(es)
       }
-      _=> {true}
   }
 }
 pub fn requests_should_clear_immediately(es: &ElevatorSystem, btn_floor: usize, btn_type: ButtonType) -> bool {

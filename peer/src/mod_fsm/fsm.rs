@@ -3,7 +3,7 @@
 use std::thread::{spawn,sleep};
 use std::time::Duration;
 use std::fmt;
-use core::panic;
+//use core::panic;
 use crossbeam_channel as cbc;
 
 // ^ Driver
