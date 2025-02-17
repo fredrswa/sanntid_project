@@ -48,7 +48,7 @@ pub struct DirnBehaviorPair {
     pub direction: Dirn,
     pub behavior: Behavior,
 }
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Clone)]
 pub struct Status {
     pub curr_floor: usize,
     pub curr_dirn: Dirn,
