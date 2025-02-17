@@ -80,15 +80,15 @@ pub fn requests_should_stop(es: &ElevatorSystem) -> bool {
         es.requests[es.status.curr_floor][ButtonType::Cab as usize] || 
         !requests_below(es)
       }
-      Dirn::Stop => {return true;}
+      Dirn::Stop => {true}
       Dirn::Up => {
         es.requests[es.status.curr_floor][ButtonType::HallUp as usize] || 
         es.requests[es.status.curr_floor][ButtonType::Cab as usize] || 
         !requests_above(es)
       }
-    }
+      _=> {true}
   }
-
+}
 pub fn requests_should_clear_immediately(es: &ElevatorSystem, btn_floor: usize, btn_type: ButtonType) -> bool {
   es.status.curr_floor as usize == btn_floor && (
       (es.status.curr_dirn as usize == Dirn::Up   as usize   && btn_type as usize == ButtonType::HallUp   as usize)  ||
