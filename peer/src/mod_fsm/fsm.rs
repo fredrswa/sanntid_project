@@ -187,7 +187,6 @@ pub fn test_script_elevator_system() {
     let addr = "localhost:15657";
     let mut es = ElevatorSystem::new(addr);
     let mut timer = Timer::new(Duration::from_secs(DOOR_OPEN_S));
-
     let poll_period = Duration::from_millis(25);
 
     let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 

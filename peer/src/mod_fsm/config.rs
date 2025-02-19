@@ -1,7 +1,11 @@
 #![allow(dead_code)]
 
+use serde::{Serialize, Deserialize};
+use serde_json;
+
 pub const NUM_FLOORS: usize = 4;
 pub const NUM_BUTTONS: usize = 3;
+pub const NUM_ELEVATORS: usize = 3;
 pub const DOOR_OPEN_S: u64 = 3;
 
 use std::u8;
@@ -9,12 +13,13 @@ use std::fmt;
 
 //use driver_rust::elevio::elev::{self, Elevator};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Behavior {
     Idle,
     Moving,
     DoorOpen,
 }
+
 #[derive(Copy, Clone)]
 pub enum ButtonType {
     HallUp = 0,
@@ -22,7 +27,7 @@ pub enum ButtonType {
     Cab = 2,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Dirn{
     Up = 1,
     Stop = 0,

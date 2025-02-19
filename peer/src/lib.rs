@@ -8,5 +8,5 @@ pub mod mod_network {
     pub mod network;
 }
 pub mod mod_assigner {
-    //pub mod json_test;
+    pub mod json_testing;
 }
