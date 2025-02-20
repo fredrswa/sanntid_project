@@ -22,6 +22,7 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
         - 
         - Get running
         - Create test script (use [repo](https://github.com/TTK4145/Project-resources))
+        - json file not needed, but good for testing. As we can actually see what's happening.
     - Network:
         - Inputs (JSON[state], heartbeat)
         - Function:
@@ -52,6 +53,7 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
         - Maybe be more consistent with forcing u8, lots of recasting.
         - Modularise single elevator into modules IO and FSM in peer module.
     - Brain/Coordinator
+      - Could be worth a read: [Message passing between threads](https://doc.rust-lang.org/stable/book/ch16-02-message-passing.html)
       - Inputs (?)
       - Function:
         - Run on startup
