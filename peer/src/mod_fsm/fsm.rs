@@ -183,18 +183,18 @@ impl ElevatorSystem {
 
 
 
-pub fn test_script_elevator_system() {
+pub fn test_script_elevator_system(call_button_from_io_rx: cbc::Receiver<sensor_polling::CallButton>) {
     let addr = "localhost:15657";
     let mut es = ElevatorSystem::new(addr);
     let mut timer = Timer::new(Duration::from_secs(DOOR_OPEN_S));
     let poll_period = Duration::from_millis(25);
 
-    let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
+    //let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
     let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>(); 
     let (obstruction_tx, obstruction_rx) = cbc::unbounded::<bool>(); 
     {
-        let elevator = es.elevator.clone();
-        spawn(move || sensor_polling::call_buttons(elevator, call_button_tx, poll_period)); 
+        //let elevator = es.elevator.clone();
+        //spawn(move || sensor_polling::call_buttons(elevator, call_button_tx, poll_period)); 
         let elevator = es.elevator.clone();
         spawn(move || sensor_polling::floor_sensor(elevator, floor_sensor_tx, poll_period)); 
         let elevator = es.elevator.clone();
@@ -203,7 +203,7 @@ pub fn test_script_elevator_system() {
     es.init();
     loop {
         cbc::select! {
-            recv(call_button_rx) -> cb_message => {
+            recv(call_button_from_io_rx) -> cb_message => {
                 if let Ok(call_button) = cb_message {
                     println!("{}", &es);
                     es.on_request_button_press(&mut timer, call_button.floor as usize, call_to_button_type(call_button.call));
