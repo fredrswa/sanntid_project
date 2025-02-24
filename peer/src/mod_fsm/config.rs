@@ -1,7 +1,11 @@
 #![allow(dead_code)]
 
+use serde::{Serialize, Deserialize};
+use serde_json;
+
 pub const NUM_FLOORS: usize = 4;
 pub const NUM_BUTTONS: usize = 3;
+pub const NUM_ELEVATORS: usize = 3;
 pub const DOOR_OPEN_S: u64 = 3;
 
 use std::u8;
@@ -9,12 +13,13 @@ use std::fmt;
 
 //use driver_rust::elevio::elev::{self, Elevator};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Behavior {
     Idle,
     Moving,
     DoorOpen,
 }
+
 #[derive(Copy, Clone)]
 pub enum ButtonType {
     HallUp = 0,
@@ -22,7 +27,8 @@ pub enum ButtonType {
     Cab = 2,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Dirn{
     Up = 1,
     Stop = 0,
@@ -68,6 +74,7 @@ impl Status {
     }
 }
 
+
 impl fmt::Debug for Behavior {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -109,9 +116,9 @@ impl fmt::Debug for Status {
 impl fmt::Debug for Dirn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Dirn::Up => write!(f, "Up"),
-            Dirn::Stop => write!(f, "Stop"),
-            Dirn::Down => write!(f, "Down"),
+            Dirn::Up => write!(f, "up"),
+            Dirn::Stop => write!(f, "stop"),
+            Dirn::Down => write!(f, "down"),
         }
     }
 }

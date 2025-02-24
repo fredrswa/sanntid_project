@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 // ^ Packages
-use std::thread::spawn;
+use std::thread::{spawn,sleep};
 use std::time::Duration;
 use std::fmt;
-use core::panic;
+//use core::panic;
 use crossbeam_channel as cbc;
 
 // ^ Driver
@@ -129,21 +129,20 @@ impl ElevatorSystem {
 
     pub fn on_floor_arrival(&mut self, timer: &mut Timer, new_floor: usize) {
         self.status.curr_floor = new_floor;
-        self.elevator.floor_indicator(new_floor as u8);
+        self.elevator.floor_indicator(self.status.curr_floor as u8);
 
         match self.status.behavior {
             Behavior::Moving => {
                 if requests_should_stop(self) {
-                    requests_clear_at_current_floor(self);
                     self.elevator.motor_direction(Dirn::Stop as u8);
                     self.elevator.door_light(true);
+                    requests_clear_at_current_floor(self);
                     timer.start();
                     self.set_all_lights();
                     self.status.behavior = Behavior::DoorOpen;
                 }
-            },
-            Behavior::DoorOpen => {panic!("on_floor_arrival: incorrect behavior! \n Should be Moving, is DoorOpen")},
-            Behavior::Idle => {panic!("on_floor_arrival: incorrect behavior! \n Should be Moving, is Idle")},
+            }
+            _=> { }
         }
     }
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
@@ -173,8 +172,7 @@ impl ElevatorSystem {
               }
             }
           }
-          Behavior::Moving => {self.elevator.door_light(false);}
-          Behavior::Idle => {self.elevator.door_light(false);}
+          _=> {}
         }
       }
 }
@@ -189,7 +187,6 @@ pub fn test_script_elevator_system() {
     let addr = "localhost:15657";
     let mut es = ElevatorSystem::new(addr);
     let mut timer = Timer::new(Duration::from_secs(DOOR_OPEN_S));
-
     let poll_period = Duration::from_millis(25);
 
     let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
@@ -207,26 +204,31 @@ pub fn test_script_elevator_system() {
     loop {
         cbc::select! {
             recv(call_button_rx) -> cb_message => {
-                let call_button = cb_message.unwrap();
-                println!("{}", &es);
-                es.on_request_button_press(&mut timer, call_button.floor as usize, call_to_button_type(call_button.call));
+                if let Ok(call_button) = cb_message {
+                    println!("{}", &es);
+                    es.on_request_button_press(&mut timer, call_button.floor as usize, call_to_button_type(call_button.call));
+                }
             }
 
             recv(floor_sensor_rx) -> fs_message => {
-                let floor = fs_message.unwrap();
-                es.on_floor_arrival(&mut timer, floor as usize);
+                if let Ok(floor) = fs_message {
+                    es.on_floor_arrival(&mut timer, floor as usize);
+                }
             }
 
             recv(obstruction_rx) -> ob_message => {
-                let obs = ob_message.unwrap();
-                if !obs{
-                    timer.start();
+                if let Ok(obs) = ob_message {
+                    if !obs {
+                        timer.start();
+                    }
+                    es.status.door_blocked = obs;
                 }
-                es.status.door_blocked = obs;                    
             }
+            default => {sleep(poll_period);}
         }
+
         if timer.is_expired() && !es.status.door_blocked {
             es.on_door_timeout(&mut timer);
-        }  
+        }
     }
 }
