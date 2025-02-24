@@ -5,25 +5,9 @@ use std::collections::HashMap;
 use serde::{Serialize, Deserialize};
 use serde_json;
 use std::process::Command;
-use crate::mod_fsm::config::Behavior;
+use crate::mod_fsm::config::{Behavior, Dirn};
 
 use crate::mod_fsm::config::{NUM_BUTTONS, NUM_FLOORS, NUM_ELEVATORS};
-
-#[derive(Serialize, Deserialize, Clone)]
-pub enum Dirn{
-    up = 1,
-    stop = 0,
-    down = -1,
-}
-impl fmt::Debug for Dirn {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Dirn::up => write!(f, "up"),
-            Dirn::stop => write!(f, "stop"),
-            Dirn::down => write!(f, "down"),
-        }
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct States {
@@ -42,19 +26,19 @@ pub fn test_struct() -> EntireSystem {
     let one =  States {
         behavior: Behavior::Moving,
         floor: 2,
-        direction: Dirn::up,
+        direction: Dirn::Up,
         cabRequests: [false, true, false, true],
     };
     let two =  States {
         behavior: Behavior::Moving,
         floor: 2,
-        direction: Dirn::up,
+        direction: Dirn::Up,
         cabRequests: [false; NUM_FLOORS as usize],
     };
     let three =  States {
         behavior: Behavior::Moving,
         floor: 2,
-        direction: Dirn::up,
+        direction: Dirn::Up,
         cabRequests: [true, true, true, true],
     };
     let mut all: HashMap <String, States> = HashMap::new();

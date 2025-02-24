@@ -28,6 +28,7 @@ pub enum ButtonType {
 }
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Dirn{
     Up = 1,
     Stop = 0,
