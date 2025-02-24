@@ -1,1 +1,55 @@
-{"hallRequests":[[false,false],[false,false],[false,false],[false,false]],"states":[{"behavior":"Moving","floor":2,"direction":"Up","cabRequests":[false,false,false,false]},{"behavior":"Moving","floor":2,"direction":"Up","cabRequests":[false,false,false,false]},{"behavior":"Moving","floor":2,"direction":"Up","cabRequests":[false,false,false,false]}]}
+{
+  "hallRequests": [
+    [
+      false,
+      false
+    ],
+    [
+      false,
+      false
+    ],
+    [
+      false,
+      false
+    ],
+    [
+      false,
+      false
+    ]
+  ],
+  "states": [
+    {
+      "behavior": "Moving",
+      "floor": 2,
+      "direction": "Up",
+      "cabRequests": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "behavior": "Moving",
+      "floor": 2,
+      "direction": "Up",
+      "cabRequests": [
+        false,
+        false,
+        false,
+        false
+      ]
+    },
+    {
+      "behavior": "Moving",
+      "floor": 2,
+      "direction": "Up",
+      "cabRequests": [
+        false,
+        false,
+        false,
+        false
+      ]
+    }
+  ]
+}

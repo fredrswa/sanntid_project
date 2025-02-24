@@ -73,6 +73,7 @@ impl Status {
     }
 }
 
+
 impl fmt::Debug for Behavior {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -114,9 +115,9 @@ impl fmt::Debug for Status {
 impl fmt::Debug for Dirn {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Dirn::Up => write!(f, "Up"),
-            Dirn::Stop => write!(f, "Stop"),
-            Dirn::Down => write!(f, "Down"),
+            Dirn::Up => write!(f, "up"),
+            Dirn::Stop => write!(f, "stop"),
+            Dirn::Down => write!(f, "down"),
         }
     }
 }
