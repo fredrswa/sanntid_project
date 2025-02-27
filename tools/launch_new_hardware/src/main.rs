@@ -15,7 +15,7 @@ fn initialize_hardware (port_number: usize) -> Result<Child,Box<dyn Error>> {
             exit(0);
         }
         "linux" => {
-            let child = Command::new("xterm")
+            let child = Command::new("open")
                 .args(["-fa", "Monospace","-fs", "16", "-e", "./SimElevatorServer", "--port", port_number.to_string().as_str()])
                 .stdout(Stdio::piped())
                 .stderr(Stdio::piped())
@@ -39,7 +39,31 @@ fn initialize_hardware (port_number: usize) -> Result<Child,Box<dyn Error>> {
         
         "macos" => {
             println!("No terminal spawner is implemented for macOS yet.");
-            exit(0);
+
+            let script = format!(
+                "tell application \"Terminal\" to do script \"cd {} && ./SimElevatorServer --port {}\"",
+                std::env::current_dir()?.display(),
+                port_number
+            );
+
+            let child = Command::new("osascript")
+                .args(["-e", &script])
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn();
+
+            match child {
+                Ok(terminal) => {
+                    println!("Successfully opened Terminal. \nRunning process at localhost:{}", port_number);
+                    let pid = terminal.id();
+                    println!("With pid: {:#?}\n", pid);
+                    Ok(())
+                }
+                Err(e) => {
+                    eprintln!("Terminal was not opened!: {}", e);
+                    Err(Box::new(e))
+                }
+            }
         }
         _ => {
             println!("Unrecognized OS.");
