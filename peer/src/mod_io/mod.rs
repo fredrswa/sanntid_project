@@ -40,6 +40,8 @@ pub fn run_io(call_button_from_io_tx: cbc::Sender<sensor_polling::CallButton>) {
             if let Ok(call_button) = cb_message {
                 call_button_from_io_tx.send(call_button).unwrap();
             }
+            // * if cab: Trigger order and network
+            // * if hall: Trigger assigner and network, wait for confirmation to take order.
         }
     }
 }
