@@ -1,39 +1,30 @@
-use tokio::net::UdpSocket;
-use std::io; 
+use std::io;
+use std::net::UdpSocket;
+use std::thread;
+use crossbeam_channel::{unbounded, Sender, Receiver};
 
-// Asynchronous function to handle receiving and responding
-async fn udp_receive(socket: &UdpSocket) -> io::Result<()> {
-    let mut buffer = [0; 1024]; // Buffer to hold the incoming data
+fn udp_receive(socket: UdpSocket, rx: Receiver<String>) -> io::Result<()> {
+    let mut buffer = [0; 1024];
+    loop {
+        // Check if there is a message from the sender to stop receiving
+        if let Ok(message) = rx.try_recv() {
+            println!("Received message to stop: {}", message);
+            break;
+        }
 
-    // Receive data from the socket (number of bytes received, source address)
-    
-
-    // Adjust the buffer length to only include valid received data
-    let buffer = &mut buffer[..n_bytes];
-
-    println!("Received message: {}", String::from_utf8_lossy(buffer));
-
-    // Reverse the buffer contents
-    //buffer.reverse();
-
-    //println!("Reversed message: {}", String::from_utf8_lossy(buffer));
-
-    // Send the reversed data back to the source
-    //socket.send_to(buffer, &src).await?;
+        let (n_bytes, _src) = socket.recv_from(&mut buffer)?;
+        println!("Received message: {}", String::from_utf8_lossy(&buffer[..n_bytes]));
+    }
     Ok(())
 }
 
-// Asynchronous function to send a message
-async fn udp_send(socket: &UdpSocket, addr: &str, message: &[u8]) -> io::Result<()> {
-    socket.send_to(message, addr).await?;
+fn udp_send(socket: &UdpSocket, addr: &str, message: &[u8]) -> io::Result<()> {
+    socket.send_to(message, addr)?;
     Ok(())
 }
 
-// Main entry point
-#[tokio::main]
-pub async fn test_script_network_module() {
-    // Bind the UDP socket to the local address
-    let socket = match UdpSocket::bind("10.100.23.23:20001").await{
+pub fn test_script_network_module() {
+    let socket = match UdpSocket::bind("10.100.23.23:20003") {
         Ok(socket) => socket,
         Err(e) => {
             println!("Failed to bind socket: \"{}\"", e);
@@ -41,9 +32,20 @@ pub async fn test_script_network_module() {
         }
     };
 
-    // Example of sending a message
-    udp_send(&socket, "10.100.23.23:20000", b"Hello, world!").await.unwrap();
+    let (tx, rx) = unbounded::<String>();
+    {
+        let socket = socket.try_clone();
+        thread::spawn(move || {
+            udp_receive(socket.unwrap(), rx);                
+        });
+    }
 
-    // Example of receiving and responding to a message
-    udp_receive(&socket).await.unwrap();
+    udp_send(&socket, "10.100.23.23:20001", b"Listening: ID:2");
+    udp_send(&socket, "10.100.23.23:20002", b"Listening: ID:2");
+    loop {
+        thread::sleep(std::time::Duration::from_millis(200));
+        udp_send(&socket, "10.100.23.23:20001",b"Heartbeat 3");
+        udp_send(&socket, "10.100.23.23:20002",b"Heartbeat 3");
+    }
+    tx.send("Stop receiving".to_string()).unwrap();
 }
