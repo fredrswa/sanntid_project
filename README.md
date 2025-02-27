@@ -12,17 +12,13 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
         - Keep things for project report.
     - Get really good at rust
 1. Modules:
+    - Currently unknown place:
+        - Take orders from assigner and create state for other peers, and create orders for this peer.
     - Testing module:
-        - Automate testing environment??
+        - Automate testing environment?? Use test module for testing, only function calls in main.
     - Assigner: 
-        - Inputs (new_order, JSON[state] for each elevator)
-        - Function: 
-            - Calculate which elevator takes an order
-        - Outputs (take_order: bool)
-        - 
-        - Get running
-        - Create test script (use [repo](https://github.com/TTK4145/Project-resources))
-        - json file not needed, but good for testing. As we can actually see what's happening.
+        - [repo](https://github.com/TTK4145/Project-resources)
+        - Communicates with IO and network.
     - Network:
         - Inputs (JSON[state], heartbeat)
         - Function:
@@ -35,7 +31,7 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
         - Figure out a package that contains info. (or use more threads).
         - What type of info do we want the network module to receive
     - IO/Server
-        - Input (Elevator/Light instructions)
+        - Input(Elevator Console)
         - Function:
             - Launch and port assignment
             - Communicate with more than one elevator (TCP handler)
