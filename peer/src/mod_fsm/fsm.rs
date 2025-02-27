@@ -45,7 +45,13 @@ impl fmt::Display for ElevatorSystem {
 impl ElevatorSystem {
     pub fn new(addr: &str) -> ElevatorSystem {
         ElevatorSystem {
-            elevator: Elevator::init(addr, NUM_FLOORS as u8).unwrap(),
+          elevator: match Elevator::init(addr, NUM_FLOORS as u8) {
+            Ok(e) => e,
+            Err(e) => {
+                println!("Failed to connect to elevator: {}", e);
+                panic!("Cannot start ElevatorSystem without a connection");
+            }
+          },
             requests: [[false; NUM_BUTTONS as usize]; NUM_FLOORS as usize],
             status: Status::new(),
         }

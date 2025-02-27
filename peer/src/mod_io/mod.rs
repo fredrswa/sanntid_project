@@ -12,7 +12,14 @@ use std::time::Duration;
 
 pub fn run_io(call_button_from_io_tx: cbc::Sender<sensor_polling::CallButton>) {
    let addr = "localhost:15657";
-   let e = Elevator::init(addr, NUM_FLOORS as u8).unwrap(); 
+   let e = match Elevator::init(addr, NUM_FLOORS as u8) {
+    Ok(elevator) => elevator,
+    Err(e) => {
+        println!("Failed to connect to elevator at {}: {}", addr, e);
+        return;
+    }   
+    };
+
    let poll_period = Duration::from_millis(25);
 
    let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
