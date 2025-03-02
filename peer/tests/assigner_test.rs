@@ -105,8 +105,3 @@ pub fn assigner_test() {
 
     assert!(Path::new(save_path).exists(), "The file does not exist at the expected path");
 }
-
-pub fn test_script_json() {
-    println!("SOMETHING");
-    assigner_test();
-}
