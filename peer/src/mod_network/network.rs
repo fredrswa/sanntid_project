@@ -177,6 +177,4 @@ pub fn test_script_network_module() {
         udp_send(&socket, "127.0.0.1:20002", &state_lock).unwrap();
 
     }
-
-    
 }
