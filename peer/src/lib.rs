@@ -8,7 +8,7 @@ pub mod mod_network {
     pub mod network;
 }
 pub mod mod_assigner {
-    pub mod json_testing;
+    //pub mod json_testing;
 }
 pub mod mod_io{
 }

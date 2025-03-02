@@ -1,0 +1,1 @@
+{"hall_requests":[[true,true],[true,true],[true,true],[true,true]],"states":{"two":{"behavior":"Moving","floor":2,"direction":"up","cab_requests":[false,false,false,false]},"one":{"behavior":"Moving","floor":2,"direction":"up","cab_requests":[false,true,false,true]},"three":{"behavior":"Moving","floor":2,"direction":"up","cab_requests":[true,true,true,true]}}}
