@@ -1,6 +1,8 @@
+use std::default;
 #[allow(dead_code)]
 use std::fs;
 use std::collections::HashMap;
+use std::io::repeat;
 use serde::{Serialize, Deserialize};
 use serde_json;
 use std::process::Command;
@@ -14,12 +16,12 @@ pub struct States {
     pub behavior: Behavior,
     pub floor: isize,
     pub direction: Dirn,
-    pub cab_requests: [bool; NUM_FLOORS as usize],
+    pub cabRequests: [bool; NUM_FLOORS as usize],
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct EntireSystem {
-    pub hall_requests: [[bool; 2]; NUM_FLOORS],
+    pub hallRequests: [[bool; 2]; NUM_FLOORS],
     pub states: HashMap<String, States>, // changed from array to hashmap
 }
 
@@ -29,21 +31,21 @@ pub fn test_struct() -> EntireSystem {
         behavior: Behavior::Moving,
         floor: 2,
         direction: Dirn::Up,
-        cab_requests: [false, true, false, true],
+        cabRequests: [false, true, false, true],
     };
 
     let two =  States {
         behavior: Behavior::Moving,
         floor: 2,
         direction: Dirn::Up,
-        cab_requests: [false; NUM_FLOORS as usize],
+        cabRequests: [false; NUM_FLOORS as usize],
     };
 
     let three =  States {
         behavior: Behavior::Moving,
         floor: 2,
         direction: Dirn::Up,
-        cab_requests: [true, true, true, true],
+        cabRequests: [true, true, true, true],
     };
 
     let mut all: HashMap <String, States> = HashMap::new();
@@ -51,7 +53,7 @@ pub fn test_struct() -> EntireSystem {
     all.insert("two".to_string(), two);
     all.insert("three".to_string(), three);
     let es = EntireSystem {
-        hall_requests: [[true; 2]; NUM_FLOORS],
+        hallRequests: [[true; 2]; NUM_FLOORS],
         states: all,
     };
     return es;
@@ -64,10 +66,12 @@ pub fn assigner_test() {
     let argument = match serde_json::to_string(&sys) {
         Ok(json) => json,
         Err(e) => {
-            panic!("Failed to parse JSON: {}", e);
+            panic!("Failed to serialize JSON: {}", e);
         }
     }; 
 
+    println!("{}", argument);
+    println!("{}", "#".repeat(100));
     let program = "./src/mod_assigner/hall_request_assigner";
     //let argument: String = fs::read_to_string("mod_assigner/assigner.json").unwrap();
     let test  = argument.clone();
@@ -88,8 +92,10 @@ pub fn assigner_test() {
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
     let stderr = String::from_utf8_lossy(&output.stderr);
-    println!("{:?}",stdout);
-    println!("{:?}",stderr);
+    println!("{}", "#".repeat(100));
+    println!("{:#?}",stdout);
+    println!("{}", "#".repeat(100));
+    println!("{:#?}",stderr);
 
     let save_path = "./tests/assigner.json";
 
@@ -104,4 +110,57 @@ pub fn assigner_test() {
     };
 
     assert!(Path::new(save_path).exists(), "The file does not exist at the expected path");
+}
+
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct AssignerOutput{
+    pub one: [[bool; 3]; NUM_FLOORS],
+    pub two: [[bool; 3]; NUM_FLOORS],
+    pub three: [[bool; 3]; NUM_FLOORS],
+}
+
+
+#[test]
+fn assigner_test_2 () {
+    let sys = test_struct();    
+    
+    let elev_states = match serde_json::to_string(&sys) {
+        Ok(json) => json,
+        Err(e) => {
+            panic!("Failed to serialize JSON: {}", e);
+        }
+    }; 
+
+    let program = "./src/mod_assigner/hall_request_assigner";
+    //let elev_states: String = fs::read_to_string("mod_assigner/assigner.json").unwrap();
+
+    let output = match Command::new(program)
+        .arg("-i")
+        .arg(&elev_states)
+        .output()
+        {
+            Ok(output) => output,
+            Err(e) => {
+                panic!("Failed to run hall request assigner: {}", e);
+            }
+        };
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    
+    if !stderr.is_empty() {
+        panic!("Assigner call returened an error!: {}", stderr);
+    }
+    
+    println!("{}", stdout);
+
+    let new_states: AssignerOutput = match serde_json::from_str(&stdout) {
+        Ok(new_states) => new_states,
+        Err(e) => {
+            panic!("Failed to deserilize new state to JSON format: {}", e);
+        }
+    }; 
+
+    println!("{:#?}", new_states);
 }

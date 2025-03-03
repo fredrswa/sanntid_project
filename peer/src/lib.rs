@@ -12,4 +12,5 @@ pub mod mod_assigner {
 }
 pub mod mod_io{
     pub mod hardware;
+    pub mod call_assigner;
 }

@@ -9,6 +9,7 @@ use crossbeam_channel as cbc;
 use std::thread::spawn;
 use std::time::Duration;
 
+use call_assigner::*;
 use hardware::init_elevator;
 
 pub fn run_io(call_button_from_io_tx: cbc::Sender<sensor_polling::CallButton>, port_number: usize, sim: bool) {

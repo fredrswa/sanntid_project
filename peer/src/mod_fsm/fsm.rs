@@ -224,7 +224,7 @@ pub fn test_script_elevator_system(call_button_from_io_rx: cbc::Receiver<sensor_
 
             recv(obstruction_rx) -> ob_message => {
                 if let Ok(obs) = ob_message {
-                    if !obs {
+                    if !obs { 
                         timer.start();
                     }
                     es.status.door_blocked = obs;

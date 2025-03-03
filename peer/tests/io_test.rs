@@ -1,3 +1,6 @@
+use std::time::Duration;
+use std::thread::sleep;
+
 use peer::mod_io::hardware::init_elevator;
 
 #[test]
@@ -8,6 +11,7 @@ fn test_init_elevator () {
             panic!("Failed to init elevator: {}", e)
         }
     };
+    sleep(Duration::from_secs(1));
 }
 
 
