@@ -20,8 +20,6 @@ impl Config {
         let config: Config = serde_json::from_str(&config_string).expect("JSON was not well-formatted");
         config
     }
-
-    
 }
 
 

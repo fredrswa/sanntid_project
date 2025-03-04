@@ -131,7 +131,7 @@ struct ElevatorMessage {
 
 
 
-fn udp_send(socket: &UdpSocket, addr: &str, message: &ElevatorState) -> io::Result<()> {
+fn udp_send(socket: &UdpSocket, addr: &str, message: &ElevatorState, server_sender_tx: Sender::<String>, server_sender_rx: Receiver::<String>) -> io::Result<()> {
     let json_msg = serde_json::to_string(&ElevatorMessage { elevator_state: message.clone()}).unwrap();
     println!("Sending message to {}: {}", addr, json_msg);
     socket.send_to(json_msg.as_bytes(), addr)?;
@@ -173,8 +173,8 @@ pub fn test_script_network_module() {
         thread::sleep(std::time::Duration::from_millis(200));
         
         let state_lock = state.lock().unwrap();
-        udp_send(&socket, "127.0.0.1:20001", &state_lock).unwrap();
-        udp_send(&socket, "127.0.0.1:20002", &state_lock).unwrap();
+        //udp_send(&socket, "127.0.0.1:20001", &state_lock).unwrap();
+        //udp_send(&socket, "127.0.0.1:20002", &state_lock).unwrap();
 
     }
 }

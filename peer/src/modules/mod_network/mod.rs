@@ -2,8 +2,20 @@ use crossbeam_channel as cbc;
 use std::thread::{spawn, sleep};
 use std::net::UdpSocket;
 
+
+mod network;
+use super::mod_network::network::*;
+
 pub fn run_network(/* CHANNELS*/) {
     
+    let (server_receiver_tx, server_receiver_rx) = cbc::unbounded::<String>();
+    let (server_sender_tx, server_sender_rx) = cbc::unbounded::<String>();
+
+    
+    //spawn listener with tx channel
+
+
+    //spawn sender with rx channel
 
     loop {
         cbc::select! {
@@ -27,4 +39,9 @@ pub fn run_network(/* CHANNELS*/) {
 
         // ! Sende
     }
+}
+
+#[test]
+pub fn network_test () {
+
 }
