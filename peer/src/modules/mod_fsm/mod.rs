@@ -1,16 +1,17 @@
+//Modules
+pub mod fsm;
+pub mod timer;
+pub mod requests;
+pub mod setup;
 
-mod fsm;
-mod timer;
-mod requests;
-mod setup;
-
+//Crates
+use crate::modules::mod_fsm::fsm::ElevatorSystem;
+use crate::modules::mod_fsm::timer::Timer;
+use crate::modules::mod_fsm::setup::*;
 
 use crossbeam_channel::Receiver;
 use crossbeam_channel as cbc;
 use driver_rust::elevio::poll as sensor_polling;
-use peer::mod_fsm::fsm::*;
-use peer::mod_fsm::timer::*;
-use peer::mod_fsm::config::*;
 use std::thread::{spawn, sleep};
 use core::time::Duration;
 
@@ -18,7 +19,7 @@ use core::time::Duration;
 
 pub fn run(es: &mut ElevatorSystem,call_from_io_rx: &cbc::Receiver<sensor_polling::CallButton>) {
     let poll_period = Duration::from_millis(25);
-    let mut timer = Timer::new(Duration::from_secs(DOOR_OPEN_S));
+    let mut timer = Timer::new(Duration::from_secs(es.door_open_s as u64));
     let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>(); 
     let (obstruction_tx, obstruction_rx) = cbc::unbounded::<bool>(); 
     {

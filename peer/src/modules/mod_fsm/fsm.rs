@@ -1,15 +1,10 @@
-#![allow(dead_code)]
-
-
-
-
 
 use std::fmt;
 // ^ Driver
 use driver_rust::elevio::elev::Elevator;
-use driver_rust::elevio::poll as sensor_polling;
 
-use crate::config;
+// ^ Crates
+use crate::config::Config;
 
 // ^ mod_fsm
 use super::setup::*;
@@ -25,35 +20,31 @@ pub struct ElevatorSystem {
     pub status: Status,
 
     
-    pub num_elevators: u8,
-    pub num_floors: u8,
-    pub num_buttons: u8,
-    pub door_open_s: u8,
-    pub poll_period: u8,
+    pub num_floors: usize,
+    pub num_buttons: usize,
+    pub door_open_s: usize,
+    pub addr: String,
+
 }
 
-impl fmt::Display for ElevatorSystem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-       
-        write!(f, "     ")?;
-        println!("\tHU, \tHD, \tCab");
-        
-        write!(f, "\n")?;
-        for (floor, row) in self.requests.iter().enumerate().rev() {
-            write!(f, "F{}\t: ", floor + 1)?;
-            for &request in row.iter() {
-            write!(f, "{}\t ", if request { "X" } else { " " })?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
-    }
-}
 
 impl ElevatorSystem {
     pub fn new() -> ElevatorSystem {
+        let config = Config::import();
         ElevatorSystem {
-          let address = 
+          //Constants Read from Config file
+          num_floors: config.num_floors,
+          num_buttons: config.num_buttons,
+          door_open_s: config.door_open_s,
+          addr: config.elev_addr.clone(),
+
+          elevator: match Elevator::init(&config.elev_addr, config.num_floors as u8) {
+            Ok(e) => e,
+            Err(e) => {panic!("Cannot start without elevator connection");},
+          },
+          //Requests size is dictated at runtime, therefore it is a vector.
+          requests: vec![vec![false; config.num_buttons as usize]; config.num_floors as usize],
+          status: Status::new(),
         }
     }
     
@@ -81,8 +72,8 @@ impl ElevatorSystem {
     }
 
     pub fn set_all_lights(&mut self){
-        for floor in 0..NUM_FLOORS {
-            for btn in 0..NUM_BUTTONS {
+        for floor in 0..self.num_floors {
+            for btn in 0..self.num_buttons{
                 self.elevator.call_button_light(floor as u8, btn as u8, self.requests[floor as usize][btn as usize]);
             }
         }
@@ -187,5 +178,22 @@ impl ElevatorSystem {
 
 
 
+impl fmt::Display for ElevatorSystem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+       
+        write!(f, "     ")?;
+        println!("\tHU, \tHD, \tCab");
+        
+        write!(f, "\n")?;
+        for (floor, row) in self.requests.iter().enumerate().rev() {
+            write!(f, "F{}\t: ", floor + 1)?;
+            for &request in row.iter() {
+            write!(f, "{}\t ", if request { "X" } else { " " })?;
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
+    }
+}
 
 

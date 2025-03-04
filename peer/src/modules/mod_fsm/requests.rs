@@ -1,10 +1,10 @@
 
-mod setup;
-use crate::mod_fsm::fsm::ElevatorSystem;
+use crate::modules::mod_fsm::fsm::ElevatorSystem;
+use crate::modules::mod_fsm::setup::*;
 
 pub fn requests_above(es: &ElevatorSystem) -> bool {
-  for floor in (es.status.curr_floor as usize + 1)..NUM_FLOORS {
-    for button in 0..NUM_BUTTONS {
+  for floor in (es.status.curr_floor as usize + 1)..es.num_floors {
+    for button in 0..es.num_buttons {
       if es.requests[floor][button] {
         return true;
       }
@@ -15,7 +15,7 @@ pub fn requests_above(es: &ElevatorSystem) -> bool {
 
 pub fn requests_below(es: &ElevatorSystem) -> bool {
   for floor in 0..es.status.curr_floor as usize {
-    for button in 0..NUM_BUTTONS {
+    for button in 0..es.num_buttons {
       if es.requests[floor][button] {
         return true;
       }
@@ -25,7 +25,7 @@ pub fn requests_below(es: &ElevatorSystem) -> bool {
 }
 
 pub fn requests_here(es: &ElevatorSystem) -> bool {
-  for button in 0..NUM_BUTTONS {
+  for button in 0..es.num_buttons {
     if es.requests[es.status.curr_floor as usize][button] {
       return true;
     }

@@ -1,37 +1,27 @@
 use crossbeam_channel as cbc;
+use std::thread::{spawn, sleep};
+use std::net::UdpSocket;
 
 pub fn run_network(/* CHANNELS*/) {
     
 
-
-    let (udp_recv_tx, udp_recv_rx) = cbc::unbounded::<u8>();
-    let (udp_send_tx, udp_send_rx) = cbc::unbounded::<u8>();
-
-    {
-        let udp_recv = udp_recv_tx.clone();
-        let udp_send = udp_send_rx.clone();
-        spawn(move || udp::recv(udp_recv, udp_send));
-        let udp_recv = udp_recv_tx.clone();
-        let udp_send = udp_send_rx.clone();
-        spawn(move || udp::send(udp_send_tx));
-    }
-
     loop {
         cbc::select! {
-            recv(udp_recv_rx) {
-                //check om heartbeat eller state
+            // recv(udp_recv_rx) -> udp_receive_message => {
+            //     //check om heartbeat eller state
 
-                if( heartbeat) {
-                    //update heartbeat timer
-                }
-                if (state) {
+            //     if( heartbeat) {
+            //         //update heartbeat timer
+            //     }
+            //     if (state) {
 
-                }
-            }
-            // ! Vente på IO
+            //     }
+            // }
+            // // ! Vente på IO
 
 
-            // ! Vente på receive
+            // // ! Vente på receive
+            default => {}
         }
 
 

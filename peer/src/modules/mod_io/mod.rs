@@ -2,10 +2,9 @@
  * Responsible for handling all input operations, communicates with the assigner.
 */
 
-use driver_rust::elevio::elev::Elevator;
+use crate::modules::mod_fsm::fsm::ElevatorSystem;
 use driver_rust::elevio::poll as sensor_polling;
-use peer::mod_fsm::config::{NUM_BUTTONS, NUM_FLOORS};
-use peer::mod_fsm::fsm::*;
+
 use crossbeam_channel as cbc;
 use std::thread::spawn;
 use std::time::Duration;

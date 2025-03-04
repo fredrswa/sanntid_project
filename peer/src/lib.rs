@@ -14,7 +14,8 @@ pub mod modules {
         
     }
 }
-pub mod config {
-    pub mod m;
-    pub mod hardware;
-}
+// pub mod misc {
+//     pub mod m;
+//     pub mod hardware;
+// }
+pub mod config;

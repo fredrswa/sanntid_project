@@ -1,10 +1,10 @@
 
+use std::io::Result;
 
 
 
 
 
-
-pub fn run_assigner () {
-    Ok(())
+pub fn run() -> Result<()> {
+    return Ok(());
 }

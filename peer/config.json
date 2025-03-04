@@ -1,0 +1,10 @@
+{
+  "num_floors": 4,
+  "num_buttons": 3,
+  "num_elevators": 3,
+  "door_open_s": 3,
+  "id": "id:001",
+  "elev_addr": "localhost:15765",
+  "udp_send_port": "placeholder",
+  "udp_recv_port": "placeholder"
+}
