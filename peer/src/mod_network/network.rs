@@ -1,13 +1,16 @@
 use std::io;
-use std::net::UdpSocket;
+use std::net::{UdpSocket, SocketAddr};
 use std::thread;
 use crossbeam_channel::{unbounded, Sender, Receiver};
+use crossbeam_channel as cbc;
 use std::time::{Instant, Duration};
 
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use serde::{Deserialize, Serialize};
+use serde_json::json;
+
 
 //struct
 
@@ -104,7 +107,7 @@ fn udp_receive(socket: UdpSocket, state: SharedElevatorState, rx: Receiver<Strin
             // update hall requests
             merge_hall_requests(&mut state_lock.hallRequests, &parsed_msg.hallRequests);
 
-            // updaye elevator states
+            // update elevator states
             for (id, incoming_info) in parsed_msg.states.iter() {
                 if let Some(existing_info) = state_lock.states.get_mut(id) {
                     merge_elevator_state(existing_info, incoming_info);
@@ -118,6 +121,21 @@ fn udp_receive(socket: UdpSocket, state: SharedElevatorState, rx: Receiver<Strin
             println!("Updated state: {:?}", state_lock);
         } else {
             println!("Invalid message format: {}", received_msg);
+        }
+        if let Ok(parsed_msg) = serde_json::from_str::<serde_json::Value>(&received_msg) {
+            if parsed_msg["type"] == "elevator_dead" {
+                let id = parsed_msg["elevator_id"].as_str().unwrap_or("unknown").to_string();
+                println!("Received death notification for elevator: {}", id);
+                
+                let mut state_lock = state.lock().unwrap();
+                
+                if state_lock.states.contains_key(&id) {
+                    println!("Removing dead elevator: {}", id);
+                    state_lock.states.remove(&id);
+                } else {
+                    println!("Warning: Received death notification for already removed elevator: {}", id);
+                }
+            }
         }
     }
     Ok(())
@@ -176,5 +194,25 @@ pub fn test_script_network_module() {
         udp_send(&socket, "127.0.0.1:20001", &state_lock).unwrap();
         udp_send(&socket, "127.0.0.1:20002", &state_lock).unwrap();
 
+    }
+}
+
+
+
+
+//sending heartbeat to other elevators
+const TIMEOUT_MS: u64 = 5000; // Timeout for ACK
+
+fn start_heartbeat(udp_socket: &UdpSocket, my_id: &str, peer_addr: &str) {
+    let heartbeat = json!({
+        "type": "heartbeat",
+        "id": my_id,
+    });
+
+    let message = heartbeat.to_string();
+    loop {
+        udp_socket.send_to(message.as_bytes(), peer_addr).unwrap();
+        println!("Sent heartbeat from {}", my_id);
+        std::thread::sleep(Duration::from_secs(5));
     }
 }
