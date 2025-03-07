@@ -1,5 +1,5 @@
 use serde::{Serialize, Deserialize};
-use std::fs;
+use std::{fs, os::unix::raw::ino_t};
 use serde_json;
 
 
@@ -30,3 +30,11 @@ pub struct PeerState {
     online: Bool,
 }
 
+pub enum Timeout_type {
+    fsm_obstruction = 0,
+    fsm_doortimeout = 1,
+    fsm_powerloss   = 2,
+
+    network_disconnect = 3,
+    network_
+}

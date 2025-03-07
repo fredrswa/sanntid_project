@@ -7,6 +7,12 @@ pub mod config;
 
 
 fn main() -> Result<()> {
-    
-    Ok(())
+
+    loop{
+        cbc::select! {
+            recv(timeout_rx) -> timout_struct => {
+                
+            }
+        }
+    }
 }
