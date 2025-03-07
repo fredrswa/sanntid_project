@@ -5,6 +5,6 @@
   "door_open_s": 3,
   "id": "id:001",
   "elev_addr": "localhost:15765",
-  "udp_send_port": "placeholder",
+  "udp_socket_addr": "0.0.0.0:20003",
   "udp_recv_port": "placeholder"
 }

@@ -11,7 +11,7 @@ pub struct Config {
     pub door_open_s: usize,
     pub id: String,
     pub elev_addr: String,
-    pub udp_send_port: String,
+    pub udp_socket_addr: String,
     pub udp_recv_port: String,
 }
 impl Config {
@@ -21,5 +21,12 @@ impl Config {
         config
     }
 }
+// ALLE STRUCTS
 
+pub struct PeerState {
+    id: String,
+    es: ElevatorSystem,
+    humble: Bool,
+    online: Bool,
+}
 
