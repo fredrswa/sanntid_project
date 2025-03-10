@@ -1,5 +1,3 @@
-
-use std::fmt;
 // ^ Driver
 use driver_rust::elevio::elev::Elevator;
 
@@ -12,23 +10,8 @@ use super::timer::Timer;
 
 
 
-#[derive(Clone)]
-pub struct ElevatorSystem {
-    pub elevator: Elevator,
-    pub requests: Vec<Vec<bool>>,
-    pub status: Status,
-
-    
-    pub num_floors: usize,
-    pub num_buttons: usize,
-    pub door_open_s: usize,
-    pub addr: String,
-
-}
-
-
 impl ElevatorSystem {
-    pub fn new() -> ElevatorSystem {
+    pub fn create() -> ElevatorSystem {
         let config = Config::import();
         ElevatorSystem {
           //Constants Read from Config file
