@@ -41,7 +41,7 @@ pub fn run(/* Channels */) {
             recv(udp_heartbeat_dead_rx) -> id => {
                 if let Ok(id) = id {
                     if config.id == id {
-                        // TODO: Legg til logikk her hvis noden trenger å gjøre noe spesielt
+                        // TODO: logikk
                     }
                     network_io_redistribute_tx.send(id).unwrap();
                 }
