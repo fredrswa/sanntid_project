@@ -8,6 +8,7 @@ use std::io::Result;
 use config::*;
 use crossbeam_channel::{select, unbounded, Sender, Receiver};
 use std::thread::{spawn, sleep};
+use once_cell::sync::Lazy;
 
 /// DRIVER
 use driver_rust::elevio::poll as sensor_polling;
@@ -22,6 +23,9 @@ pub mod mod_network;
 
 /// main function
 fn main() -> Result<()> {
+    Lazy::force(&config::CONFIG); //Forces read of config on start of runtime in order to ensure safety
+    Lazy::force(&config::PeerStateCONFIG);
+
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
     { spawn(move || run_modules(timeout_tx)); }
@@ -44,6 +48,8 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         spawn(move || {mod_fsm::run(&mut es1, &io_call_rx, &timeout_tx);});
         let mut es2 = es.clone();
         spawn(move || {mod_io::run(&mut es2, &io_call_tx);});
+        
+        spawn(move || {mod_network::run();});
     }
     loop {
         select! {

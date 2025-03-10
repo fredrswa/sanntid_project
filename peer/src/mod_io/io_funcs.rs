@@ -1,6 +1,8 @@
 use std::process::Command;
+use std::fs;
+use crate::config::*;
 
-pub fn call_assigner(sys: EntireSystem) -> Result<AssignerOutput, Box<dyn Error>>{
+pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
     
     let elev_states = match serde_json::to_string(&sys) {
         Ok(json) => json,
@@ -9,7 +11,7 @@ pub fn call_assigner(sys: EntireSystem) -> Result<AssignerOutput, Box<dyn Error>
         }
     }; 
 
-    let program = "./src/mod_assigner/hall_request_assigner";
+    let program = "../tools/assigner/hall_request_assigner";
 
     let output = match Command::new(program)
         .arg("-i")
@@ -30,8 +32,8 @@ pub fn call_assigner(sys: EntireSystem) -> Result<AssignerOutput, Box<dyn Error>
     }
     
     println!("{}", stdout);
-
-    let new_states: AssignerOutput = match serde_json::from_str(&stdout) {
+    let mut new_states = AssignerOutput::new(CONFIG.num_floors, CONFIG.num_elevators);
+    new_states = match serde_json::from_str(&stdout) {
         Ok(new_states) => new_states,
         Err(e) => {
             panic!("Failed to deserilize new state to JSON format: {}", e);
@@ -40,7 +42,7 @@ pub fn call_assigner(sys: EntireSystem) -> Result<AssignerOutput, Box<dyn Error>
 
     println!("{:#?}", new_states);
 
-    Ok(new_states)
+    new_states
 }
 
 pub fn save_system_state_to_json(sys: EntireSystem) {

@@ -6,6 +6,7 @@
 pub mod fsm;            //Handles implemantation logic
 pub mod requests;       //Handles logic regarding requests
 pub mod timer;          //Timer for generating timout and handling door_open time and obstruction.
+pub mod hardware;
 
 
 ///Crates

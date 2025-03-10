@@ -1,1 +1,1 @@
-/home/student/Documents/sanntid_project/peer/target/debug/libpeer.rlib: /home/student/Documents/sanntid_project/peer/src/config.rs /home/student/Documents/sanntid_project/peer/src/lib.rs
+/home/marius/Documents/NTNU/TTK4145/Sanntid13/peer/target/debug/libpeer.rlib: /home/marius/Documents/NTNU/TTK4145/Sanntid13/peer/src/config.rs /home/marius/Documents/NTNU/TTK4145/Sanntid13/peer/src/lib.rs

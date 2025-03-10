@@ -3,7 +3,7 @@
   "num_buttons": 3,
   "num_elevators": 3,
   "door_open_s": 3,
-  "id": "id:001",
+  "id": "id:1",
   "elev_addr": "localhost:15657",
   "udp_socket_addr": "0.0.0.0:20003",
   "udp_recv_port": "placeholder"
