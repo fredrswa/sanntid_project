@@ -38,8 +38,6 @@ pub struct PeerState {
 }
 
 
-
-
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct States {
     pub behavior: Behavior,
@@ -82,9 +80,6 @@ pub enum Timeout_type {
     network_
 }
 
-
-
-
 /* ELEVATOR STRUCTS */
 
 #[derive(Clone)]
@@ -93,7 +88,6 @@ pub struct ElevatorSystem {
     pub requests: Vec<Vec<bool>>,
     pub status: Status,
 }
-
 
 //use driver_rust::elevio::elev::{self, Elevator};
 

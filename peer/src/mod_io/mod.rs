@@ -5,7 +5,7 @@ use crossbeam_channel as cbc;
 
 use crate::{config::EntireSystem, mod_io::io_funcs::*};
 
-pub fn run(/* Channels */) {
+pub fn run_io(/* Channels */) {
     // Simulate Channels Here //
     let (network_io_tx, network_io_rx) = cbc::unbounded::<EntireSystem>();
     let (fsm_io_tx, fsm_io_rx) = cbc::unbounded::<String>();

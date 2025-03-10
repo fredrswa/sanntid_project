@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::net::UdpSocket;
+use std::{net::UdpSocket, panic::panic_any};
 use crossbeam_channel as cbc;
 
 
@@ -16,7 +16,10 @@ pub fn udp_receive(socket: UdpSocket, udp_listener_tx: cbc::Sender<String>) {
         };
 
         let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]);
-        udp_listener_tx.send(received_msg.to_string());
+        match udp_listener_tx.send(received_msg.to_string()) {
+            Ok(ok) => ok,
+            Err(e) => {panic!("Message was not sent to peer: {}", e)}
+        };
     }
 }
 

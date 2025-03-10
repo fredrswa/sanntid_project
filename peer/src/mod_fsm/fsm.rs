@@ -14,6 +14,9 @@ use driver_rust::elevio::poll as sensor_polling;
 use super::requests::*;
 use super::timer::Timer;
 
+// ^ mod_startup
+use crate::mod_startup::hardware::*;
+
 // ^ config
 use crate::config::*;
 
@@ -36,9 +39,9 @@ impl fmt::Display for ElevatorSystem {
 }
 
 impl ElevatorSystem {
-    pub fn new(addr: &str) -> ElevatorSystem {
+    pub fn new(port_number: usize, sim: bool) -> ElevatorSystem {
         ElevatorSystem {
-          elevator: match Elevator::init(addr, CONFIG.num_floors as u8) {
+          elevator: match init_elevator(port_number, 0, sim) { 
             Ok(e) => e,
             Err(e) => {
                 println!("Failed to connect to elevator: {}", e);
@@ -176,53 +179,3 @@ impl ElevatorSystem {
       }
 }
 
-
-pub fn test_script_elevator_system(call_button_from_io_rx: cbc::Receiver<sensor_polling::CallButton>) {
-    let addr = "localhost:15657";
-    let mut es = ElevatorSystem::new(addr);
-    let mut timer = Timer::new(Duration::from_secs(CONFIG.door_open_s as u64));
-    let poll_period = Duration::from_millis(25);
-
-    //let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
-    let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>(); 
-    let (obstruction_tx, obstruction_rx) = cbc::unbounded::<bool>(); 
-    {
-        //let elevator = es.elevator.clone();
-        //spawn(move || sensor_polling::call_buttons(elevator, call_button_tx, poll_period)); 
-        let elevator = es.elevator.clone();
-        spawn(move || sensor_polling::floor_sensor(elevator, floor_sensor_tx, poll_period)); 
-        let elevator = es.elevator.clone();
-        spawn(move || sensor_polling::obstruction(elevator, obstruction_tx, poll_period)); 
-    }
-    es.init();
-    loop {
-        cbc::select! {
-            recv(call_button_from_io_rx) -> cb_message => {
-                if let Ok(call_button) = cb_message {
-                    println!("{}", &es);
-                    es.on_request_button_press(&mut timer, call_button.floor as usize, call_to_button_type(call_button.call));
-                }
-            }
-
-            recv(floor_sensor_rx) -> fs_message => {
-                if let Ok(floor) = fs_message {
-                    es.on_floor_arrival(&mut timer, floor as usize);
-                }
-            }
-
-            recv(obstruction_rx) -> ob_message => {
-                if let Ok(obs) = ob_message {
-                    if !obs { 
-                        timer.start();
-                    }
-                    es.status.door_blocked = obs;
-                }
-            }
-            default => {sleep(poll_period);}
-        }
-
-        if timer.is_expired() && !es.status.door_blocked {
-            es.on_door_timeout(&mut timer);
-        }
-    }
-}
