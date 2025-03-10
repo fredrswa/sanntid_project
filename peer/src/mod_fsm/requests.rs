@@ -1,6 +1,3 @@
-
-
-
 use crate::config::*;
 
 pub fn requests_above(es: &ElevatorSystem) -> bool {
