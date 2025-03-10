@@ -86,7 +86,6 @@ pub fn udp_create_socket(addr: String) -> UdpSocket {
         }
     }
 }
-<<<<<<< HEAD
  */
 
 pub fn udp_receive(socket: UdpSocket, udp_listener_tx: Sender<String>) {
@@ -165,5 +164,3 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<Strin
 pub fn update_peer_state (peer_state: &PeerState) {
     //peer_state.connected
 }
-=======
->>>>>>> 01a0b1eb3da5f541d4d6d5873b5a20e6b191420a

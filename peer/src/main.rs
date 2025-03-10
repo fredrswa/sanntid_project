@@ -52,11 +52,7 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         spawn(move || {mod_fsm::run(&mut es1, &io_call_rx, &timeout_tx);});
         let mut es2 = es.clone();
         spawn(move || {mod_io::run(&mut es2, &io_call_tx);});
-<<<<<<< HEAD
         
-=======
-
->>>>>>> 01a0b1eb3da5f541d4d6d5873b5a20e6b191420a
         spawn(move || {mod_network::run();});
     }
     loop {
