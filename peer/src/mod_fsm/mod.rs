@@ -3,17 +3,11 @@ pub mod requests;
 pub mod timer;
 
 //Modules
-pub mod fsm;
-pub mod timer;
-pub mod requests;
-pub mod setup;
 
 //Crates
-use crate::mod_fsm::fsm::ElevatorSystem;
+use crate::config::*;
 use crate::mod_fsm::timer::Timer;
-use crate::modules::mod_fsm::setup::*;
 
-use crossbeam_channel::Receiver;
 use crossbeam_channel as cbc;
 use driver_rust::elevio::poll as sensor_polling;
 use std::thread::{spawn, sleep};

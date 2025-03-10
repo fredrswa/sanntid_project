@@ -1,17 +1,17 @@
 
-use crossbeam_channels as cbc;
+use crossbeam_channel as cbc;
 
 use std::thread::{spawn, sleep};
 
 
 
-use crate::config::Config;
+use crate::config::*;
 
 
 pub fn run(/* Channels */) {
     // Simulate Channels Here //
     let (network_io_tx, network_io_rx) = cbc::unbounded::<String>();
-    let (network_io_redistribute_tx, network_io_redistribute_tx) = cbc::unbounded::<String>(); //ID
+    let (network_io_redistribute_tx, network_io_redistribute_rx) = cbc::unbounded::<String>(); //ID
     let (network_io_neworder_tx, network_io_neworder_rx) = cbc::unbounded::<CallOrder>();
     let (network_io_peer_state_tx, netork_io_peer_state_tx) = cbc::unbounded::<PeerState>();
     //           -            //
@@ -47,7 +47,7 @@ pub fn run(/* Channels */) {
                 network_io_redistribute_tx.send(id);
 
 
-            }
+            }tx
         }
 
         if true {

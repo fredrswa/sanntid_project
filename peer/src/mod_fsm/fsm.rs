@@ -11,7 +11,7 @@ use super::timer::Timer;
 
 
 impl ElevatorSystem {
-    pub fn create() -> ElevatorSystem {
+    pub fn new() -> ElevatorSystem {
         let config = Config::import();
         ElevatorSystem {
           //Constants Read from Config file

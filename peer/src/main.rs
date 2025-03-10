@@ -1,6 +1,5 @@
 #[allow(dead_code)]
 use std::io::Result;
-use std::fs;
 use config::*;
 use crossbeam_channel::{select, unbounded, Sender, Receiver};
 use std::thread::{spawn, sleep};
@@ -15,6 +14,10 @@ pub mod mod_io;
 
 fn main() -> Result<()> {
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
+
+    { spawn(move || run_modules()); }
+
+
     loop{
         select! {
             recv(timeout_rx) -> timout_struct => {
@@ -26,7 +29,6 @@ fn main() -> Result<()> {
 
 fn run_modules() {
     let (io_call_tx,io_call_rx) = unbounded::<sensor_polling::CallButton>();
-    let addr = "localhost:15657";
     let es: ElevatorSystem = ElevatorSystem::new();
     {
         let mut es1 = es.clone();
@@ -35,7 +37,7 @@ fn run_modules() {
         spawn(move || {mod_io::run(&mut es2, &io_call_tx);});
     }
     loop {
-        cbc::select! {
+        select! {
             default => {}
         }
     }

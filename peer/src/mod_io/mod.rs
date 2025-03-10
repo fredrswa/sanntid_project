@@ -2,7 +2,7 @@
  * Responsible for handling all input operations, communicates with the assigner.
 */
 
-use crate::modules::mod_fsm::fsm::ElevatorSystem;
+use crate::config::*;
 use driver_rust::elevio::poll as sensor_polling;
 
 use crossbeam_channel as cbc;
