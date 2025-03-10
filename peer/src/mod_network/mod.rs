@@ -1,3 +1,4 @@
+pub mod network;
 
 use crossbeam_channel as cbc;
 
@@ -24,22 +25,19 @@ pub fn run(/* Channels */) {
     {
         spawn(move ||udp_receive(socket, udp_listener_tx, udp_heartbeat_dead_tx));
     }
-
     loop {
-        cbc::select!{
+        cbc::select! {
             recv(udp_listener_rx) -> udp_message => {
-                let Ok(message) = udp_message.unwrap() {
-                    let t = type_name::<message>();
-                    if (t == CallOrder) {
-                        let newCallOrder = serde::Deserialize(&message);
-                        network_io_neworder_tx.send(newOrder);
-                    }
-                    if (t == state) {
-                        let peer_state = serde::Deserialize(&message);
-                        network_io_peer_state_tx.send()
+                if let Ok(message) = udp_message {
+                    if let Ok(new_call_order) = serde_json::from_str::<CallOrder>(&message) {
+                        network_io_neworder_tx.send(new_call_order).unwrap();
+                    } else if let Ok(peer_state) = serde_json::from_str::<PeerState>(&message) {
+                        network_io_peer_state_tx.send(peer_state).unwrap();
                     }
                 }
             }
+    
+           
             recv(udp_heartbeat_dead_rx) -> id => {
                 if config.id == id.unwrap() {
                     //
@@ -47,7 +45,7 @@ pub fn run(/* Channels */) {
                 network_io_redistribute_tx.send(id);
 
 
-            }tx
+            }
         }
 
         if true {
