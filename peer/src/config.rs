@@ -78,7 +78,6 @@ pub enum Timeout_type {
     fsm_powerloss   = 2,
 
     network_disconnect = 3,
-    network_
 }
 
 

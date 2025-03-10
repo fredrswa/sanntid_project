@@ -3,15 +3,27 @@ use std::time::{Instant, Duration};
 use std::net::UdpSocket;
 use std::io;
 use crossbeam_channel::Sender;
-use crate::config::Config;
+use crate::config::*;
 
 const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
 
-fn udp_receive( socket: UdpSocket, udp_listener_tx: Sender<String>, udp_heartbeat_dead_tx: Sender<String>) -> io::Result<()> {
-    let mut heartbeats: HashMap<String, Instant> = HashMap::new();
+pub fn udp_create_socket() -> UdpSocket {
+    let socket = match UdpSocket::bind("0.0.0.0:20003") {
+        Ok(socket) => {
+            println!("Socket bound successfully.");
+            socket
+        },
+        Err(e) => {
+            panic!("Could'nt bind to socket");
+        }
+    };
+    return socket;
+}
 
-    let id_self = config.id.clone();
+pub fn udp_receive( socket: UdpSocket, udp_listener_tx: Sender<String>, udp_heartbeat_dead_tx: Sender<String>) -> io::Result<()> {
+    let mut heartbeats: HashMap<String, Instant> = HashMap::new();
+    let id_self = Config::import().id;
     let id_1 = "id_1".to_string();
     let id_2 = "id_2".to_string();
 

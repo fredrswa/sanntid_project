@@ -1,6 +1,5 @@
-/**IO.RS
- * Responsible for handling all input operations, communicates with the assigner.
-*/
+//! IO.RS
+//! Responsible for handling all input operations, communicates with the assigner and network to generate orders for fsm.
 
 use crate::config::*;
 use driver_rust::elevio::poll as sensor_polling;

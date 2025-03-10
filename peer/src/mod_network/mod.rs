@@ -1,13 +1,12 @@
 pub mod network;
 
 use crossbeam_channel as cbc;
-
 use std::thread::{spawn, sleep};
 
 
 
 use crate::config::*;
-
+use crate::mod_network::network::*;
 
 pub fn run(/* Channels */) {
     // Simulate Channels Here //
