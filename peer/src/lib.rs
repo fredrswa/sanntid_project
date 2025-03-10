@@ -1,5 +1,8 @@
 
 pub mod mod_fsm {
+    pub mod fsm;
+    pub mod requests;
+    pub mod timer;
 }
 pub mod mod_network {
 }
