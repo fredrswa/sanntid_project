@@ -4,7 +4,11 @@
     "num_elevators": 3,
     "door_open_s": 3,
     "id": "id:1",
-    "elev_addr": "127.0.1.1:32781",
-    "udp_socket_addr": "0.0.0.0:49515",
+    "elev_addr": "127.0.1.1:53331",
+    "udp_socket_addr": "0.0.0.0:41985",
+    "upd_others_addr": [
+        "0.0.0.0:55279",
+        "0.0.0.0:53177"
+    ],
     "udp_recv_port": "placeholder"
 }

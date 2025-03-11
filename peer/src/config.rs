@@ -32,6 +32,38 @@ pub struct ElevatorSystem {
 
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct States {
+    pub behavior: Behavior,
+    pub floor: isize,
+    pub direction: Dirn,
+    pub cab_requests: Vec<bool>,
+}
+
+ #[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct EntireSystem {
+    pub hallRequests: Vec<[bool; 2]>,
+    pub states: HashMap<String, States>,
+} 
+
+//Dynamically sized struct, makes it possible with an arbitrary number of elevators
+#[derive(serde::Deserialize, Debug)]
+pub struct AssignerOutput {
+    pub elevators: Vec<Option<Vec<Vec<bool>>>>,
+}
+impl AssignerOutput {
+    pub fn new(num_floors: usize, elevator_count: usize) -> Self {
+        let states = vec![vec![false; 3]; num_floors];
+        let mut elevators = Vec::with_capacity(elevator_count);
+
+        for _ in 0..elevator_count {
+            elevators.push(Some(states.clone()));
+        }
+
+        AssignerOutput { elevators }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Config {
     pub num_floors: usize,
@@ -41,6 +73,7 @@ pub struct Config {
     pub id: String,
     pub elev_addr: String,
     pub udp_socket_addr: String,
+    pub udp_others_addr: Vec<String>,
     pub udp_recv_port: String,
 }
 
@@ -112,6 +145,7 @@ pub enum Timeout_type {
     network_disconnect = 3,
 }
 
+///////////////FSM////////////////////
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Behavior {
@@ -155,7 +189,6 @@ pub fn call_to_button_type(call: u8) -> ButtonType {
         _ => panic!("Invalid button type"),
     }
 }
-
 
 
 ///////////////DEBUGS////////////////////

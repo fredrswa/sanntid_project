@@ -28,8 +28,7 @@ def find_free_port():
 
 local_ip = socket.gethostbyname(socket.gethostname())
 
-ids = [f"id:{id}" for id in range(int(args.N))]
-ips = ["".join((local_ip,":", str(find_free_port()))) for _ in range(int(args.N))]
+udp_socket_addr = ["".join(("0.0.0.0:", str(find_free_port()))) for _ in range(int(args.N))]
 
 
 for i in range(int(args.N)):
@@ -40,7 +39,8 @@ for i in range(int(args.N)):
     json_dict["door_open_s"] = DOOR_OPEN_S
     json_dict["id"] = f"id:{i+1}"
     json_dict["elev_addr"] = "".join((local_ip,":", str(find_free_port())))
-    json_dict["udp_socket_addr"] = "".join(("0.0.0.0:", str(find_free_port())))
+    json_dict["udp_socket_addr"] = udp_socket_addr[i]
+    json_dict["upd_others_addr"] = udp_socket_addr[:i] + udp_socket_addr[i + 1:]
     json_dict["udp_recv_port"] = "placeholder"
 
     with open(f"config_id:{i+1}.json", "w") as json_file:

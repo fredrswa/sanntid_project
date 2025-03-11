@@ -33,6 +33,8 @@ for i in range(int(args.N)):
         json_dict["peers"] = ips[:ii] + ips[ii + 1:]
         json_dict["connected"] = {}
         for iii in range(int(args.N)):
+            if ii+1 == iii+1:
+                continue
             json_dict["connected"][f"id:{iii+1}"] = False 
 
         with open(f"peer_state_id:{ii+1}.json", "w") as json_file:

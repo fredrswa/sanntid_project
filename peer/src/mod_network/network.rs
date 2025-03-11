@@ -3,6 +3,7 @@ use std::time::{Instant, Duration};
 use std::net::UdpSocket;
 use std::io;
 use crossbeam_channel::{Receiver, Sender};
+use crossbeam_channel as cbc;
 use std::thread;
 
 use crate::config::*;
@@ -11,7 +12,7 @@ use crate::config::*;
 const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
 
-pub fn udp_create_socket(addr: String) -> UdpSocket {
+pub fn udp_create_socket(addr: &String) -> UdpSocket {
     let socket = match UdpSocket::bind(addr) {
         Ok(socket) => {
             println!("Socket bound successfully.");
@@ -88,7 +89,7 @@ pub fn udp_create_socket(addr: String) -> UdpSocket {
 }
  */
 
-pub fn udp_receive(socket: UdpSocket, udp_listener_tx: Sender<String>) {
+pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
     let mut buffer = [0; 1024];
 
     loop {
@@ -99,8 +100,16 @@ pub fn udp_receive(socket: UdpSocket, udp_listener_tx: Sender<String>) {
             }
         };
 
-        let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]);
-        match udp_listener_tx.send(received_msg.to_string()) {
+        let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
+
+        let sys: EntireSystem = match serde_json::from_str(&received_msg) {
+            Ok(sys) => sys,
+            Err(e) => {
+                panic!("Failed to parse incoming state!: {}", e)
+            }
+        };
+
+        match udp_listener_tx.send(sys) {
             Ok(ok) => ok,
             Err(e) => {panic!("Message was not sent to peer: {}", e)}
         };
@@ -109,27 +118,37 @@ pub fn udp_receive(socket: UdpSocket, udp_listener_tx: Sender<String>) {
 
 
                                              //Hva skal egentlig sendes?
-fn udp_send(socket: &UdpSocket, addr: &str, message: &String) {
-    let json_msg = match serde_json::to_string(message){
-        Ok(json_msg) => json_msg,
-        Err(e) => {
-            panic!("Failed to serialize message to send over Udp!: {}", e)
-        }    
-    };
-    
-    match socket.send_to(json_msg.as_bytes(), addr) {
-        Ok(ok) => ok,
-        Err(e) => {
-            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, addr, e)
+pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx: Receiver<EntireSystem>) {  
+    loop {
+        cbc::select! {
+            recv(udp_sender_rx) -> sys => {
+                let sys = sys.unwrap();
+                
+                let json_msg = match serde_json::to_string(&sys){
+                    Ok(json_msg) => json_msg,
+                    Err(e) => {
+                        panic!("Failed to serialize message to send over Udp!: {}", e)
+                    }    
+                };
+        
+                for peer_address in peer_addresses.iter(){
+                    match socket.send_to(json_msg.as_bytes(), peer_address) {
+                        Ok(ok) => ok,
+                        Err(e) => {
+                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
+                        }
+                    };
+                }
+            }
         }
-    };
+    }  
 } 
 
-pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_adresses: &Vec<String>) -> std::io::Result<()> {
+pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_addresses: &Vec<String>) -> std::io::Result<()> {
     loop {
-        for peer_address in peer_adresses.iter(){
+        for peer_address in peer_addresses.iter(){
             match heartbeat_socket.send_to( &peer_id.as_bytes(), &peer_address){
-                Ok(_) => println!("Heartbeat sent to: {}", peer_address),
+                Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat to {}: {}", &peer_address , e);}
             };
         }
@@ -137,7 +156,8 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_adres
     }
 }
 
-pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<String>) {
+pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(String, bool)>) {
+    let mut heartbeats: HashMap<String, Instant> = HashMap::new();
     let mut buffer = [0; 1024]; 
 
     heartbeat_socket.set_nonblocking(true).expect("Failed to set non-blocking!");
@@ -146,21 +166,28 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<Strin
         match heartbeat_socket.recv(&mut buffer) {
             Ok(n_bytes) => {
                 let id = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-                println!("Heartbeat received from: {}", id);
-                heartbeat_tx.send(id);
+                //println!("Heartbeat received from: {}", id);
+
+                heartbeats.insert(id.clone(), Instant::now());
+
+                
             },
             //If there is no heartbeat waiting, dont block s.t. heartbeat can not be sent. 
             Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                println!("No heartbeat waiting...");
-                thread::sleep(Duration::from_millis(500));
+                //println!("No heartbeat waiting...");
+                thread::sleep(Duration::from_millis(1000));
             }
             Err(e) => {
                 eprintln!("An error occured when receiving heartbeat: {}", e);
             }
         }
+        for (id, time) in &heartbeats {
+            if Instant::now() - *time < Duration::from_millis(5000) {
+                heartbeat_tx.send((id.clone(), true)).expect(&format!("Failed to pass heartbeat {} over channel.", &id));
+            } else {
+                heartbeat_tx.send((id.clone(), false)).expect(&format!("Failed to pass heartbeat {} over channel.", &id));
+            }
+        }
     }
 }
 
-pub fn update_peer_state (peer_state: &PeerState) {
-    //peer_state.connected
-}
