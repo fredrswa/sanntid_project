@@ -20,9 +20,17 @@ use std::thread::{spawn, sleep};
 use core::time::Duration;
 
 
-/// Runs the FSM_modulesm
+/// Runs the FSM_module
 /// - Interacts with IO to handle and generate order
-pub fn run(es: &mut ElevatorSystem,call_from_io_rx: &cbc::Receiver<sensor_polling::CallButton>, timout_tx: &cbc::Sender<Timeout_type>) {
+pub fn run(
+    es: &mut ElevatorSystem,
+    call_from_io_rx: &cbc::Receiver<sensor_polling::CallButton>,
+    timout_tx: &cbc::Sender<Timeout_type>,
+    fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
+    ) {
+
+
+    /* ########################### FSM Sensors ######################################################################## */
     let poll_period = Duration::from_millis(25);
     let mut timer = Timer::new(Duration::from_secs(es.door_open_s as u64));
     let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>(); 
@@ -33,6 +41,7 @@ pub fn run(es: &mut ElevatorSystem,call_from_io_rx: &cbc::Receiver<sensor_pollin
         let elevator = es.elevator.clone();
         spawn(move || sensor_polling::obstruction(elevator, obstruction_tx, poll_period)); 
     }
+    /* ############################################################################################################### */
 
     es.init();
 
@@ -47,6 +56,8 @@ pub fn run(es: &mut ElevatorSystem,call_from_io_rx: &cbc::Receiver<sensor_pollin
             recv(floor_sensor_rx) -> fs_message => {
                 if let Ok(floor) = fs_message {
                     es.on_floor_arrival(&mut timer, floor as usize);
+
+                    fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
                 }
             }
             recv(obstruction_rx) -> ob_message => {
@@ -62,5 +73,13 @@ pub fn run(es: &mut ElevatorSystem,call_from_io_rx: &cbc::Receiver<sensor_pollin
         if timer.is_expired() && !es.status.door_blocked {
             es.on_door_timeout(&mut timer);
         }
+
+        
+        // send own state
+        // send confirmation on taken order
+        
+
+
+
     }
 }

@@ -6,7 +6,7 @@
     "id": "id:2",
     "elev_addr": "127.0.1.1:60111",
     "udp_socket_addr": "0.0.0.0:55279",
-    "upd_others_addr": [
+    "udp_others_addr": [
         "0.0.0.0:41985",
         "0.0.0.0:53177"
     ],

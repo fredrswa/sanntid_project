@@ -8,20 +8,19 @@ use crate::config::*;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
 use crate::mod_io::io_funcs::{call_assigner, save_system_state_to_json};
 
-pub fn run(/* Channels */) {
+pub fn run(
+    network_to_io_tx: &cbc::Sender<EntireSystem>,
+    io_to_network_rx: &cbc::Receiver<EntireSystem>,) {
+
+
     // Simulate Channels Here //
-    let (network_io_tx, network_io_rx) = cbc::unbounded::<String>();
     let (network_io_redistribute_tx, network_io_redistribute_rx) = cbc::unbounded::<String>(); //ID
     //let (network_io_neworder_tx, network_io_neworder_rx) = cbc::unbounded::<CallOrder>();
     let (network_io_peer_state_tx, netork_io_peer_state_tx) = cbc::unbounded::<PeerState>();
     //           -            //
 
 
-    let mut world_view = EntireSystem {
-        hallRequests: ,
-        states: , 
-    };
-
+    
     let mut ps = PeerState {
         id: PeerStateCONFIG.id.clone(),
         ip: PeerStateCONFIG.ip.clone(),
@@ -35,11 +34,11 @@ pub fn run(/* Channels */) {
     
     let udp_socket = Arc::new(udp_create_socket(&CONFIG.udp_socket_addr));
     
-    let send_udp_socket = Arc::clone(&udp_socket);
-    let receive_udp_socket = Arc::clone(&udp_socket);
+    let udp_send_socket = Arc::clone(&udp_socket);
+    let udp_receive_socket = Arc::clone(&udp_socket);
 
-    {spawn(move || udp_send(&receive_udp_socket, &CONFIG.udp_others_addr,udp_sender_rx));}
-    {spawn(move || udp_receive(&receive_udp_socket, udp_listener_tx));}
+    {spawn(move || udp_send(&udp_send_socket, &CONFIG.udp_others_addr,udp_sender_rx));}
+    {spawn(move || udp_receive(&udp_receive_socket, udp_listener_tx));}
     /* #################################################################################################################### */
 
     /* ########################### Hearbeat ############################################################################### */
@@ -62,13 +61,16 @@ pub fn run(/* Channels */) {
                 
                 ps.connected.insert(id.clone(), val);
                 
-                /* println!("###########");
+                println!("###########");
                 for (_id, _val) in &ps.connected {
                     println!("{}->{}", _id, _val);
                 }
-                println!("###########\n"); */
+                println!("###########\n");
             }
-            
+            recv(udp_listener_rx) -> sys => {
+                let sys = sys.unwrap();
+
+            }
 
 
 

@@ -133,7 +133,7 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx:
         
                 for peer_address in peer_addresses.iter(){
                     match socket.send_to(json_msg.as_bytes(), peer_address) {
-                        Ok(ok) => ok,
+                        Ok(ok) => ok,//Ack send to io
                         Err(e) => {
                             panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
                         }

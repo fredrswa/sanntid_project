@@ -45,16 +45,45 @@ fn main() -> Result<()> {
 }
 ///module init
 fn run_modules(timeout_tx: Sender<Timeout_type>) {
-    let (io_call_tx,io_call_rx) = unbounded::<sensor_polling::CallButton>();
+    
+    /* ######### Elevator System for current peer ################################################################# */
     let es: ElevatorSystem = ElevatorSystem::new();
+    
+    /* ################# CHANNELS TO PASS ############# (Allows modules to communicate) ########################### */
+    let (io_call_tx,io_call_rx) = unbounded::<sensor_polling::CallButton>();
+
+    let (network_to_io_tx, network_to_io_rx) = unbounded::<EntireSystem>();
+    let (io_to_network_tx, io_to_network_rx) = unbounded::<EntireSystem>();
+    
+    let (fsm_to_io_tx, fsm_to_io_rx) = unbounded::<ElevatorSystem>();
+    /* ############################################################################################################ */
+
     {
+        /* ######### Run FSM module ################################################################## */
         let mut es1 = es.clone();
-        spawn(move || {mod_fsm::run(&mut es1, &io_call_rx, &timeout_tx);});
-        let mut es2 = es.clone();
-        spawn(move || {mod_io::run(&mut es2, &io_call_tx);});
+        spawn(move || {mod_fsm::run(
+            &mut es1,
+            &io_call_rx,
+            &timeout_tx,
+            &fsm_to_io_tx,
+        );});
         
-        spawn(move || {mod_network::run();});
+        
+        /* ######### Run IO module ################################################################### */
+        let mut es2 = es.clone();
+        spawn(move || {mod_io::run(
+            &mut es2, 
+            &io_call_tx,
+            &network_to_io_rx,
+            &io_to_network_tx,
+            &fsm_to_io_rx,
+        );});
+        
+        /* ######### Run NETWORK module ############################################################## */
+        spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
     }
+
+
     loop {
         select! {
             default => {}

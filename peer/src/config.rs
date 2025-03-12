@@ -45,6 +45,10 @@ pub struct EntireSystem {
     pub hallRequests: Vec<[bool; 2]>,
     pub states: HashMap<String, States>,
 } 
+pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
+    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
 
 //Dynamically sized struct, makes it possible with an arbitrary number of elevators
 #[derive(serde::Deserialize, Debug)]
@@ -52,11 +56,11 @@ pub struct AssignerOutput {
     pub elevators: Vec<Option<Vec<Vec<bool>>>>,
 }
 impl AssignerOutput {
-    pub fn new(num_floors: usize, elevator_count: usize) -> Self {
+    pub fn new(num_floors: usize, num_elevators: usize) -> Self {
         let states = vec![vec![false; 3]; num_floors];
-        let mut elevators = Vec::with_capacity(elevator_count);
+        let mut elevators = Vec::with_capacity(num_elevators);
 
-        for _ in 0..elevator_count {
+        for _ in 0..num_elevators {
             elevators.push(Some(states.clone()));
         }
 
