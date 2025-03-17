@@ -23,8 +23,18 @@ pub mod mod_network;
 
 /// main function
 fn main() -> Result<()> {
+    /// cargo run id primary udp_net_socket udp_
+    /// arg = id (int) primary(bool) udp_net(string) udp_backup(string)
+    /// id: unique identifier
+    /// primary bool that specifies if this is spawned as primary or secondary, makes starting logic easy.
+    /// As secondary it shoud listen for success calls from the primary, when primary dies it takes over and spawns it's own secondary. Remember to pass addr,
     Lazy::force(&config::CONFIG); //Forces read of config on start of runtime in order to ensure safety
     Lazy::force(&config::PeerStateCONFIG);
+
+
+
+
+
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
