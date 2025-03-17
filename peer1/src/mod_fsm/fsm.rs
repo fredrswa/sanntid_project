@@ -5,23 +5,27 @@ use driver_rust::elevio::elev::Elevator;
 use crate::config::*;
 
 // ^ mod_fsm
+use super::hardware::init_elevator;
 use super::requests::*;
 use super::timer::Timer;
 
 
 impl ElevatorSystem {
-    pub fn new(addr: String, num_floors: usize, door_open_s: usize) -> ElevatorSystem {
-        let connect_addr = addr.clone();
+    pub fn new() -> ElevatorSystem {
         ElevatorSystem {
           //Constants Read from Config file
-          num_floors,
+          num_floors: CONFIG.num_floors,
           num_buttons: 3,
-          door_open_s,
-          addr,
+          door_open_s: CONFIG.door_open_s,
+          addr: CONFIG.elev_addr.clone(),
           
-          elevator: Elevator::init(&connect_addr, num_floors.clone() as u8).unwrap(),
+          elevator: match init_elevator(CONFIG.elev_addr.clone(), 0, true) {
+          //elevator: match Elevator::init(&CONFIG.elev_addr, CONFIG.num_floors as u8) {
+            Ok(e) => e,
+            Err(e) => {panic!("Cannot start without elevator connection: {}", e);},
+          },
           //Requests size is dictated at runtime, therefore it is a vector.
-          requests: vec![vec![false; 3]; num_floors.clone() as usize],
+          requests: vec![vec![false; CONFIG.num_buttons as usize]; CONFIG.num_floors as usize],
           status: Status::new(),
         }
     }

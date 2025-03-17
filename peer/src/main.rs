@@ -1,102 +1,37 @@
-//! main coordinates the initialization of all threads
-//! Creates the required channels
-//! Spawns modules
-//! Then "listens" for recovery using timeout_rx which sends a struct indicating which module has failed.
-
-/// INCLUDES
-use std::io::Result;
-use config::*;
-use crossbeam_channel::{select, unbounded, Sender, Receiver};
-use std::thread::{spawn, sleep};
-use once_cell::sync::Lazy;
-
-/// DRIVER
-use driver_rust::elevio::poll as sensor_polling;
 
 
-/// MODULES
-pub mod config;
+use std::{env, io::Result, net::{UdpSocket}};
+
+use mod_backup::{create_socket, string_to_bool};
+
+
+
+
 pub mod mod_fsm;
-pub mod mod_io;
-pub mod mod_network;
+pub mod mod_backup;
+pub mod config;
 
 
-/// main function
-fn main() -> Result<()> {
-    /// cargo run id primary udp_net_socket udp_
-    /// arg = id (int) primary(bool) udp_net(string) udp_backup(string)
-    /// id: unique identifier
-    /// primary bool that specifies if this is spawned as primary or secondary, makes starting logic easy.
-    /// As secondary it shoud listen for success calls from the primary, when primary dies it takes over and spawns it's own secondary. Remember to pass addr,
-    Lazy::force(&config::CONFIG); //Forces read of config on start of runtime in order to ensure safety
-    Lazy::force(&config::PeerStateCONFIG);
+fn main() -> Result<()>  {
+    let args: Vec<String> = env::args().collect();
+
+    let id: usize                     = args.get(1).expect("Illegal id passed").to_string().parse().unwrap();
+    let primary                 = string_to_bool(args.get(2).expect("Missing Primary Bolean"));
+    let udp_secondary_recv    = args.get(3).expect("Pass secondary backup string").to_string();
+    let elevator_addr         = args.get(4).expect("Pass Elevator address").to_string();
+    let num_floors: usize             = args.get(5).expect("Pass Number of floors").parse().unwrap();
+    let num_peer: usize               = args.get(6).expect("Pass Number of Peers").parse().unwrap();
+    let lab_server: bool              = string_to_bool(args.get(2).expect("Specify lab server(1) or local server (0)"));
 
 
+    
 
+    if !primary {
+        let listening_socket = create_socket(udp_secondary_recv);
+        
 
-
-
-    let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
-
-    { spawn(move || run_modules(timeout_tx)); }
-
-    //Recovery Scripts
-    loop{
-        select! {
-            recv(timeout_rx) -> timout_struct => {
-                
-            }
-
-            default => {
-                
-            }
-        }
     }
-}
-///module init
-fn run_modules(timeout_tx: Sender<Timeout_type>) {
-    
-    /* ######### Elevator System for current peer ################################################################# */
-    let es: ElevatorSystem = ElevatorSystem::new();
-    
-    /* ################# CHANNELS TO PASS ############# (Allows modules to communicate) ########################### */
-    let (io_call_tx,io_call_rx) = unbounded::<sensor_polling::CallButton>();
-
-    let (network_to_io_tx, network_to_io_rx) = unbounded::<EntireSystem>();
-    let (io_to_network_tx, io_to_network_rx) = unbounded::<EntireSystem>();
-    
-    let (fsm_to_io_tx, fsm_to_io_rx) = unbounded::<ElevatorSystem>();
-    /* ############################################################################################################ */
-
-    {
-        /* ######### Run FSM module ################################################################## */
-        let mut es1 = es.clone();
-        spawn(move || {mod_fsm::run(
-            &mut es1,
-            &io_call_rx,
-            &timeout_tx,
-            &fsm_to_io_tx,
-        );});
-        
-        
-        /* ######### Run IO module ################################################################### */
-        let mut es2 = es.clone();
-        spawn(move || {mod_io::run(
-            &mut es2, 
-            &io_call_tx,
-            &network_to_io_rx,
-            &io_to_network_tx,
-            &fsm_to_io_rx,
-        );});
-        
-        /* ######### Run NETWORK module ############################################################## */
-        spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
-    }
-
-
     loop {
-        select! {
-            default => {}
-        }
+
     }
 }

@@ -1,97 +1,43 @@
 #![allow(dead_code)]
-
-use std::{u8, fmt, fs, env};
+use std::net::IpAddr;
+use std::u8;
+use std::fmt;
 use serde::{self, Serialize, Deserialize};
+use std::{fs};
+use serde_json;
+use once_cell::sync::Lazy;
 use std::collections::HashMap;
+use std::env;
 
 
 use driver_rust::elevio::elev::Elevator;
-////////STRUCTURE//////////
-/// ------States------- ///
-/// ------ErrHan------- /// 
-/// /////////////////// ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// ------Structs------ ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// --------FSM-------- ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// -------Debug------- ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// /////////////////// ///
-///////////////////////////
 
 
-/////////////////STATES///////////////
 
+/////GENERAL SYSTEM STATES//////
+/// //Kan bygges ut dersom det trengs flere states
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PeerState {
     //Network
-    id: usize, //Or isize
+    id: String, //Or isize
     online: bool,
     udp_server_socket: String,
     status: Status,
-}
-impl PeerState{
-    pub fn new_self(id_num: usize, lab: bool) -> PeerState {
-        let socket = match lab {
-            false => {format!("localhost:4000{}", id_num.clone())},
-            true => {format!("10:100:23:23:4000{}", id_num.clone())},
-        };
-        let peerState = PeerState {
-            id: id_num,
-            online: true,
-            udp_server_socket: socket,
-            status: Status::new(),
-        };
-        peerState
-    }
-    pub fn new_peer(id_num: usize, lab: bool) -> PeerState {
-        let socket = match lab {
-            false => {format!("localhost:4000{}", id_num.clone())},
-            true => {format!("10:100:23:23:4000{}", id_num.clone())},
-        };
-        let peerState = PeerState {
-            id: id_num,
-            online: false,
-            udp_server_socket: socket,
-            status: Status::new(),
-        };
-        peerState
-    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SystemState {
     peers: Vec<PeerState>,
 }
-impl SystemState {
-    pub fn new(id_self: usize, num_peers: usize, lab: bool) -> SystemState {
-        let mut peers: Vec<PeerState> = Vec::new();
-        for id in 0..num_peers {
-            if id == id_self{
-                peers.push(PeerState::new_self(id, lab));
-            } else {
-                peers.push(PeerState::new_peer(id, lab));
-            }
-        }
-        let ss = SystemState {
-            peers,
-        };
-        ss
-    }
-}
-//////////////////ERROR HANDLING////////////////////////
-/// 
-pub struct Timeout_type {
-    i: isize,
-}
 
+////////STRUCTURE//////////
+/// /////////////////// ///
+/// ------Structs------ ///
+/// /////////////////// ///
+/// /////////////////// ///
+/// /////////////////// ///
+/// ---
+/// 
 #[derive(Clone)]
 pub struct ElevatorSystem {
 
@@ -154,8 +100,25 @@ pub struct Config {
     pub udp_recv_port: String,
 }
 
+/* impl Config {
+    pub fn import() -> Config {
+        let config_string = fs::read_to_string("config.json").expect("Unable to read file");
+        let config: Config = serde_json::from_str(&config_string).expect("JSON was not well-formatted");
+        config
+    }
+} */
 
+//Bedre ?? Gjør at config bare må leses en gang. 
+pub static CONFIG: Lazy<Config> = Lazy::new(|| {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        panic!("Please provide the elevator id number as a command-line argument!");
+    }
+    let elev_num: usize = args[1].parse().expect("Invalid elevator number!");
 
+    let config_str = fs::read_to_string(format!("../tools/generate_json/config_id:{}.json", elev_num)).expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct Status {
@@ -178,7 +141,24 @@ impl Status {
 }
 
 
-///////////////////////FINITE STATE MACHINE STRUCTS///////////////////////////
+
+pub enum Timeout_type {
+    fsm_obstruction = 0,
+    fsm_doortimeout = 1,
+    fsm_powerloss   = 2,
+
+    network_disconnect = 3, // Drop Socket, reconnect
+}
+/// //////////////////////////////////
+/// //////////////////////////////////
+/// //////////////////////////////////
+/// //////////////////////////////////
+/// ///////////FSM////////////////////
+/// //////////////////////////////////
+/// //////////////////////////////////
+/// //////////////////////////////////
+/// //////////////////////////////////
+/// //////////////////////////////////
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Behavior {
