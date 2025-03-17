@@ -1,14 +1,19 @@
+
+/// Sub Modules
 pub mod network;
 
+//Includes
 use crossbeam_channel as cbc;
 use std::thread::{spawn, sleep};
 use std::sync::Arc;
 
+///Crates
 use crate::config::*;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
 use crate::mod_io::io_funcs::{call_assigner, save_system_state_to_json};
 
 pub fn run(
+    //Communication with IO module
     network_to_io_tx: &cbc::Sender<EntireSystem>,
     io_to_network_rx: &cbc::Receiver<EntireSystem>,) {
 

@@ -1,4 +1,5 @@
-// This module contains the network functionality of the peer. It is responsible for sending and receiving messages and heartbeats over the network.
+//Handles peer-to-peer communication between elevators using UDP and JSON-based messages 
+// Detetect dead elevators by sending and receiving heartbeats
 
 ///Includes
 use std::collections::HashMap;
@@ -96,6 +97,8 @@ pub fn udp_create_socket(addr: &String) -> UdpSocket {
 }
  */
 
+ //Receive UDP messages and send them to the channel
+ // Message contain the entire system state
 pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
     let mut buffer = [0; 1024];
 
@@ -151,6 +154,7 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx:
     }  
 } 
 
+//Send heartbeats to all peers to indicate that the elevator is still alive
 pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_addresses: &Vec<String>) -> std::io::Result<()> {
     loop {
         for peer_address in peer_addresses.iter(){
@@ -163,7 +167,10 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_addre
     }
 }
 
+//Receive heartbeats from all peers to detect dead elevators
 pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(String, bool)>) {
+
+    //HashMap to keep track of heartbeats
     let mut heartbeats: HashMap<String, Instant> = HashMap::new();
     let mut buffer = [0; 1024]; 
 
