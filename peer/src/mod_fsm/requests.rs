@@ -86,6 +86,7 @@ pub fn requests_should_stop(es: &ElevatorSystem) -> bool {
       }
   }
 }
+
 pub fn requests_should_clear_immediately(es: &ElevatorSystem, btn_floor: usize, btn_type: ButtonType) -> bool {
   es.status.curr_floor as usize == btn_floor && (
       (es.status.curr_dirn as usize == Dirn::Up   as usize   && btn_type as usize == ButtonType::HallUp   as usize)  ||

@@ -1,16 +1,23 @@
+// This module contains the network functionality of the peer. It is responsible for sending and receiving messages and heartbeats over the network.
+
+///Includes
 use std::collections::HashMap;
 use std::time::{Instant, Duration};
 use std::net::UdpSocket;
 use std::io;
+
+///
 use crossbeam_channel::{Receiver, Sender};
 use crossbeam_channel as cbc;
 use std::thread;
 
+///Crates
 use crate::config::*;
 
-
+//Constants
 const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
+
 
 pub fn udp_create_socket(addr: &String) -> UdpSocket {
     let socket = match UdpSocket::bind(addr) {

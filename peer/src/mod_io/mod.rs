@@ -1,10 +1,14 @@
 //! IO.RS
 //! Responsible for handling all input operations, communicates with the assigner and network to generate orders for fsm.
+
+///
 pub mod io_funcs;
 
+///
 use crate::config::*;
 use driver_rust::elevio::poll as sensor_polling;
 
+///
 use crossbeam_channel as cbc;
 use std::thread::spawn;
 use std::time::Duration;

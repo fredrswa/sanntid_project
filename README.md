@@ -61,3 +61,77 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
 2. main.rs:
     - A way too coordinate modules
     - Open channels between them
+
+
+## Overview
+
+This project is a peer-to-peer elevator system divided into three main modules: FSM-Module, IO-Module, and Network-Module.
+
+The goal is to develop software that manages n elevators operating simultaneously across m floors.
+
+Each elevator maintains a shared worldview of the system and communicates using message passing between these modules.
+
+
+## FSM-Module
+
+This module handles the logic of a single elevator, including:
+
+Light and button operations
+
+Door control and timers
+
+Handling and processing elevator requests
+
+Communicates with the IO module using channels: fsm_to_io_tx and call_from_io_rx.
+
+
+## IO-Module
+
+The IO module is responsible for:
+
+Managing all input operations.
+
+Storing and retrieving system states.
+
+Assigning hall requests based on the hall_request_assigner.
+
+Communicating accepted requests to the FSM module and state updates with the network module using: call_button_from_io_tx, network_to_io_rx, io_to_network_tx and fsm_to_io_rx.
+
+
+
+## Network-Module
+
+Handles peer-to-peer communication between elevators using UDP and JSON-based messages : udp_send and udp_receive. 
+
+Ensures that each elevator has a synchronized worldview of the system.
+
+It is responsible for sendign and recieving heartbeats, to detect dead elevators: send_heartbeat and receive_hearbeat.
+
+## MAIN
+
+Run all modules
+
+Opens channels between modules
+
+
+## Install instructions 
+
+1. Clone the repository:
+    git clone <repository-url>
+
+2. Navigate to the project directory.
+
+3. Install dependencies:
+    cargo build
+
+4. Ensure that you have Rust and Cargo installed.
+
+
+## How to run the project
+1. Build the project:
+    cargo build
+
+2. Run the project:
+    cargo run 
+
+## Configurations

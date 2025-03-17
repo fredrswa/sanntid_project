@@ -60,6 +60,7 @@ impl ElevatorSystem {
             }
         }
     }
+
     pub fn on_request_button_press(&mut self, timer: &mut Timer, btn_floor: usize, btn_type: ButtonType) {
         match self.status.behavior {
             Behavior::DoorOpen => {
@@ -105,7 +106,6 @@ impl ElevatorSystem {
           self.set_all_lights();
     }
 
-
     pub fn on_floor_arrival(&mut self, timer: &mut Timer, new_floor: usize) {
         self.status.curr_floor = new_floor;
         self.elevator.floor_indicator(self.status.curr_floor as u8);
@@ -124,6 +124,7 @@ impl ElevatorSystem {
             _=> { }
         }
     }
+    
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
         match self.status.behavior {
           Behavior::DoorOpen => {
