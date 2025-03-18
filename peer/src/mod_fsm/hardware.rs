@@ -16,64 +16,28 @@ fn init_hardware (port_number: usize, sim: bool) -> Result<Child,Box<dyn Error>>
         "./../tools/elevatorServers/elevatorserver"
     };
 
-    match os {
-        "windows" => {
-            println!("No terminal spawner is implemented for Windows yet.");
-            exit(0);
-        }
-        "linux" => {
-            let child = Command::new("xterm")
-                .args(["-fa", "Monospace","-fs", "16", "-e", hardware, "--port", port_number.to_string().as_str()])
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn();
-            
-                match child {
-                    Ok(terminal) => {
-                        println!("Successfully opened terminal. \nRunning process at localhost:{}", port_number);
-                        let pid = terminal.id();
-                        println!("With pid: {:#?}\n", pid);
+    
+    let child = Command::new("xterm")
+        .args(["-fa", "Monospace","-fs", "16", "-e", hardware, "--port", port_number.to_string().as_str()])
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn();
+    
+        match child {
+            Ok(terminal) => {
+                println!("Successfully opened terminal. \nRunning process at localhost:{}", port_number);
+                let pid = terminal.id();
+                println!("With pid: {:#?}\n", pid);
 
-                        return Ok(terminal);
-                    }
-         
-                    Err(e) => {
-                        eprintln!("Terminal was not opened!: {}", e);
-                        return Err(Box::new(e))
-                    }
-                }
+                return Ok(terminal);
             }
-        
-        "macos" => {
-            let child = Command::new("osascript")
-                .args([
-                    "-e", 
-                    &format!("tell application \"Terminal\" to do script \"./SimElevatorServer --port {}\"", port_number)
-                ])
-                .stdout(Stdio::piped())
-                .stderr(Stdio::piped())
-                .spawn();
-
-            match child {
-                Ok(terminal) => {
-                    println!("Successfully opened terminal. \nRunning process at localhost:{}", port_number);
-                    let pid = terminal.id();
-                    println!("With pid: {:#?}\n", pid);
-                    return Ok(terminal);
-                }
-                Err(e) => {
-                    eprintln!("Terminal was not opened!: {}", e);
-                    return Err(Box::new(e))
-                }
+    
+            Err(e) => {
+                eprintln!("Terminal was not opened!: {}", e);
+                return Err(Box::new(e))
             }
         }
-        _ => {
-            println!("Unrecognized OS.");
-            println!("SHUTTING DOWN.");
-            exit(0);
-        }
-    }    
-}
+    }
 
 pub fn init_elevator (addr: String, mut trial_count: usize, sim: bool) -> Result<Elevator, Box<dyn Error>>  {
 

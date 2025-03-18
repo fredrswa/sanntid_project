@@ -10,14 +10,14 @@ use super::timer::Timer;
 
 
 impl ElevatorSystem {
-    pub fn new(addr: String, num_floors: usize, door_open_s: usize) -> ElevatorSystem {
-        let connect_addr = addr.clone();
+    pub fn new(addr: usize, num_floors: usize, door_open_s: usize) -> ElevatorSystem {
+        let connect_addr = format!{"localhost:{}", addr.clone()};
         ElevatorSystem {
           //Constants Read from Config file
           num_floors,
           num_buttons: 3,
           door_open_s,
-          addr,
+          addr: format!("localhost:{}", connect_addr),
           
           elevator: Elevator::init(&connect_addr, num_floors.clone() as u8).unwrap(),
           //Requests size is dictated at runtime, therefore it is a vector.
