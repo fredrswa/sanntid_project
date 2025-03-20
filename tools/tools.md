@@ -2,7 +2,8 @@
 **Div**
  - [SimElevatorServer](https://github.com/TTK4145/Simulator-v2)
  - [Rust Practice](https://github.com/rust-lang/rustlings)
- - [Other](https://github.com/TTK4145-Students-2023/project-group-27)
+ - [Other1](https://github.com/TTK4145-Students-2023/project-group-27)
+ - [Other2](https://github.com/TTK4145-Real-time-programming/project)
 ---
 **Access to Overleaf**:
  - [Preliminary Design Report](https://www.overleaf.com/4749789321fvtnpjxxpbwz#4961e8)
