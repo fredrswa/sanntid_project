@@ -28,6 +28,10 @@ mod mod_hardware;
 use crate::config::CONFIG;
 
 
+static_toml::static_toml! {
+    static CONFIG = include_toml!("Config.toml");
+}
+
 /// main function
 fn main() -> Result<()> {
     //Read command line arguments

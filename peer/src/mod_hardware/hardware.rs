@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 #[allow(dead_code)]
 
+=======
+>>>>>>> 9ca0225 (fixed some errors from the lab)
 use std::error::Error;
 use std::process::{exit, Child, Command, Stdio};
 use std::env;
