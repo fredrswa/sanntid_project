@@ -2,6 +2,11 @@ use std::process::Command;
 use std::fs;
 use crate::config::*;
 
+
+static_toml::static_toml! {
+    static CONFIG = include_toml!("Config.toml");
+}
+
 pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
     
     let elev_states = match serde_json::to_string(&sys) {
@@ -32,7 +37,7 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
     }
     
     println!("{}", stdout);
-    let mut new_states = AssignerOutput::new(CONFIG.num_floors, CONFIG.num_elevators);
+    let mut new_states = AssignerOutput::new(CONFIG.elevator.num_floors as usize, CONFIG.network.peers as usize);
     new_states = match serde_json::from_str(&stdout) {
         Ok(new_states) => new_states,
         Err(e) => {

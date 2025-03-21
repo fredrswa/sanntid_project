@@ -5,8 +5,10 @@
 
 /// INCLUDES
 use std::{env, io::Result};
+use std::time::Duration;
 use config::*;
 use crossbeam_channel::{select, unbounded, Sender, Receiver};
+use mod_backup::create_socket;
 use std::thread::{spawn, sleep};
 use once_cell::sync::Lazy;
 use static_toml;
@@ -15,15 +17,16 @@ use driver_rust::elevio::poll as sensor_polling;
 
 
 /// MODULES
-pub mod config;
-pub mod mod_fsm;
-pub mod mod_io;
-pub mod mod_network;
+mod config;
+mod mod_fsm;
+mod mod_io;
+// pub mod mod_network;
+mod mod_backup;
+mod mod_hardware;
 
 
-static_toml::static_toml! {
-    static CONFIG = include_toml!("Config.toml");
-}
+use crate::config::CONFIG;
+
 
 /// main function
 fn main() -> Result<()> {
@@ -31,12 +34,41 @@ fn main() -> Result<()> {
     let command_line_arguments: Vec<String>= env::args().collect();
     let is_primary: bool = command_line_arguments.get(2).expect("Specify primary -- id true/false").parse().unwrap();
 
+
+    
+    if !is_primary {
+        mod_backup::backup_state();
+    } else {
+        let _ = mod_hardware::init();
+    }
+
+
+    
+
+    mod_backup::spawn_secondary();
+
+
+    
+    
+
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
     { spawn(move || run_modules(timeout_tx)); }
 
+ 
+
+    let ss = EntireSystem::template();
+    let pri_send = create_socket(CONFIG.backup.pri_send.to_string());
+    let ss_serialized = serde_json::to_string(&ss).unwrap();
+    let sec_recv = CONFIG.backup.sec_recv;
+
+
     //Recovery Scripts
     loop{
+        sleep(Duration::from_millis(1000));
+
+        pri_send.send_to(ss_serialized.as_bytes(),  sec_recv);
+        println!("Sent: {}", ss_serialized);
         select! {
             recv(timeout_rx) -> timout_struct => {
                 
@@ -85,11 +117,17 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         );});
         
         /* ######### Run NETWORK module ############################################################## */
-        spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
+        //spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
     }
 
-
+    let ss = EntireSystem::template();
+    let pri_send = create_socket(CONFIG.backup.pri_send.to_string());
+    let ss_serialized = serde_json::to_string(&ss).unwrap();
+    let sec_recv = CONFIG.backup.sec_recv;
     loop {
+        sleep(Duration::from_millis(1000));
+
+        pri_send.send_to(ss_serialized.as_bytes(),  sec_recv);
         select! {
             default => {}
         }

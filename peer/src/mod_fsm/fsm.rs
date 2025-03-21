@@ -1,3 +1,4 @@
+
 // ^ Driver
 use driver_rust::elevio::elev::Elevator;
 
@@ -5,27 +6,32 @@ use driver_rust::elevio::elev::Elevator;
 use crate::config::*;
 
 // ^ mod_fsm
-use super::hardware::init_elevator;
 use super::requests::*;
 use super::timer::Timer;
 
+static_toml::static_toml! {
+  static CONFIG = include_toml!("Config.toml");
+}
 
 impl ElevatorSystem {
     pub fn new() -> ElevatorSystem {
+        let elevator = match Elevator::init(CONFIG.elevator.addr, CONFIG.elevator.num_floors as u8) {
+          Ok(elev) => elev,
+          Err(_) => {
+            panic!("mod_fsm-fsm: Could'nt connect to elevator");
+          },
+        };
+
         ElevatorSystem {
           //Constants Read from Config file
-          num_floors: CONFIG.num_floors,
-          num_buttons: CONFIG.num_buttons,
-          door_open_s: CONFIG.door_open_s,
-          addr: CONFIG.elev_addr.clone(),
+          num_floors: CONFIG.elevator.num_floors as usize,
+          num_buttons: 3,
+          door_open_s: CONFIG.elevator.door_open_s as usize,
+          addr: CONFIG.elevator.addr.to_string(),
           
-          elevator: match init_elevator(CONFIG.elev_addr.clone(), 0, true) {
-          //elevator: match Elevator::init(&CONFIG.elev_addr, CONFIG.num_floors as u8) {
-            Ok(e) => e,
-            Err(e) => {panic!("Cannot start without elevator connection: {}", e);},
-          },
+          elevator,
           //Requests size is dictated at runtime, therefore it is a vector.
-          requests: vec![vec![false; CONFIG.num_buttons as usize]; CONFIG.num_floors as usize],
+          requests: vec![vec![false; 3]; CONFIG.elevator.num_floors as usize],
           status: Status::new(),
         }
     }

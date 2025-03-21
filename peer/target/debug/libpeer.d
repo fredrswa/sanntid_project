@@ -1,1 +1,1 @@
-/home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/peer/target/debug/libpeer.rlib: /home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/peer/src/config.rs /home/fredrswa/Documents/00\ Sanntid/git\ -\ project/Sanntid13/peer/src/lib.rs
+/home/student/Documents/sanntid_12/sanntid_project/peer/target/debug/libpeer.rlib: /home/student/Documents/sanntid_12/sanntid_project/peer/Config.toml /home/student/Documents/sanntid_12/sanntid_project/peer/src/config.rs /home/student/Documents/sanntid_12/sanntid_project/peer/src/lib.rs

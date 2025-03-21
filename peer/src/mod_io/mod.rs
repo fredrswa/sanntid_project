@@ -55,7 +55,7 @@ pub fn run(
                 //Update EntireSystem with current es
             }
             recv(network_to_io_rx) -> ww => {
-                let ww = ww.unwrap();
+                //let ww = ww.unwrap();
 
                 //Update EntireSystem with ww
             }

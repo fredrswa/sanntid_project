@@ -12,15 +12,21 @@ use std::env;
 use driver_rust::elevio::elev::Elevator;
 
 
+//////TEMPORARY
+static_toml::static_toml! {
+    pub static CONFIG = include_toml!("Config.toml");
+}
+impl EntireSystem {
+    pub fn template() -> EntireSystem {
+        let es = EntireSystem {
+            hallRequests: vec![[true; 2]; CONFIG.elevator.num_floors as usize],
+            states: HashMap::new(),
+        };
+    es
+    }
+}
 
-////////STRUCTURE//////////
-/// /////////////////// ///
-/// ------Structs------ ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// ---
-/// 
+
 #[derive(Clone)]
 pub struct ElevatorSystem {
     pub elevator: Elevator,
