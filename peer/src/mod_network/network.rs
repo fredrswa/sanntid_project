@@ -98,8 +98,8 @@ pub fn udp_create_socket(addr: &String) -> UdpSocket {
 }
  */
 
- //Receive UDP messages and send them to the channel
- // Message contain the entire system state
+//Receives UDP messages and send them to IO mod over a channel
+//Message contain the entire system state
 pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
     let mut buffer = [0; 1024];
 
@@ -128,7 +128,7 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
 }
 
 
-                                             //Hva skal egentlig sendes?
+//Sends (spams) EntireSystem over UDP to other peers
 pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx: Receiver<EntireSystem>) {  
     loop {
         cbc::select! {
@@ -206,6 +206,7 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(Stri
     }
 }
 
+//Merges world views
 pub fn merge_entire_systems (own_id: String, world_view: EntireSystem, incoming_world_view: EntireSystem) -> EntireSystem {
     let new_world_view = EntireSystem {
         hallRequests: merge_hall_requests(world_view.hallRequests, incoming_world_view.hallRequests),
@@ -226,19 +227,12 @@ pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<
 }
 
 //Merges the states for all elevators in the system. Return new, updates, state.
-//If the elevator being updated is itself, only update cap requests (Not other behavior, as it knows best itself what it does)
-//Else, update according to incoming information from other peer.
+//Update only if not self, DDN TF U DOING.
 pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap<String, States>) -> HashMap<String, States> { 
     let mut new_wws: HashMap<String, States> = HashMap::new();
     
     for ((key1, val1),(key2,val2)) in wws.iter().zip(iwws.iter()) {
-        if *key1 == own_id {
-            new_wws.insert(key1.clone(), val1.clone());
-            new_wws.get_mut(key1).unwrap().cab_requests = val1.cab_requests.iter()
-            .zip(val2.cab_requests.iter())
-            .map(|(&a, &b)| a || b)
-            .collect();
-        } else {
+        if *key1 != own_id {
             new_wws.insert(key1.clone(), val1.clone());
             new_wws.get_mut(key1).unwrap().behavior = val2.behavior;
             new_wws.get_mut(key1).unwrap().direction = val2.direction;
