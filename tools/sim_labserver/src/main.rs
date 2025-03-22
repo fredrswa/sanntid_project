@@ -7,8 +7,7 @@ use rand::Rng;
 
 
 fn main() {
-    //find_actual_server_port();
-    let socket = UdpSocket::bind("127.0.0.1:40012").expect("Could'nt bind to address");
+    let socket = UdpSocket::bind("0.0.0.0:2000").expect("Could'nt bind to address");
     println!("Simulated lab server started at server: {}", socket.local_addr().unwrap());
     
     let mut peers: HashSet<String> = HashSet::new();
@@ -38,14 +37,4 @@ fn main() {
         }
     
     }  
-}
-
-pub fn find_actual_server_port() {
-    let mut buf = [0u8; 1024];
-
-    let socket = UdpSocket::bind("255.255.255.255:3000").expect("Could'nt bind");
-
-
-    let (amt, src) = socket.recv_from(&mut buf).expect("LabServer not live");
-    println!("Labserver on : {}", src);
 }

@@ -11,37 +11,31 @@ use crate::config::*;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
 use crate::mod_io::io::{call_assigner, save_system_state_to_json};
 
-static host: &str = CONFIG.network.host;
-static udp_recv_port: i64 = CONFIG.network.udp_recv;
-static udp_send_port: i64 = CONFIG.network.udp_send;
+static SELF_ID: &str = CONFIG.peer.id;
+static HOST: &str = CONFIG.network.host;
+static UDP_RECV_PORT: i64 = CONFIG.network.udp_recv;
+static UDP_SEND_PORT: i64 = CONFIG.network.udp_send;
 
 pub fn run(
+    
     //Communication with IO module
     network_to_io_tx: &cbc::Sender<EntireSystem>,
     io_to_network_rx: &cbc::Receiver<EntireSystem>,) {
-
-
+    println!("Running network module");
+    let udp_recv_addr = format!("{}:{}", HOST, UDP_RECV_PORT);
+    let socket = Arc::new(udp_create_socket(&udp_recv_addr));
     // Simulate Channels Here //
     let (network_io_redistribute_tx, network_io_redistribute_rx) = cbc::unbounded::<String>(); //ID
     //let (network_io_neworder_tx, network_io_neworder_rx) = cbc::unbounded::<CallOrder>();
     let (network_io_peer_state_tx, netork_io_peer_state_tx) = cbc::unbounded::<PeerState>();
     //           -            //
 
-
-    
-    let mut ps = PeerState {
-        id: PeerStateCONFIG.id.clone(),
-        ip: PeerStateCONFIG.ip.clone(),
-        peers: PeerStateCONFIG.peers.clone(),
-        connected: PeerStateCONFIG.connected.clone(),
-    };
-
     /* ########################### Udp #################################################################################### */
     let (udp_sender_tx, udp_sender_rx) = cbc::unbounded::<EntireSystem>();
     let (udp_listener_tx, udp_listener_rx) = cbc::unbounded::<EntireSystem>();
-    let udp_recv_addr = format!("{}:{}",host, udp_recv_port);
-    let udp_send_addr = format!("{}:{}",host, udp_send_port);
-    let udp_socket = Arc::new(udp_create_socket(&udp_recv_addr));
+    let udp_recv_addr = format!("{}:{}",HOST, UDP_RECV_PORT);
+    let udp_send_addr = format!("{}:{}",HOST, UDP_SEND_PORT);
+    let udp_socket = Arc::clone(&socket);
     
     let udp_send_socket = Arc::clone(&udp_socket);
     let udp_receive_socket = Arc::clone(&udp_socket);
@@ -55,12 +49,14 @@ pub fn run(
     /* ########################### Hearbeat ############################################################################### */
     let (udp_heartbeat_tx, udp_heartbeat_rx) = cbc::unbounded::<(String, bool)>();
 
-    let heartbeat_socket = Arc::new(udp_create_socket(&ps.ip));
+    let heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&socket);
     
-    let send_heartbeat_socket = Arc::clone(&heartbeat_socket);
-    let receive_heartbeat_socket = Arc::clone(&heartbeat_socket);
+    let send_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
+    let receive_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
 
-    {spawn(move || send_heartbeat(&send_heartbeat_socket, &ps.id, &ps.peers))};
+
+    // SPAWN HEATBEAT FUNCTIONS
+    {spawn(move || send_heartbeat(&send_heartbeat_socket, &SELF_ID.to_string()))};
     {spawn(move || receive_hearbeat(&receive_heartbeat_socket, udp_heartbeat_tx))};
     /* #################################################################################################################### */
 
@@ -70,13 +66,13 @@ pub fn run(
             recv(udp_heartbeat_rx) -> heartbeat => {
                 let (id, val) = heartbeat.unwrap();
                 
-                ps.connected.insert(id.clone(), val);
+                //ps.connected.insert(id.clone(), val);
                 
-                println!("###########");
-                for (_id, _val) in &ps.connected {
-                    println!("{}->{}", _id, _val);
-                }
-                println!("###########\n");
+            // println!("###########");
+            // for (_id, _val) in &ps.connected {
+            //     println!("{}->{}", _id, _val);
+            // }
+            // println!("###########\n");
             }
             recv(udp_listener_rx) -> sys => {
                 let sys = sys.unwrap();

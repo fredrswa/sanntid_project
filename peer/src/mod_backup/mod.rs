@@ -18,8 +18,9 @@ use static_toml;
 //config.rs has configuration og structs and debug
 use crate::config::*;
 
-static sleep_dur_mill: u64 = CONFIG.backup.sleep_dur_milli as u64;
-static backup_addr: &str = CONFIG.backup.sec_recv;
+static SLEEP_MILLI: u64 = CONFIG.backup.sleep_dur_milli as u64;
+static BACKUP_ADDR: &str = CONFIG.backup.sec_recv;
+static MAX_ATTEMPTS: i64 = CONFIG.backup.attempts;
 
 
 
@@ -32,14 +33,12 @@ pub fn backup_state() -> EntireSystem{
     let mut system_state: EntireSystem = EntireSystem::template();
 
     //Parameters for the loop and break condition
-    let sleep_dur = Duration::from_millis(CONFIG.backup.sleep_dur_milli as u64 - 50);
+    let sleep_dur = Duration::from_millis(SLEEP_MILLI - 50);
     let mut buffer: [u8; 1024] = [0; 1024]; //Adjust if packages are bigger
     let mut attempts = 0;
-    let max_attempts = CONFIG.backup.attempts;
-
 
     //Socket to listen on:
-    let backup_socket = create_socket(backup_addr.to_string());
+    let backup_socket: UdpSocket = UdpSocket::bind(BACKUP_ADDR.to_string()).expect("Could'nt setup receiver");
 
 
     //Enter loop that listens to the state of primary, if primary dies, we take over based on the last seen state.
@@ -70,7 +69,7 @@ pub fn backup_state() -> EntireSystem{
                 attempts +=1; //Same case as above
             }
         }
-        if attempts >= max_attempts {
+        if attempts >= MAX_ATTEMPTS {
             drop(backup_socket); //Allows the next secondary to be spawned securely.
             return system_state;
         }    
@@ -89,15 +88,9 @@ pub fn spawn_secondary() {
         .arg("-e")
         .arg("cargo")
         .arg("run")
-        .arg(id)
         .arg(primary)
         .stdout(Stdio::null())  // Avoid blocking by suppressing stdout
         .stderr(Stdio::null())  // Suppress stderr
         .spawn()
         .expect("Failed to start secondary process in new xterm terminal. Start it yourself with cargo run -- false");
-}
-
-pub fn create_socket(addr: String) -> UdpSocket {
-    let socket = UdpSocket::bind(addr).expect("Could'nt setup receiver");
-    socket
 }

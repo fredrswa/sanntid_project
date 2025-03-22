@@ -19,6 +19,9 @@ use crate::config::*;
 const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
 
+static host: &str = CONFIG.network.host;
+static udp_recv_port: i64 = CONFIG.network.udp_recv;
+static udp_send_port: i64 = CONFIG.network.udp_send;
 
 pub fn udp_create_socket(addr: &String) -> UdpSocket {
     let socket = match UdpSocket::bind(addr) {
@@ -154,14 +157,16 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
 } 
 
 //Send heartbeats to all peers to indicate that the elevator is still alive
-pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_addresses: &Vec<String>) -> std::io::Result<()> {
+pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io::Result<()> {
+    println!("Sending Heartbeat");
+    let udp_send_addr = format!("{}:{}", host, udp_send_port);
     loop {
-        for peer_address in peer_addresses.iter(){
-            match heartbeat_socket.send_to( &peer_id.as_bytes(), &peer_address){
+        
+            match heartbeat_socket.send_to( &peer_id.as_bytes(), udp_send_addr.clone()){
                 Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
-                Err(e) => {eprintln!("Failed to send heartbeat to {}: {}", &peer_address , e);}
+                Err(e) => {eprintln!("Failed to send heartbeat");}
             };
-        }
+        
         thread::sleep(Duration::from_millis(1000));
     }
 }

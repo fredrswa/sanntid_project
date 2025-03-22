@@ -19,8 +19,6 @@ static_toml::static_toml! {
 
     ///choices for testing locally
     pub static CONFIG = include_toml!("config_files/config_peer_local_1.toml");
-    // pub static CONFIG = include_toml!("config_files/config_peer_local_2.toml");
-    // pub static CONFIG = include_toml!("config_files/config_peer_local_3.toml");
     
 }
 impl EntireSystem {
@@ -106,16 +104,6 @@ pub struct PeerState {
     pub connected: HashMap<String, bool>, //[id -> connected true or false] If udp dont receive heartbeat -> not connected
 }
 
-pub static PeerStateCONFIG: Lazy<PeerState> = Lazy::new(|| {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        panic!("Please provide the elevator id number as a command-line argument!");
-    }
-    let elev_num: usize = args[1].parse().expect("Invalid elevator number!");
-
-    let config_str = fs::read_to_string(format!("../tools/generate_json/peer_state_id:{}.json", elev_num)).expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
 
 pub enum Timeout_type {
     fsm_obstruction = 0,

@@ -4,11 +4,10 @@
 //! Then "listens" for recovery using timeout_rx which sends a struct indicating which module has failed.
 
 /// INCLUDES
-use std::{env, io::Result};
+use std::{env, io::Result, net::UdpSocket};
 use std::time::Duration;
 use config::*;
 use crossbeam_channel::{select, unbounded, Sender, Receiver};
-use mod_backup::create_socket;
 use std::thread::{spawn, sleep};
 use once_cell::sync::Lazy;
 use static_toml;
@@ -32,7 +31,7 @@ use crate::config::CONFIG;
 fn main() -> Result<()> {
     //Read command line arguments
     let command_line_arguments: Vec<String>= env::args().collect();
-    let is_primary: bool = command_line_arguments.get(2).expect("Specify primary -- id true/false").parse().unwrap();
+    let is_primary: bool = command_line_arguments.get(1).expect("Specify primary -- id true/false").parse().unwrap();
 
 
     
@@ -41,7 +40,7 @@ fn main() -> Result<()> {
     } else {
         let _ = mod_hardware::init();
     }
-
+    
 
     
 
@@ -58,7 +57,7 @@ fn main() -> Result<()> {
  
 
     let ss = EntireSystem::template();
-    let pri_send = create_socket(CONFIG.backup.pri_send.to_string());
+    let pri_send = UdpSocket::bind(CONFIG.backup.pri_send.to_string()).expect("Could'nt setup receiver");
     let ss_serialized = serde_json::to_string(&ss).unwrap();
     let sec_recv = CONFIG.backup.sec_recv;
 
@@ -95,6 +94,9 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
     let (fsm_to_io_tx, fsm_to_io_rx) = unbounded::<ElevatorSystem>();
     /* ############################################################################################################ */
 
+
+
+    println!("Spawning Modules");
     {
         /* ######### Run FSM module ################################################################## */
         let mut es1 = es.clone();
@@ -120,14 +122,8 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
     }
 
-    let ss = EntireSystem::template();
-    let pri_send = create_socket(CONFIG.backup.pri_send.to_string());
-    let ss_serialized = serde_json::to_string(&ss).unwrap();
-    let sec_recv = CONFIG.backup.sec_recv;
     loop {
-        sleep(Duration::from_millis(1000));
-
-        pri_send.send_to(ss_serialized.as_bytes(),  sec_recv);
+        
         select! {
             default => {}
         }
