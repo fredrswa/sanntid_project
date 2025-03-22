@@ -1,76 +1,85 @@
-pub mod fsm;
-pub mod requests;
-pub mod timer;
+//! This module handles the operation of the finite state machine (elevator)
+//! Or
 
-use std::time::Duration;
+
+/// Sub Modules (created from handout)
+pub mod fsm;            //Handles implemantation logic
+pub mod requests;       //Handles logic regarding requests
+pub mod timer;          //Timer for generating timout and handling door_open time and obstruction.
+pub mod hardware;       //Handles hardware interaction
+
+
+///Crates
+use crate::config::*;                   //Config has every struct
+use crate::mod_fsm::timer::Timer;       
+
+///
 use crossbeam_channel as cbc;
-use std::thread::spawn;
-
 use driver_rust::elevio::poll as sensor_polling;
-use crate::config::{self, CONFIG};
+use std::thread::{spawn, sleep};
+use core::time::Duration;
 
 
-pub fn run_fsm() {
-    let es = config::ElevatorSystem::new(15665, true);
-    let elevator = es.elevator.clone();
+/// Runs the FSM_module
+/// - Interacts with IO to handle and generate order
+pub fn run(
+    es: &mut ElevatorSystem,
+    call_from_io_rx: &cbc::Receiver<sensor_polling::CallButton>,
+    timout_tx: &cbc::Sender<Timeout_type>,
+    fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
+    ) {
+
+
+    /* ########################### FSM Sensors ######################################################################## */
     let poll_period = Duration::from_millis(25);
-
-    let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
-    {
-        let elevator = elevator.clone();
-        spawn(move || sensor_polling::call_buttons(elevator, call_button_tx, poll_period)); 
-    }
-
+    let mut timer = Timer::new(Duration::from_secs(es.door_open_s as u64));
     let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>(); 
-    {
-        let elevator = elevator.clone();
-        spawn(move || sensor_polling::floor_sensor(elevator, floor_sensor_tx, poll_period)); 
-    }
-
-    let (stop_button_tx, stop_button_rx) = cbc::unbounded::<bool>(); 
-    {
-        let elevator = elevator.clone();
-        spawn(move || sensor_polling::stop_button(elevator, stop_button_tx, poll_period)); 
-    }
-
     let (obstruction_tx, obstruction_rx) = cbc::unbounded::<bool>(); 
     {
-        let elevator = elevator.clone();
+        let elevator = es.elevator.clone();
+        spawn(move || sensor_polling::floor_sensor(elevator, floor_sensor_tx, poll_period)); 
+        let elevator = es.elevator.clone();
         spawn(move || sensor_polling::obstruction(elevator, obstruction_tx, poll_period)); 
     }
+    /* ############################################################################################################### */
 
-    let timer = Timer::new(Duration::from_secs(CONFIG.door_open_s as u64));
-    fsm_init(&mut elevator);
-    println!("{}", &elevator);
-    
+    es.init();
+
     loop {
         cbc::select! {
-            recv(call_button_rx) -> cb_message => {
-                let call_button = cb_message.unwrap();
-                println!("{}", &elevator);
-                fsm_on_request_button_press(&mut elevator, &timer.clone(), call_button.floor as usize, ButtonType::from_u8(call_button.call).unwrap());
+            recv(call_from_io_rx) -> cb_message => {
+                if let Ok(call_button) = cb_message {
+                    println!{"{}", &es};
+                    es.on_request_button_press(&mut timer, call_button.floor as usize, call_to_button_type(call_button.call));
+                }
             }
-
             recv(floor_sensor_rx) -> fs_message => {
-                let floor = fs_message.unwrap();
-                fsm_on_floor_arrival(&mut elevator, &timer.clone(), floor as usize);
-            }
+                if let Ok(floor) = fs_message {
+                    es.on_floor_arrival(&mut timer, floor as usize);
 
-            recv(stop_button_rx) -> sb_message => {
-                let _stop = sb_message.unwrap();
+                    fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
+                }
             }
-
             recv(obstruction_rx) -> ob_message => {
-                let _obstr = ob_message.unwrap();
+                if let Ok(obs) = ob_message {
+                    if !obs {
+                        timer.start();
+                    }
+                    es.status.door_blocked = obs;
+                }
             }
-            default => {sleep(Duration::from_millis(25))}
-            
+            default => {sleep(poll_period);}
         }
-        if timer.is_expired() {
-            fsm_on_door_timeout(&mut elevator, &timer.clone());
-        }  
-    }
-    loop {
+        if timer.is_expired() && !es.status.door_blocked {
+            es.on_door_timeout(&mut timer);
+        }
+
         
+        // send own state
+        // send confirmation on taken order
+        
+
+
+
     }
 }

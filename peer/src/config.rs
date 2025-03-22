@@ -1,42 +1,36 @@
+#![allow(dead_code)]
+use std::net::IpAddr;
+use std::u8;
+use std::fmt;
 use serde::{Serialize, Deserialize};
 use std::{fs, os::unix::raw::ino_t};
 use serde_json;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
-use std::u8;
-use std::fmt;
-
+use std::env;
 
 use driver_rust::elevio::elev::Elevator;
 
+////////STRUCTURE//////////
+/// /////////////////// ///
+/// ------Structs------ ///
+/// /////////////////// ///
+/// /////////////////// ///
+/// /////////////////// ///
+/// ---
+/// 
+#[derive(Clone)]
+pub struct ElevatorSystem {
+    pub elevator: Elevator,
+    pub requests: Vec<Vec<bool>>,
+    pub status: Status,
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct Config {
     pub num_floors: usize,
     pub num_buttons: usize,
-    pub num_elevators: usize,
     pub door_open_s: usize,
-    pub id: String,
-    pub elev_addr: String,
-    pub udp_socket_addr: String,
-    pub udp_recv_port: String,
+    pub addr: String,
+
 }
-
-pub static CONFIG: Lazy<Config> = Lazy::new(|| {
-    let config_str = fs::read_to_string("config.json").expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
-
-
-// ALLE STRUCTS
-
-pub struct PeerState {
-    id: String,
-    es: ElevatorSystem,
-    humble: bool,
-    online: bool,
-}
-
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct States {
@@ -51,6 +45,10 @@ pub struct EntireSystem {
     pub hallRequests: Vec<[bool; 2]>,
     pub states: HashMap<String, States>,
 } 
+pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
+    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
 
 //Dynamically sized struct, makes it possible with an arbitrary number of elevators
 #[derive(serde::Deserialize, Debug)]
@@ -58,18 +56,90 @@ pub struct AssignerOutput {
     pub elevators: Vec<Option<Vec<Vec<bool>>>>,
 }
 impl AssignerOutput {
-    pub fn new(num_floors: usize, elevator_count: usize) -> Self {
-        let vec_of_bools = vec![vec![false; 3]; num_floors];
-        let mut elevators = Vec::with_capacity(elevator_count);
+    pub fn new(num_floors: usize, num_elevators: usize) -> Self {
+        let states = vec![vec![false; 3]; num_floors];
+        let mut elevators = Vec::with_capacity(num_elevators);
 
-        // Add fields up to `field_count`, each filled with the same data
-        for _ in 0..elevator_count {
-            elevators.push(Some(vec_of_bools.clone()));
+        for _ in 0..num_elevators {
+            elevators.push(Some(states.clone()));
         }
 
         AssignerOutput { elevators }
     }
 }
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct Config {
+    pub num_floors: usize,
+    pub num_buttons: usize,
+    pub num_elevators: usize,
+    pub door_open_s: usize,
+    pub id: String,
+    pub elev_addr: String,
+    pub udp_socket_addr: String,
+    pub udp_others_addr: Vec<String>,
+    pub udp_recv_port: String,
+}
+
+/* impl Config {
+    pub fn import() -> Config {
+        let config_string = fs::read_to_string("config.json").expect("Unable to read file");
+        let config: Config = serde_json::from_str(&config_string).expect("JSON was not well-formatted");
+        config
+    }
+} */
+
+//Bedre ?? Gjør at config bare må leses en gang. 
+pub static CONFIG: Lazy<Config> = Lazy::new(|| {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        panic!("Please provide the elevator id number as a command-line argument!");
+    }
+    let elev_num: usize = args[1].parse().expect("Invalid elevator number!");
+
+    let config_str = fs::read_to_string(format!("../tools/generate_json/config_id:{}.json", elev_num)).expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
+
+#[derive(Clone)]
+pub struct Status {
+    pub curr_floor: usize,
+    pub curr_dirn: Dirn,
+    pub behavior: Behavior,
+    pub door_blocked: bool,    
+    pub clear_requests: ClearRequestVariant,
+}
+impl Status {
+    pub fn new() -> Status {
+        Status {
+            curr_floor: 0,
+            curr_dirn: Dirn::Stop,
+            behavior: Behavior::Idle,
+            door_blocked: false,
+            clear_requests: ClearRequestVariant::ClearAll,
+        }
+    }
+}
+
+//Kan bygges ut dersom det trengs flere states
+#[derive(Serialize, Deserialize, Clone)]
+pub struct PeerState {
+    pub id: String,
+    pub ip: String, 
+    pub peers: Vec<String>, //Peer heartbeat ip adresses 
+    pub connected: HashMap<String, bool>, //[id -> connected true or false] If udp dont receive heartbeat -> not connected
+}
+
+pub static PeerStateCONFIG: Lazy<PeerState> = Lazy::new(|| {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        panic!("Please provide the elevator id number as a command-line argument!");
+    }
+    let elev_num: usize = args[1].parse().expect("Invalid elevator number!");
+
+    let config_str = fs::read_to_string(format!("../tools/generate_json/peer_state_id:{}.json", elev_num)).expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
 
 pub enum Timeout_type {
     fsm_obstruction = 0,
@@ -77,19 +147,9 @@ pub enum Timeout_type {
     fsm_powerloss   = 2,
 
     network_disconnect = 3,
-    network_
 }
 
-/* ELEVATOR STRUCTS */
-
-#[derive(Clone)]
-pub struct ElevatorSystem {
-    pub elevator: Elevator,
-    pub requests: Vec<Vec<bool>>,
-    pub status: Status,
-}
-
-//use driver_rust::elevio::elev::{self, Elevator};
+///////////////FSM////////////////////
 
 #[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum Behavior {
@@ -119,6 +179,12 @@ pub enum ClearRequestVariant {
     ClearInDirection,
 }
 
+#[derive(Copy, Clone)]
+pub struct DirnBehaviorPair {
+    pub direction: Dirn,
+    pub behavior: Behavior,
+}
+
 pub fn call_to_button_type(call: u8) -> ButtonType {
     match call {
         0 => ButtonType::HallUp,
@@ -128,32 +194,8 @@ pub fn call_to_button_type(call: u8) -> ButtonType {
     }
 }
 
-#[derive(Copy, Clone)]
-pub struct DirnBehaviorPair {
-    pub direction: Dirn,
-    pub behavior: Behavior,
-}
 
-#[derive(Clone)]
-pub struct Status {
-    pub curr_floor: usize,
-    pub curr_dirn: Dirn,
-    pub behavior: Behavior,
-    pub door_blocked: bool,    
-    pub clear_requests: ClearRequestVariant,
-}
-
-impl Status {
-    pub fn new() -> Status {
-        Status {
-            curr_floor: 0,
-            curr_dirn: Dirn::Stop,
-            behavior: Behavior::Idle,
-            door_blocked: false,
-            clear_requests: ClearRequestVariant::ClearAll,
-        }
-    }
-}
+///////////////DEBUGS////////////////////
 
 
 impl fmt::Debug for Behavior {
@@ -210,5 +252,23 @@ impl fmt::Debug for ClearRequestVariant {
             ClearRequestVariant::ClearAll => write!(f, "Clear All"),
             ClearRequestVariant::ClearInDirection => write!(f, "Clear In Direction"),
         }
+    }
+}
+
+impl fmt::Display for ElevatorSystem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+       
+        write!(f, "     ")?;
+        println!("\tHU, \tHD, \tCab");
+        
+        write!(f, "\n")?;
+        for (floor, row) in self.requests.iter().enumerate().rev() {
+            write!(f, "F{}\t: ", floor + 1)?;
+            for &request in row.iter() {
+            write!(f, "{}\t ", if request { "X" } else { " " })?;
+            }
+            write!(f, "\n")?;
+        }
+        Ok(())
     }
 }

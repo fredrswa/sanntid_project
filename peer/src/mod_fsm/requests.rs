@@ -1,8 +1,8 @@
 use crate::config::*;
 
 pub fn requests_above(es: &ElevatorSystem) -> bool {
-  for floor in (es.status.curr_floor as usize + 1)..CONFIG.num_floors {
-    for button in 0..CONFIG.num_buttons {
+  for floor in (es.status.curr_floor as usize + 1)..es.num_floors {
+    for button in 0..es.num_buttons {
       if es.requests[floor][button] {
         return true;
       }
@@ -13,7 +13,7 @@ pub fn requests_above(es: &ElevatorSystem) -> bool {
 
 pub fn requests_below(es: &ElevatorSystem) -> bool {
   for floor in 0..es.status.curr_floor as usize {
-    for button in 0..CONFIG.num_buttons {
+    for button in 0..es.num_buttons {
       if es.requests[floor][button] {
         return true;
       }
@@ -23,7 +23,7 @@ pub fn requests_below(es: &ElevatorSystem) -> bool {
 }
 
 pub fn requests_here(es: &ElevatorSystem) -> bool {
-  for button in 0..CONFIG.num_buttons {
+  for button in 0..es.num_buttons {
     if es.requests[es.status.curr_floor as usize][button] {
       return true;
     }
@@ -86,6 +86,7 @@ pub fn requests_should_stop(es: &ElevatorSystem) -> bool {
       }
   }
 }
+
 pub fn requests_should_clear_immediately(es: &ElevatorSystem, btn_floor: usize, btn_type: ButtonType) -> bool {
   es.status.curr_floor as usize == btn_floor && (
       (es.status.curr_dirn as usize == Dirn::Up   as usize   && btn_type as usize == ButtonType::HallUp   as usize)  ||

@@ -1,55 +1,32 @@
-#![allow(dead_code)]
-// ^ Packages
-use std::thread::{spawn,sleep};
-use std::time::Duration;
-use std::fmt;
-//use core::panic;
-use crossbeam_channel as cbc;
-
 // ^ Driver
 use driver_rust::elevio::elev::Elevator;
-use driver_rust::elevio::poll as sensor_polling;
+
+// ^ Crates
+use crate::config::*;
 
 // ^ mod_fsm
+use super::hardware::init_elevator;
 use super::requests::*;
 use super::timer::Timer;
 
-// ^ mod_startup
-use crate::mod_startup::hardware::*;
-
-// ^ config
-use crate::config::*;
-
-impl fmt::Display for ElevatorSystem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-       
-        write!(f, "     ")?;
-        println!("\tHU, \tHD, \tCab");
-        
-        write!(f, "\n")?;
-        for (floor, row) in self.requests.iter().enumerate().rev() {
-            write!(f, "F{}\t: ", floor + 1)?;
-            for &request in row.iter() {
-            write!(f, "{}\t ", if request { "X" } else { " " })?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
-    }
-}
 
 impl ElevatorSystem {
-    pub fn new(port_number: usize, sim: bool) -> ElevatorSystem {
+    pub fn new() -> ElevatorSystem {
         ElevatorSystem {
-          elevator: match init_elevator(port_number, 0, sim) { 
+          //Constants Read from Config file
+          num_floors: CONFIG.num_floors,
+          num_buttons: CONFIG.num_buttons,
+          door_open_s: CONFIG.door_open_s,
+          addr: CONFIG.elev_addr.clone(),
+          
+          elevator: match init_elevator(CONFIG.elev_addr.clone(), 0, true) {
+          //elevator: match Elevator::init(&CONFIG.elev_addr, CONFIG.num_floors as u8) {
             Ok(e) => e,
-            Err(e) => {
-                println!("Failed to connect to elevator: {}", e);
-                panic!("Cannot start ElevatorSystem without a connection");
-            }
+            Err(e) => {panic!("Cannot start without elevator connection: {}", e);},
           },
-            requests: vec![vec![false; CONFIG.num_buttons as usize]; CONFIG.num_floors as usize],
-            status: Status::new(),
+          //Requests size is dictated at runtime, therefore it is a vector.
+          requests: vec![vec![false; CONFIG.num_buttons as usize]; CONFIG.num_floors as usize],
+          status: Status::new(),
         }
     }
     
@@ -77,12 +54,13 @@ impl ElevatorSystem {
     }
 
     pub fn set_all_lights(&mut self){
-        for floor in 0..CONFIG.num_floors {
-            for btn in 0..CONFIG.num_buttons {
+        for floor in 0..self.num_floors {
+            for btn in 0..self.num_buttons{
                 self.elevator.call_button_light(floor as u8, btn as u8, self.requests[floor as usize][btn as usize]);
             }
         }
     }
+
     pub fn on_request_button_press(&mut self, timer: &mut Timer, btn_floor: usize, btn_type: ButtonType) {
         match self.status.behavior {
             Behavior::DoorOpen => {
@@ -128,7 +106,6 @@ impl ElevatorSystem {
           self.set_all_lights();
     }
 
-
     pub fn on_floor_arrival(&mut self, timer: &mut Timer, new_floor: usize) {
         self.status.curr_floor = new_floor;
         self.elevator.floor_indicator(self.status.curr_floor as u8);
@@ -147,6 +124,7 @@ impl ElevatorSystem {
             _=> { }
         }
     }
+    
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
         match self.status.behavior {
           Behavior::DoorOpen => {
@@ -176,6 +154,5 @@ impl ElevatorSystem {
           }
           _=> {}
         }
-      }
+    }        
 }
-
