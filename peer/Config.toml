@@ -1,14 +1,9 @@
-<<<<<<< HEAD
 [peer]
 id = 1
 
 
 [hardware]
 addr        = 15657
-=======
-[hardware]
-addr        = "localhost:15657"
->>>>>>> 9ca0225 (fixed some errors from the lab)
 sim         = true
 num_floors  = 4
 
@@ -29,12 +24,7 @@ udp_recv    = 40012
 
 
 [backup]
-<<<<<<< HEAD
 pri_send        = "localhost:40000"
 sec_recv        = "localhost:40001"
-=======
-pri_send        = "localhost:"
-sec_recv        = "localhost:"
->>>>>>> 9ca0225 (fixed some errors from the lab)
 attempts        = 3
 sleep_dur_milli = 1000
