@@ -3,9 +3,7 @@ use std::fs;
 use crate::config::*;
 
 
-static_toml::static_toml! {
-    static CONFIG = include_toml!("Config.toml");
-}
+
 
 pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
     

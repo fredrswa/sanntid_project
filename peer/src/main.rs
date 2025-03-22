@@ -65,10 +65,10 @@ fn main() -> Result<()> {
 
     //Recovery Scripts
     loop{
-        sleep(Duration::from_millis(1000));
+        sleep(Duration::from_millis(CONFIG.backup.sleep_dur_milli as u64));
 
         pri_send.send_to(ss_serialized.as_bytes(),  sec_recv);
-        println!("Sent: {}", ss_serialized);
+        //println!("Sent: {}", ss_serialized);
         select! {
             recv(timeout_rx) -> timout_struct => {
                 

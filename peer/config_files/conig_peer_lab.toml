@@ -1,0 +1,32 @@
+[peer]
+id    = 1
+peers = 3
+
+
+[hardware]
+addr        = 15657
+sim         = false
+num_floors  = 4
+
+
+[elevator]
+addr            = "localhost:15657"
+num_floors      = 4
+door_open_s     = 3
+door_timout_s   = 10
+motor_timeout_s = 10
+
+
+[network]
+peers       = 3
+# host is set to either localhost/127.0.0.1 or the lab server.
+host        = "127.0.0.1"
+udp_send    = 40012
+udp_recv    = 40013
+
+
+[backup]
+pri_send        = "localhost:40000"
+sec_recv        = "localhost:40001"
+attempts        = 3
+sleep_dur_milli = 1000

@@ -5,7 +5,7 @@ peers = 3
 
 [hardware]
 addr        = 15657
-sim         = true
+sim         = false
 num_floors  = 4
 
 

@@ -32,7 +32,7 @@ pub fn backup_state() -> EntireSystem{
     let mut system_state: EntireSystem = EntireSystem::template();
 
     //Parameters for the loop and break condition
-    let sleep_dur = Duration::from_millis(CONFIG.backup.sleep_dur_milli as u64);
+    let sleep_dur = Duration::from_millis(CONFIG.backup.sleep_dur_milli as u64 - 50);
     let mut buffer: [u8; 1024] = [0; 1024]; //Adjust if packages are bigger
     let mut attempts = 0;
     let max_attempts = CONFIG.backup.attempts;
@@ -56,7 +56,7 @@ pub fn backup_state() -> EntireSystem{
 
                 if let Ok(parsed) = serde_json::from_str::<EntireSystem>(&received.trim()) {
                     system_state = parsed;
-                    println!("SystemState = {:?}", system_state);
+                    println!("Received valid state from primary");
                     attempts = 0; // We have a good state, reset attempts.
                 } else {
                     attempts += 1; //We count invalid messages towards attempt.
