@@ -11,25 +11,32 @@ use std::env;
 
 use driver_rust::elevio::elev::Elevator;
 
-////////STRUCTURE//////////
-/// /////////////////// ///
-/// ------Structs------ ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// /////////////////// ///
-/// ---
-/// 
+
+//////TEMPORARY
+static_toml::static_toml! {
+    ///main file for running when running at lab
+    // pub static CONFIG = include_toml!("Config.toml");
+
+    ///choices for testing locally
+    pub static CONFIG = include_toml!("config_files/config_peer_local_1.toml");
+    
+}
+impl EntireSystem {
+    pub fn template() -> EntireSystem {
+        let es = EntireSystem {
+            hallRequests: vec![[true; 2]; CONFIG.elevator.num_floors as usize],
+            states: HashMap::new(),
+        };
+    es
+    }
+}
+
+
 #[derive(Clone)]
 pub struct ElevatorSystem {
     pub elevator: Elevator,
     pub requests: Vec<Vec<bool>>,
     pub status: Status,
-
-    pub num_floors: usize,
-    pub num_buttons: usize,
-    pub door_open_s: usize,
-    pub addr: String,
-
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -68,39 +75,6 @@ impl AssignerOutput {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone)]
-pub struct Config {
-    pub num_floors: usize,
-    pub num_buttons: usize,
-    pub num_elevators: usize,
-    pub door_open_s: usize,
-    pub id: String,
-    pub elev_addr: String,
-    pub udp_socket_addr: String,
-    pub udp_others_addr: Vec<String>,
-    pub udp_recv_port: String,
-}
-
-/* impl Config {
-    pub fn import() -> Config {
-        let config_string = fs::read_to_string("config.json").expect("Unable to read file");
-        let config: Config = serde_json::from_str(&config_string).expect("JSON was not well-formatted");
-        config
-    }
-} */
-
-//Bedre ?? Gjør at config bare må leses en gang. 
-pub static CONFIG: Lazy<Config> = Lazy::new(|| {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        panic!("Please provide the elevator id number as a command-line argument!");
-    }
-    let elev_num: usize = args[1].parse().expect("Invalid elevator number!");
-
-    let config_str = fs::read_to_string(format!("../tools/generate_json/config_id:{}.json", elev_num)).expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
-
 #[derive(Clone)]
 pub struct Status {
     pub curr_floor: usize,
@@ -130,16 +104,6 @@ pub struct PeerState {
     pub connected: HashMap<String, bool>, //[id -> connected true or false] If udp dont receive heartbeat -> not connected
 }
 
-pub static PeerStateCONFIG: Lazy<PeerState> = Lazy::new(|| {
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        panic!("Please provide the elevator id number as a command-line argument!");
-    }
-    let elev_num: usize = args[1].parse().expect("Invalid elevator number!");
-
-    let config_str = fs::read_to_string(format!("../tools/generate_json/peer_state_id:{}.json", elev_num)).expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
 
 pub enum Timeout_type {
     fsm_obstruction = 0,

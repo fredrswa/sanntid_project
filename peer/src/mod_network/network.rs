@@ -2,8 +2,7 @@
 // Detetect dead elevators by sending and receiving heartbeats
 
 ///Includes
-use std::collections::{hash_map, HashMap};
-use std::os::linux::raw::stat;
+use std::collections::HashMap;
 use std::time::{Instant, Duration};
 use std::net::UdpSocket;
 use std::io;
@@ -20,6 +19,9 @@ use crate::config::*;
 const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
 
+static host: &str = CONFIG.network.host;
+static udp_recv_port: i64 = CONFIG.network.udp_recv;
+static udp_send_port: i64 = CONFIG.network.udp_send;
 
 pub fn udp_create_socket(addr: &String) -> UdpSocket {
     let socket = match UdpSocket::bind(addr) {
@@ -98,8 +100,8 @@ pub fn udp_create_socket(addr: &String) -> UdpSocket {
 }
  */
 
-//Receives UDP messages and send them to IO mod over a channel
-//Message contain the entire system state
+ //Receive UDP messages and send them to the channel
+ // Message contain the entire system state
 pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
     let mut buffer = [0; 1024];
 
@@ -128,8 +130,8 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
 }
 
 
-//Sends (spams) EntireSystem over UDP to other peers
-pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx: Receiver<EntireSystem>) {  
+                                             //Hva skal egentlig sendes?
+pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<EntireSystem>) {  
     loop {
         cbc::select! {
             recv(udp_sender_rx) -> sys => {
@@ -142,28 +144,29 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx:
                     }    
                 };
         
-                for peer_address in peer_addresses.iter(){
-                    match socket.send_to(json_msg.as_bytes(), peer_address) {
+                    match socket.send_to(json_msg.as_bytes(), peer_addresses.clone()) {
                         Ok(ok) => ok,//Ack send to io
                         Err(e) => {
-                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
+                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
                         }
                     };
-                }
+                
             }
         }
     }  
 } 
 
 //Send heartbeats to all peers to indicate that the elevator is still alive
-pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, peer_addresses: &Vec<String>) -> std::io::Result<()> {
+pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io::Result<()> {
+    println!("Sending Heartbeat");
+    let udp_send_addr = format!("{}:{}", host, udp_send_port);
     loop {
-        for peer_address in peer_addresses.iter(){
-            match heartbeat_socket.send_to( &peer_id.as_bytes(), &peer_address){
+        
+            match heartbeat_socket.send_to( &peer_id.as_bytes(), udp_send_addr.clone()){
                 Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
-                Err(e) => {eprintln!("Failed to send heartbeat to {}: {}", &peer_address , e);}
+                Err(e) => {eprintln!("Failed to send heartbeat");}
             };
-        }
+        
         thread::sleep(Duration::from_millis(1000));
     }
 }
@@ -204,45 +207,4 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(Stri
             }
         }
     }
-}
-
-//Merges world views
-pub fn merge_entire_systems (own_id: String, world_view: EntireSystem, incoming_world_view: EntireSystem) -> EntireSystem {
-    let new_world_view = EntireSystem {
-        hallRequests: merge_hall_requests(world_view.hallRequests, incoming_world_view.hallRequests),
-        states: merge_states(own_id, world_view.states, incoming_world_view.states)
-    };
-
-    new_world_view
-}
-
-//Logical OR between all values in the hall_requests vector
-pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<[bool; 2]> { 
-    let new_ww: Vec<[bool; 2]> = wwhr.iter()
-        .zip(iwwhr.iter())
-        .map(|(&a, &b)| [a[0] || b[0], a[1] || b[1]])
-        .collect();
-    
-    new_ww
-}
-
-//Merges the states for all elevators in the system. Return new, updates, state.
-//Update only if not self, DDN TF U DOING.
-pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap<String, States>) -> HashMap<String, States> { 
-    let mut new_wws: HashMap<String, States> = HashMap::new();
-    
-    for ((key1, val1),(key2,val2)) in wws.iter().zip(iwws.iter()) {
-        if *key1 != own_id {
-            new_wws.insert(key1.clone(), val1.clone());
-            new_wws.get_mut(key1).unwrap().behavior = val2.behavior;
-            new_wws.get_mut(key1).unwrap().direction = val2.direction;
-            new_wws.get_mut(key1).unwrap().floor = val2.floor;
-            new_wws.get_mut(key1).unwrap().cab_requests = val1.cab_requests.iter()
-            .zip(val2.cab_requests.iter())
-            .map(|(&a, &b)| a || b)
-            .collect();
-        }
-    };
-
-    return new_wws;
 }

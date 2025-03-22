@@ -1,3 +1,4 @@
+
 // ^ Driver
 use driver_rust::elevio::elev::Elevator;
 
@@ -5,27 +6,25 @@ use driver_rust::elevio::elev::Elevator;
 use crate::config::*;
 
 // ^ mod_fsm
-use super::hardware::init_elevator;
 use super::requests::*;
 use super::timer::Timer;
 
+static NUM_FLOORS: i32 = CONFIG.elevator.num_floors as i32;
+static NUM_BUTTONS: i32 = 3;
 
 impl ElevatorSystem {
     pub fn new() -> ElevatorSystem {
-        ElevatorSystem {
-          //Constants Read from Config file
-          num_floors: CONFIG.num_floors,
-          num_buttons: CONFIG.num_buttons,
-          door_open_s: CONFIG.door_open_s,
-          addr: CONFIG.elev_addr.clone(),
-          
-          elevator: match init_elevator(CONFIG.elev_addr.clone(), 0, true) {
-          //elevator: match Elevator::init(&CONFIG.elev_addr, CONFIG.num_floors as u8) {
-            Ok(e) => e,
-            Err(e) => {panic!("Cannot start without elevator connection: {}", e);},
+        let elevator = match Elevator::init(CONFIG.elevator.addr, CONFIG.elevator.num_floors as u8) {
+          Ok(elev) => elev,
+          Err(_) => {
+            panic!("mod_fsm-fsm: Could'nt connect to elevator");
           },
+        };
+
+        ElevatorSystem {          
+          elevator,
           //Requests size is dictated at runtime, therefore it is a vector.
-          requests: vec![vec![false; CONFIG.num_buttons as usize]; CONFIG.num_floors as usize],
+          requests: vec![vec![false; 3]; CONFIG.elevator.num_floors as usize],
           status: Status::new(),
         }
     }
@@ -54,8 +53,8 @@ impl ElevatorSystem {
     }
 
     pub fn set_all_lights(&mut self){
-        for floor in 0..self.num_floors {
-            for btn in 0..self.num_buttons{
+        for floor in 0..NUM_FLOORS {
+            for btn in 0..NUM_BUTTONS {
                 self.elevator.call_button_light(floor as u8, btn as u8, self.requests[floor as usize][btn as usize]);
             }
         }

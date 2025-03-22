@@ -2,7 +2,7 @@
 //! Responsible for handling all input operations, communicates with the assigner and network to generate orders for fsm.
 
 /// Sub Modules
-pub mod io_funcs;
+pub mod io;
 
 ///
 use crate::config::*;
@@ -61,9 +61,6 @@ pub fn run(
                 let incoming_world_view = incoming_world_view.unwrap();
 
                 world_view = merge_entire_systems(PeerStateCONFIG.id.clone(), world_view.clone(), incoming_world_view);
-
-
-                //Update EntireSystem with ww
             }
         }
     }

@@ -4,44 +4,70 @@
 //! Then "listens" for recovery using timeout_rx which sends a struct indicating which module has failed.
 
 /// INCLUDES
-use std::io::Result;
+use std::{env, io::Result, net::UdpSocket};
+use std::time::Duration;
 use config::*;
 use crossbeam_channel::{select, unbounded, Sender, Receiver};
 use std::thread::{spawn, sleep};
 use once_cell::sync::Lazy;
-
+use static_toml;
 /// DRIVER
 use driver_rust::elevio::poll as sensor_polling;
 
 
 /// MODULES
-pub mod config;
-pub mod mod_fsm;
-pub mod mod_io;
-pub mod mod_network;
+mod config;
+mod mod_fsm;
+mod mod_io;
+mod mod_network;
+mod mod_backup;
+mod mod_hardware;
+
+
+use crate::config::CONFIG;
 
 
 /// main function
 fn main() -> Result<()> {
-    /// cargo run id primary udp_net_socket udp_
-    /// arg = id (int) primary(bool) udp_net(string) udp_backup(string)
-    /// id: unique identifier
-    /// primary bool that specifies if this is spawned as primary or secondary, makes starting logic easy.
-    /// As secondary it shoud listen for success calls from the primary, when primary dies it takes over and spawns it's own secondary. Remember to pass addr,
-    Lazy::force(&config::CONFIG); //Forces read of config on start of runtime in order to ensure safety
-    Lazy::force(&config::PeerStateCONFIG);
+    //Read command line arguments
+    let command_line_arguments: Vec<String>= env::args().collect();
+    let is_primary: bool = command_line_arguments.get(1).expect("Specify primary -- id true/false").parse().unwrap();
 
 
+    
+    if !is_primary {
+        mod_backup::backup_state();
+    } else {
+        let _ = mod_hardware::init();
+    }
+    
+
+    
+
+    mod_backup::spawn_secondary();
 
 
-
+    
+    
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
     { spawn(move || run_modules(timeout_tx)); }
 
+ 
+
+    let ss = EntireSystem::template();
+    let pri_send = UdpSocket::bind(CONFIG.backup.pri_send.to_string()).expect("Could'nt setup receiver");
+    let ss_serialized = serde_json::to_string(&ss).unwrap();
+    let sec_recv = CONFIG.backup.sec_recv;
+
+
     //Recovery Scripts
     loop{
+        sleep(Duration::from_millis(CONFIG.backup.sleep_dur_milli as u64));
+
+        pri_send.send_to(ss_serialized.as_bytes(),  sec_recv);
+        //println!("Sent: {}", ss_serialized);
         select! {
             recv(timeout_rx) -> timout_struct => {
                 
@@ -68,6 +94,9 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
     let (fsm_to_io_tx, fsm_to_io_rx) = unbounded::<ElevatorSystem>();
     /* ############################################################################################################ */
 
+
+
+    println!("Spawning Modules");
     {
         /* ######### Run FSM module ################################################################## */
         let mut es1 = es.clone();
@@ -93,8 +122,8 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
     }
 
-
     loop {
+        
         select! {
             default => {}
         }
