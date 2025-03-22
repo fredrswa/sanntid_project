@@ -20,17 +20,13 @@ use driver_rust::elevio::poll as sensor_polling;
 mod config;
 mod mod_fsm;
 mod mod_io;
-// pub mod mod_network;
+mod mod_network;
 mod mod_backup;
 mod mod_hardware;
 
 
 use crate::config::CONFIG;
 
-
-static_toml::static_toml! {
-    static CONFIG = include_toml!("Config.toml");
-}
 
 /// main function
 fn main() -> Result<()> {
@@ -121,7 +117,7 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         );});
         
         /* ######### Run NETWORK module ############################################################## */
-        //spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
+        spawn(move || {mod_network::run(&network_to_io_tx, &io_to_network_rx);});
     }
 
     let ss = EntireSystem::template();

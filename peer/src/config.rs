@@ -32,12 +32,6 @@ pub struct ElevatorSystem {
     pub elevator: Elevator,
     pub requests: Vec<Vec<bool>>,
     pub status: Status,
-
-    pub num_floors: usize,
-    pub num_buttons: usize,
-    pub door_open_s: usize,
-    pub addr: String,
-
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

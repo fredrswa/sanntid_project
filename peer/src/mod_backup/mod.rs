@@ -17,11 +17,9 @@ use static_toml;
 
 //config.rs has configuration og structs and debug
 use crate::config::*;
-//CONFIG is created at runtime from Config.toml: handles ports, id, etc.
-static_toml::static_toml! {
-    static CONFIG = include_toml!("Config.toml");
-}
 
+static sleep_dur_mill: u64 = CONFIG.backup.sleep_dur_milli as u64;
+static backup_addr: &str = CONFIG.backup.sec_recv;
 
 
 
@@ -41,8 +39,7 @@ pub fn backup_state() -> EntireSystem{
 
 
     //Socket to listen on:
-    let listening_socket_addr: String = CONFIG.backup.sec_recv.to_string();
-    let listening_socket = create_socket(listening_socket_addr);
+    let backup_socket = create_socket(backup_addr.to_string());
 
 
     //Enter loop that listens to the state of primary, if primary dies, we take over based on the last seen state.
@@ -51,8 +48,8 @@ pub fn backup_state() -> EntireSystem{
         sleep(sleep_dur);
         println!("Secondary Loop: attempt {}", attempts);
         //Makes sure we are not stuck in this loop and not incrementing attempts.
-        listening_socket.set_nonblocking(true).expect("Backup: Failed to set non_blocking");
-        match listening_socket.recv_from(&mut buffer) {
+        backup_socket.set_nonblocking(true).expect("Backup: Failed to set non_blocking");
+        match backup_socket.recv_from(&mut buffer) {
             Ok((amt, _)) => {
 
                 let received = String::from_utf8_lossy(&buffer[..amt]);
@@ -74,7 +71,7 @@ pub fn backup_state() -> EntireSystem{
             }
         }
         if attempts >= max_attempts {
-            drop(listening_socket); //Allows the next secondary to be spawned securely.
+            drop(backup_socket); //Allows the next secondary to be spawned securely.
             return system_state;
         }    
 

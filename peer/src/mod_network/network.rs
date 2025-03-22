@@ -128,7 +128,7 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
 
 
                                              //Hva skal egentlig sendes?
-pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx: Receiver<EntireSystem>) {  
+pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<EntireSystem>) {  
     loop {
         cbc::select! {
             recv(udp_sender_rx) -> sys => {
@@ -141,14 +141,13 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: &Vec<String>, udp_sender_rx:
                     }    
                 };
         
-                for peer_address in peer_addresses.iter(){
-                    match socket.send_to(json_msg.as_bytes(), peer_address) {
+                    match socket.send_to(json_msg.as_bytes(), peer_addresses.clone()) {
                         Ok(ok) => ok,//Ack send to io
                         Err(e) => {
-                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
+                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
                         }
                     };
-                }
+                
             }
         }
     }  

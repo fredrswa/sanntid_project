@@ -2,7 +2,7 @@
 //! Responsible for handling all input operations, communicates with the assigner and network to generate orders for fsm.
 
 /// Sub Modules
-pub mod io_funcs;
+pub mod io;
 
 ///
 use crate::config::*;

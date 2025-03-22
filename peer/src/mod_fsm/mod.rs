@@ -32,7 +32,7 @@ pub fn run(
 
     /* ########################### FSM Sensors ######################################################################## */
     let poll_period = Duration::from_millis(25);
-    let mut timer = Timer::new(Duration::from_secs(es.door_open_s as u64));
+    let mut timer = Timer::new(Duration::from_secs(CONFIG.elevator.door_open_s as u64));
     let (floor_sensor_tx, floor_sensor_rx) = cbc::unbounded::<u8>(); 
     let (obstruction_tx, obstruction_rx) = cbc::unbounded::<bool>(); 
     {

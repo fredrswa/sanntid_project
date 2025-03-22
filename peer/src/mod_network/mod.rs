@@ -1,4 +1,3 @@
-
 /// Sub Modules
 pub mod network;
 
@@ -10,7 +9,11 @@ use std::sync::Arc;
 ///Crates
 use crate::config::*;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
-use crate::mod_io::io_funcs::{call_assigner, save_system_state_to_json};
+use crate::mod_io::io::{call_assigner, save_system_state_to_json};
+
+static host: &str = CONFIG.network.host;
+static udp_recv_port: i64 = CONFIG.network.udp_recv;
+static udp_send_port: i64 = CONFIG.network.udp_send;
 
 pub fn run(
     //Communication with IO module
@@ -36,13 +39,16 @@ pub fn run(
     /* ########################### Udp #################################################################################### */
     let (udp_sender_tx, udp_sender_rx) = cbc::unbounded::<EntireSystem>();
     let (udp_listener_tx, udp_listener_rx) = cbc::unbounded::<EntireSystem>();
-    
-    let udp_socket = Arc::new(udp_create_socket(&CONFIG.udp_socket_addr));
+    let udp_recv_addr = format!("{}:{}",host, udp_recv_port);
+    let udp_send_addr = format!("{}:{}",host, udp_send_port);
+    let udp_socket = Arc::new(udp_create_socket(&udp_recv_addr));
     
     let udp_send_socket = Arc::clone(&udp_socket);
     let udp_receive_socket = Arc::clone(&udp_socket);
 
-    {spawn(move || udp_send(&udp_send_socket, &CONFIG.udp_others_addr,udp_sender_rx));}
+
+
+    {spawn(move || udp_send(&udp_send_socket, udp_send_addr,udp_sender_rx));}
     {spawn(move || udp_receive(&udp_receive_socket, udp_listener_tx));}
     /* #################################################################################################################### */
 

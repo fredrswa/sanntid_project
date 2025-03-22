@@ -9,9 +9,8 @@ use crate::config::*;
 use super::requests::*;
 use super::timer::Timer;
 
-static_toml::static_toml! {
-  static CONFIG = include_toml!("Config.toml");
-}
+static NUM_FLOORS: i32 = CONFIG.elevator.num_floors as i32;
+static NUM_BUTTONS: i32 = 3;
 
 impl ElevatorSystem {
     pub fn new() -> ElevatorSystem {
@@ -22,13 +21,7 @@ impl ElevatorSystem {
           },
         };
 
-        ElevatorSystem {
-          //Constants Read from Config file
-          num_floors: CONFIG.elevator.num_floors as usize,
-          num_buttons: 3,
-          door_open_s: CONFIG.elevator.door_open_s as usize,
-          addr: CONFIG.elevator.addr.to_string(),
-          
+        ElevatorSystem {          
           elevator,
           //Requests size is dictated at runtime, therefore it is a vector.
           requests: vec![vec![false; 3]; CONFIG.elevator.num_floors as usize],
@@ -60,8 +53,8 @@ impl ElevatorSystem {
     }
 
     pub fn set_all_lights(&mut self){
-        for floor in 0..self.num_floors {
-            for btn in 0..self.num_buttons{
+        for floor in 0..NUM_FLOORS {
+            for btn in 0..NUM_BUTTONS {
                 self.elevator.call_button_light(floor as u8, btn as u8, self.requests[floor as usize][btn as usize]);
             }
         }

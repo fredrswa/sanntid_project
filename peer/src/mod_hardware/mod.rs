@@ -28,6 +28,7 @@ pub fn init() -> Result<Child, Box<dyn Error>> {
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn();
+        println!("Hardware command {:?}", child);
     
         match child {
             Ok(terminal) => {
