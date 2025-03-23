@@ -114,7 +114,9 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
         };
 
         let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-
+        if received_msg.contains("heartbeat") {
+            continue;
+        }
         let sys: EntireSystem = match serde_json::from_str(&received_msg) {
             Ok(sys) => sys,
             Err(e) => {
@@ -159,9 +161,11 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
 //Send heartbeats to all peers to indicate that the elevator is still alive
 pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io::Result<()> {
     println!("Sending Heartbeat");
+    let hb_str = format!("heartbeat: {}", peer_id);
+    let hb_bytes = hb_str.as_bytes();
     loop {
-        
-            match heartbeat_socket.send_to( &peer_id.as_bytes(), udp_send_port.to_string()){
+            
+            match heartbeat_socket.send_to( hb_bytes, udp_send_port.to_string()){
                 Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat");}
             };
