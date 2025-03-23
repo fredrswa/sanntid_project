@@ -8,23 +8,23 @@
         [false, false]
     ], 
     "states": {
-        "id:1": {
-            "behavior"     : "Idle",
+        "1": {
+            "behavior"     : "idle",
             "floor"         : 0,
             "direction"     : "stop",
-            "cab_requests"   : [false, false, false, false]
+            "cabRequests"   : [false, false, false, false]
         },
-        "id:2": {
-            "behavior"     : "Idle",
+        "2": {
+            "behavior"     : "idle",
             "floor"         : 0,
             "direction"     : "stop",
-            "cab_requests"   : [false, false, false, false]
+            "cabRequests"   : [false, false, false, false]
         },
-        "id:3": {
-            "behavior"     : "Idle",
+        "3": {
+            "behavior"     : "idle",
             "floor"         : 0,
             "direction"     : "stop",
-            "cab_requests"   : [false, false, false, false]
+            "cabRequests"   : [false, false, false, false]
         }
     }   
 }

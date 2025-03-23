@@ -15,12 +15,11 @@ use driver_rust::elevio::elev::Elevator;
 //////TEMPORARY
 static_toml::static_toml! {
     ///main file for running when running at lab
-    // pub static CONFIG = include_toml!("Config.toml");
+    pub static CONFIG = include_toml!("Config.toml"); }
 
     ///choices for testing locally
-    pub static CONFIG = include_toml!("config_files/config_peer_local_1.toml");
-    
-}
+    //pub static CONFIG = include_toml!("config_files/config_peer_local_1.toml"); }
+
 impl EntireSystem {
     pub fn template() -> EntireSystem {
         let es = EntireSystem {
@@ -40,14 +39,16 @@ pub struct ElevatorSystem {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+
 pub struct States {
     pub behavior: Behavior,
     pub floor: isize,
     pub direction: Dirn,
-    pub cab_requests: Vec<bool>,
+    pub cabRequests: Vec<bool>,
 }
 
  #[derive(Serialize, Deserialize, Debug, Clone)]
+ #[serde(rename_all = "lowercase")]
 pub struct EntireSystem {
     pub hallRequests: Vec<[bool; 2]>,
     pub states: HashMap<String, States>,
@@ -58,24 +59,14 @@ pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
 });
 
 //Dynamically sized struct, makes it possible with an arbitrary number of elevators
-#[derive(serde::Deserialize, Debug)]
+//#[derive(serde::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AssignerOutput {
-    pub elevators: Vec<Option<Vec<Vec<bool>>>>,
-}
-impl AssignerOutput {
-    pub fn new(num_floors: usize, num_elevators: usize) -> Self {
-        let states = vec![vec![false; 3]; num_floors];
-        let mut elevators = Vec::with_capacity(num_elevators);
-
-        for _ in 0..num_elevators {
-            elevators.push(Some(states.clone()));
-        }
-
-        AssignerOutput { elevators }
-    }
+    pub elevators: HashMap<String, Vec<Vec<bool>>>,
 }
 
 #[derive(Clone)]
+
 pub struct Status {
     pub curr_floor: usize,
     pub curr_dirn: Dirn,
@@ -95,14 +86,6 @@ impl Status {
     }
 }
 
-//Kan bygges ut dersom det trengs flere states
-#[derive(Serialize, Deserialize, Clone)]
-pub struct PeerState {
-    pub id: String,
-    pub ip: String, 
-    pub peers: Vec<String>, //Peer heartbeat ip adresses 
-    pub connected: HashMap<String, bool>, //[id -> connected true or false] If udp dont receive heartbeat -> not connected
-}
 
 
 pub enum Timeout_type {
@@ -115,8 +98,10 @@ pub enum Timeout_type {
 
 ///////////////FSM////////////////////
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Debug,Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Behavior {
+    
     Idle,
     Moving,
     DoorOpen,
@@ -162,15 +147,7 @@ pub fn call_to_button_type(call: u8) -> ButtonType {
 ///////////////DEBUGS////////////////////
 
 
-impl fmt::Debug for Behavior {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            Behavior::Idle => write!(f, "Idle"),
-            Behavior::DoorOpen => write!(f, "Door Open"),
-            Behavior::Moving => write!(f, "Moving"),
-        }
-    }
-}
+
 
 impl fmt::Debug for ButtonType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

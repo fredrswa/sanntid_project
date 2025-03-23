@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::time::{Instant, Duration};
 use std::net::UdpSocket;
 use std::io;
-
+use std::thread::sleep;
 ///
 use crossbeam_channel::{Receiver, Sender};
 use crossbeam_channel as cbc;
@@ -20,8 +20,8 @@ const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
 
 static host: &str = CONFIG.network.host;
-static udp_recv_port: i64 = CONFIG.network.udp_recv;
-static udp_send_port: i64 = CONFIG.network.udp_send;
+static udp_recv_port: &str = CONFIG.network.udp_recv;
+static udp_send_port: &str = CONFIG.network.udp_send;
 
 pub fn udp_create_socket(addr: &String) -> UdpSocket {
     let socket = match UdpSocket::bind(addr) {
@@ -144,7 +144,7 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
                     }    
                 };
         
-                    match socket.send_to(json_msg.as_bytes(), peer_addresses.clone()) {
+                    match socket.send_to(json_msg.as_bytes(), udp_send_port.to_string()) {
                         Ok(ok) => ok,//Ack send to io
                         Err(e) => {
                             panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
@@ -159,10 +159,9 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
 //Send heartbeats to all peers to indicate that the elevator is still alive
 pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io::Result<()> {
     println!("Sending Heartbeat");
-    let udp_send_addr = format!("{}:{}", host, udp_send_port);
     loop {
         
-            match heartbeat_socket.send_to( &peer_id.as_bytes(), udp_send_addr.clone()){
+            match heartbeat_socket.send_to( &peer_id.as_bytes(), udp_send_port.to_string()){
                 Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat");}
             };
@@ -181,6 +180,7 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(Stri
     heartbeat_socket.set_nonblocking(true).expect("Failed to set non-blocking!");
 
     loop {
+        sleep(Duration::from_millis(200));
         match heartbeat_socket.recv(&mut buffer) {
             Ok(n_bytes) => {
                 let id = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();

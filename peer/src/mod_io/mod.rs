@@ -36,7 +36,7 @@ pub fn run(
         states: LAST_SEEN_STATES.states.clone(), 
     };
 
-    println!("{:#?}", world_view);
+    // println!("{:#?}", world_view);
 
     /* ########################### Call Button ################################################################################## */
     let poll_period = Duration::from_millis(25);
@@ -65,7 +65,7 @@ pub fn run(
             recv(fsm_to_io_es_rx) -> current_es => {
                 let current_elevator_system: ElevatorSystem = current_es.unwrap();
 
-                world_view = update_own_state(current_elevator_system.clone());
+                world_view = update_own_state(world_view, current_elevator_system.clone());
 
                 io_to_network_tx.send(world_view.clone());
 
@@ -79,16 +79,17 @@ pub fn run(
 
 
             recv(network_to_io_rx) -> incoming_world_view => {
-                let incoming_world_view = incoming_world_view.unwrap();
+                if let Ok(iww) = incoming_world_view {
 
-                world_view = merge_entire_systems(CONFIG.peer.id.to_string(), world_view.clone(), incoming_world_view);
+                world_view = merge_entire_systems(CONFIG.peer.id.to_string(), world_view.clone(), iww);
 
                 let assigner_output = call_assigner(world_view.clone());
-                let id_index: usize = SELF_ID.to_string().parse().unwrap();
-                let requests = assigner_output.elevators[id_index].clone().unwrap();
+                
+                let requests = assigner_output.elevators[SELF_ID].clone();
                 //let es  //updated from ww;
                 io_to_fsm_requests_tx.send(requests);
                 //might include new hall orders, send them to FSM
+                }
             }
         }
     }

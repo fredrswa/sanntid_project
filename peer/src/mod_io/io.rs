@@ -7,7 +7,7 @@ use tokio::runtime::EnterGuard;
 use crate::config::*;
 
 pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
-    
+
     let elev_states = match serde_json::to_string(&sys) {
         Ok(json) => json,
         Err(e) => {
@@ -35,16 +35,14 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
         panic!("Assigner call returened an error!: {}", stderr);
     }
     
-    println!("{}", stdout);
-    let mut new_states = AssignerOutput::new(CONFIG.elevator.num_floors as usize, CONFIG.network.peers as usize);
-    new_states = match serde_json::from_str(&stdout) {
+    let assigner_string = format!("{{\"elevators\": {}}}", stdout);
+    
+    let new_states: AssignerOutput = match serde_json::from_str(&assigner_string) {
         Ok(new_states) => new_states,
         Err(e) => {
             panic!("Failed to deserilize new state to JSON format: {}", e);
         }
     }; 
-
-    println!("{:#?}", new_states);
 
     new_states
 }
@@ -70,15 +68,14 @@ pub fn save_system_state_to_json(sys: EntireSystem) {
     };
 }
 
-pub fn update_own_state (current_elevator_system: ElevatorSystem) -> EntireSystem {
-    
-    let mut world_view: EntireSystem = EntireSystem::template();  
+pub fn update_own_state (world_view: EntireSystem, current_elevator_system: ElevatorSystem) -> EntireSystem {
+    let mut world_view = world_view;
 
     let mut i = 0;
     for val in current_elevator_system.requests.iter() {
         world_view.hallRequests[i][0] = val[0];
         world_view.hallRequests[i][1] = val[1];
-        world_view.states.get_mut(CONFIG.peer.id).unwrap().cab_requests[i] = val[2];
+        world_view.states.get_mut(CONFIG.peer.id).unwrap().cabRequests[i] = val[2];
         i+=1;
 
     }
@@ -121,8 +118,8 @@ pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap
                 val1.direction = val2.direction;
                 val1.floor = val2.floor;
                 
-                val1.cab_requests = val1.cab_requests.iter()
-                    .zip(&val2.cab_requests)
+                val1.cabRequests = val1.cabRequests.iter()
+                    .zip(&val2.cabRequests)
                     .map(|(&a, &b)| a || b)
                     .collect();
             }
@@ -155,7 +152,6 @@ pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap
 pub fn update_es_from_assigner (elevator_system: ElevatorSystem, assigner_output: AssignerOutput) -> ElevatorSystem {
     let mut es = elevator_system;
 
-    let id: usize = CONFIG.peer.id.parse().expect("Id is not saved in CONFIG as a number!");
-    es.requests = Option::expect(assigner_output.elevators[id].clone(), "The assigner have not done is job! Output is not on the form Vec<Vec<bool>>") ;
+    es.requests = assigner_output.elevators[CONFIG.peer.id].clone() ;
     return es;
 }

@@ -6,17 +6,17 @@
       "door_open_s": 3
     },
     "SystemState": {
-      "id_001": {
+      "1": {
         "id": "id:001",
         "elev_addr": "localhost:15657",
         "udp_socket_addr": "0.0.0.0:20001"
       },
-      "id_002": {
+      "2": {
         "id": "id:002",
         "elev_addr": "localhost:15658",
         "udp_socket_addr": "0.0.0.0:20002"
       },
-      "id_003": {
+      "": {
         "id": "id:003",
         "elev_addr": "localhost:15659",
         "udp_socket_addr": "0.0.0.0:20003"

@@ -33,10 +33,11 @@ fn main() -> Result<()> {
     let command_line_arguments: Vec<String>= env::args().collect();
     let is_primary: bool = command_line_arguments.get(1).expect("Specify primary -- id true/false").parse().unwrap();
 
+    let mut ww = EntireSystem::template();
     //Create state
     if !is_primary {
         // get from backup
-        mod_backup::backup_state();
+        ww = mod_backup::backup_state();
     } else {
         let _ = mod_hardware::init();
     }
