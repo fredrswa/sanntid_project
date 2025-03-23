@@ -6,8 +6,10 @@ use tokio::runtime::EnterGuard;
 
 use crate::config::*;
 
+//Calls the hall_request_assigner, responsible for assigning which elevator should take what order
 pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
 
+    //Serializes the world view into a JSON string
     let elev_states = match serde_json::to_string(&sys) {
         Ok(json) => json,
         Err(e) => {
@@ -15,8 +17,8 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
         }
     }; 
 
+    //Calls the hall_request_assigner, passing it the JSON string
     let program = "../tools/assigner/hall_request_assigner";
-
     let output = match Command::new(program)
         .arg("-i")
         .arg(&elev_states)
@@ -28,15 +30,17 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
             }
         };
 
+    //String output from assigner
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
-    let stderr = String::from_utf8_lossy(&output.stderr);
     
+    //Error returned from assigner
+    let stderr = String::from_utf8_lossy(&output.stderr); 
     if !stderr.is_empty() {
         panic!("Assigner call returened an error!: {}", stderr);
     }
     
+    //Deserializes the assigner output into a AssignerOutput struct 
     let assigner_string = format!("{{\"elevators\": {}}}", stdout);
-    
     let new_states: AssignerOutput = match serde_json::from_str(&assigner_string) {
         Ok(new_states) => new_states,
         Err(e) => {
@@ -44,7 +48,7 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
         }
     }; 
 
-    new_states
+    return new_states;
 }
 
 pub fn save_system_state_to_json(sys: EntireSystem) {
@@ -68,18 +72,21 @@ pub fn save_system_state_to_json(sys: EntireSystem) {
     };
 }
 
+//Updates its own world view according to its own elevator system, given to the IO module by FSM module.
 pub fn update_own_state (world_view: EntireSystem, current_elevator_system: ElevatorSystem) -> EntireSystem {
     let mut world_view = world_view;
 
-    let mut i = 0;
-    for val in current_elevator_system.requests.iter() {
-        world_view.hallRequests[i][0] = val[0];
-        world_view.hallRequests[i][1] = val[1];
-        world_view.states.get_mut(CONFIG.peer.id).unwrap().cabRequests[i] = val[2];
-        i+=1;
-
+    //Sets a hall request button to TRUE if either the world view or the elevator system thinks there is a call
+    //Updates cab requests in world view according to elevator system 
+    for (i, val) in current_elevator_system.requests.iter().enumerate() {
+        world_view.hallRequests[i][0] |= val[0];
+        world_view.hallRequests[i][1] |= val[1];
+        if let Some(state) = world_view.states.get_mut(CONFIG.peer.id) {
+            state.cabRequests[i] = val[2];
+        }
     }
 
+    //Sets other parameters given by the elevator system
     world_view.states.get_mut(CONFIG.peer.id).unwrap().behavior = current_elevator_system.status.behavior;
     world_view.states.get_mut(CONFIG.peer.id).unwrap().floor = current_elevator_system.status.curr_floor as isize;
     world_view.states.get_mut(CONFIG.peer.id).unwrap().direction = current_elevator_system.status.curr_dirn;
@@ -87,11 +94,11 @@ pub fn update_own_state (world_view: EntireSystem, current_elevator_system: Elev
     return world_view;
 }
 
-//Merges world views
-pub fn merge_entire_systems (own_id: String, world_view: EntireSystem, incoming_world_view: EntireSystem) -> EntireSystem {
+//Merges its own world view with an incoming world view from another peer
+pub fn merge_entire_systems (world_view: EntireSystem, incoming_world_view: EntireSystem) -> EntireSystem {
     let new_world_view = EntireSystem {
         hallRequests: merge_hall_requests(world_view.hallRequests, incoming_world_view.hallRequests),
-        states: merge_states(own_id, world_view.states, incoming_world_view.states)
+        states: merge_states(CONFIG.peer.id.to_string(), world_view.states, incoming_world_view.states)
     };
 
     return new_world_view;
@@ -107,8 +114,8 @@ pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<
     return new_ww;
 }
 
-//Merges the states for all elevators in the system. Return new, updates, state.
-//Update only if not self, DDN TF U DOING.
+//Merges the states for all elevators in the system. Used in the update of world views (merge_entire_systems)
+//Update own world view only if not self, DDN TF U DOING.
 pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap<String, States>) -> HashMap<String, States> { 
     let mut merged_states: HashMap<String, States>  = wws.into_iter()
         .filter(|(key, _)| key != &own_id)
@@ -129,7 +136,7 @@ pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap
 
     merged_states.insert(own_id.clone(), iwws[&own_id.clone()].clone());
 
-    merged_states
+    return merged_states;
 
     
     //Asked claude to refactor the code below, dont know if above works but look right (and is a lot cleaner)
@@ -152,7 +159,7 @@ pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap
 }
 
 
-
+//When the assigner is called, update the FSM's requests accordingly
 pub fn update_es_from_assigner (elevator_system: ElevatorSystem, assigner_output: AssignerOutput) -> ElevatorSystem {
     let mut es = elevator_system;
 

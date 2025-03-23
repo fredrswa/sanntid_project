@@ -61,7 +61,7 @@ pub fn run(
             //Gets elevator system from FSM
             //Uses the elevator system to update knowlegde about own world view
             //Uses world view to call the assigner, updating who takes which order
-            //Send the updates hall order back to the FSM
+            //Send the updated hall orders back to the FSM
             recv(fsm_to_io_es_rx) -> current_es => {
                 let current_elevator_system: ElevatorSystem = current_es.unwrap();
 
@@ -74,6 +74,7 @@ pub fn run(
                 //update ww
 
                 let es = update_es_from_assigner(current_elevator_system.clone(), assigner_output);
+
                 io_to_fsm_es_tx.send(es);
             }
 
@@ -81,15 +82,15 @@ pub fn run(
             recv(network_to_io_rx) -> incoming_world_view => {
                 if let Ok(iww) = incoming_world_view {
 
-                world_view = merge_entire_systems(CONFIG.peer.id.to_string(), world_view.clone(), iww);
+                world_view = merge_entire_systems(world_view.clone(), iww);
 
                 let assigner_output = call_assigner(world_view.clone());
                 //println!("{:#?}", assigner_output);
                 
                 let requests = assigner_output.elevators[SELF_ID].clone();
-                //let es  //updated from ww;
+                
                 io_to_fsm_requests_tx.send(requests);
-                //might include new hall orders, send them to FSM
+                //might include new hall orders, sends them to FSM
                 }
             }
         }

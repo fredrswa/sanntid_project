@@ -37,36 +37,7 @@ pub struct ElevatorSystem {
     pub requests: Vec<Vec<bool>>,
     pub status: Status,
 }
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-
-pub struct States {
-    pub behavior: Behavior,
-    pub floor: isize,
-    pub direction: Dirn,
-    pub cabRequests: Vec<bool>,
-}
-
- #[derive(Serialize, Deserialize, Debug, Clone)]
- #[serde(rename_all = "lowercase")]
-pub struct EntireSystem {
-    pub hallRequests: Vec<[bool; 2]>,
-    pub states: HashMap<String, States>,
-} 
-pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
-    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
-
-//Dynamically sized struct, makes it possible with an arbitrary number of elevators
-//#[derive(serde::Deserialize, Debug)]
-#[derive(Serialize, Deserialize, Debug)]
-pub struct AssignerOutput {
-    pub elevators: HashMap<String, Vec<Vec<bool>>>,
-}
-
 #[derive(Clone)]
-
 pub struct Status {
     pub curr_floor: usize,
     pub curr_dirn: Dirn,
@@ -86,7 +57,31 @@ impl Status {
     }
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "lowercase")]
+pub struct EntireSystem {
+    pub hallRequests: Vec<[bool; 2]>,
+    pub states: HashMap<String, States>,
+} 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct States {
+    pub behavior: Behavior,
+    pub floor: isize,
+    pub direction: Dirn,
+    pub cabRequests: Vec<bool>,
+}
 
+pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
+    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
+
+//Dynamically sized struct, makes it possible with an arbitrary number of elevators
+//#[derive(serde::Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
+pub struct AssignerOutput {
+    pub elevators: HashMap<String, Vec<Vec<bool>>>,
+}
 
 pub enum Timeout_type {
     fsm_obstruction = 0,
@@ -101,7 +96,6 @@ pub enum Timeout_type {
 #[derive(Copy, Clone, Serialize, Debug,Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Behavior {
-    
     Idle,
     Moving,
     DoorOpen,
