@@ -17,18 +17,14 @@ static UDP_RECV_PORT: i64 = CONFIG.network.udp_recv;
 static UDP_SEND_PORT: i64 = CONFIG.network.udp_send;
 
 pub fn run(
-    
     //Communication with IO module
     network_to_io_tx: &cbc::Sender<EntireSystem>,
     io_to_network_rx: &cbc::Receiver<EntireSystem>,) {
+    
     println!("Running network module");
     let udp_recv_addr = format!("{}:{}", HOST, UDP_RECV_PORT);
     let socket = Arc::new(udp_create_socket(&udp_recv_addr));
-    // Simulate Channels Here //
-    let (network_io_redistribute_tx, network_io_redistribute_rx) = cbc::unbounded::<String>(); //ID
-    //let (network_io_neworder_tx, network_io_neworder_rx) = cbc::unbounded::<CallOrder>();
-    let (network_io_peer_state_tx, netork_io_peer_state_tx) = cbc::unbounded::<PeerState>();
-    //           -            //
+
 
     /* ########################### Udp #################################################################################### */
     let (udp_sender_tx, udp_sender_rx) = cbc::unbounded::<EntireSystem>();
@@ -39,8 +35,6 @@ pub fn run(
     
     let udp_send_socket = Arc::clone(&udp_socket);
     let udp_receive_socket = Arc::clone(&udp_socket);
-
-
 
     {spawn(move || udp_send(&udp_send_socket, udp_send_addr,udp_sender_rx));}
     {spawn(move || udp_receive(&udp_receive_socket, udp_listener_tx));}
@@ -74,12 +68,17 @@ pub fn run(
             // }
             // println!("###########\n");
             }
-            recv(udp_listener_rx) -> sys => {
-                let sys = sys.unwrap();
 
+            recv(udp_listener_rx) -> incoming_sys => {
+                if let Ok(sys) = incoming_sys {
+                    network_to_io_tx.send(sys);
+                }
             }
-
-
+            recv(io_to_network_rx) -> outgoing_sys => {
+                if let Ok(sys) = outgoing_sys {
+                    udp_sender_tx.send(sys);
+                }
+            }
 
             /* recv(udp_listener_rx) -> udp_message => {
                 if let Ok(message) = udp_message {

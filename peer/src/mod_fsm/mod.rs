@@ -27,6 +27,8 @@ pub fn run(
     call_from_io_rx: &cbc::Receiver<sensor_polling::CallButton>,
     timout_tx: &cbc::Sender<Timeout_type>,
     fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
+    io_to_fsm_es_rx: &cbc::Receiver<ElevatorSystem>,
+    io_to_fsm_requests_rx: &cbc::Receiver<Vec<Vec<bool>>>
     ) {
 
 
@@ -66,6 +68,16 @@ pub fn run(
                         timer.start();
                     }
                     es.status.door_blocked = obs;
+                }
+            }
+            recv(io_to_fsm_requests_rx) -> updated_request_vector => {
+                if let Ok(req) = updated_request_vector {
+                    es.requests = req;
+                }
+            }
+            recv(io_to_fsm_es_rx) -> updated_es => {
+                if let Ok(upt) = updated_es {
+                    *es = upt.clone();
                 }
             }
             default => {sleep(poll_period);}

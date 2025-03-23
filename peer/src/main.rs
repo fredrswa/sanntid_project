@@ -33,22 +33,16 @@ fn main() -> Result<()> {
     let command_line_arguments: Vec<String>= env::args().collect();
     let is_primary: bool = command_line_arguments.get(1).expect("Specify primary -- id true/false").parse().unwrap();
 
-
-    
+    //Create state
     if !is_primary {
+        // get from backup
         mod_backup::backup_state();
     } else {
         let _ = mod_hardware::init();
     }
     
-
-    
-
     mod_backup::spawn_secondary();
 
-
-    
-    
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
@@ -91,9 +85,12 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
     let (network_to_io_tx, network_to_io_rx) = unbounded::<EntireSystem>();
     let (io_to_network_tx, io_to_network_rx) = unbounded::<EntireSystem>();
     
-    let (fsm_to_io_tx, fsm_to_io_rx) = unbounded::<ElevatorSystem>();
+    let (io_to_fsm_requests_tx, io_to_fsm_requests_rx) = unbounded::<Vec<Vec<bool>>>();
+    
+    let (fsm_to_io_es_tx, fsm_to_io_es_rx) = unbounded::<ElevatorSystem>();
+    let (io_to_fsm_es_tx, io_to_fsm_es_rx) = unbounded::<ElevatorSystem>();
     /* ############################################################################################################ */
-
+    
 
 
     println!("Spawning Modules");
@@ -101,11 +98,13 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
         /* ######### Run FSM module ################################################################## */
         let mut es1 = es.clone();
         spawn(move || {mod_fsm::run(
-            &mut es1,
-            &io_call_rx,
-            &timeout_tx,
-            &fsm_to_io_tx,
-        );});
+                                    &mut es1,
+                                    &io_call_rx,
+                                    &timeout_tx,
+                                    &fsm_to_io_es_tx,
+                                    &io_to_fsm_es_rx,
+                                    &io_to_fsm_requests_rx
+                                    );});
         
         
         /* ######### Run IO module ################################################################### */
@@ -115,7 +114,9 @@ fn run_modules(timeout_tx: Sender<Timeout_type>) {
             &io_call_tx,
             &network_to_io_rx,
             &io_to_network_tx,
-            &fsm_to_io_rx,
+            &io_to_fsm_requests_tx,
+            &fsm_to_io_es_rx,
+            &io_to_fsm_es_tx,
         );});
         
         /* ######### Run NETWORK module ############################################################## */

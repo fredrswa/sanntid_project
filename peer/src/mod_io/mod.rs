@@ -6,20 +6,29 @@ pub mod io;
 
 ///
 use crate::config::*;
+use crate::mod_io::io::{merge_entire_systems, update_own_state, update_es_from_assigner};
 use driver_rust::elevio::poll as sensor_polling;
 
 ///Includes
 use crossbeam_channel as cbc;
+use io::call_assigner;
 use std::thread::spawn;
 use std::time::Duration;
 //use hardware::init_elevator;
+
+
+static SELF_ID: &str = CONFIG.peer.id;
 
 pub fn run(
     es: &mut ElevatorSystem, 
     call_button_from_io_tx: &cbc::Sender<sensor_polling::CallButton>,
     network_to_io_rx: &cbc::Receiver<EntireSystem>,
     io_to_network_tx: &cbc::Sender<EntireSystem>,
-    fsm_to_io_rx: &cbc::Receiver<ElevatorSystem>,
+    
+    io_to_fsm_requests_tx: &cbc::Sender<Vec<Vec<bool>>>,
+    
+    fsm_to_io_es_rx: &cbc::Receiver<ElevatorSystem>,
+    io_to_fsm_es_tx: &cbc::Sender<ElevatorSystem>,
     ){
 
     let mut world_view = EntireSystem {
@@ -48,16 +57,38 @@ pub fn run(
             // * if cab: Trigger order and network
             // * if hall: Trigger assigner and network, wait for confirmation to take order.
             }
-            recv(fsm_to_io_rx) -> current_es => {
-                let current_es = current_es.unwrap();
 
+            //Gets elevator system from FSM
+            //Uses the elevator system to update knowlegde about own world view
+            //Uses world view to call the assigner, updating who takes which order
+            //Send the updates hall order back to the FSM
+            recv(fsm_to_io_es_rx) -> current_es => {
+                let current_elevator_system: ElevatorSystem = current_es.unwrap();
 
-                //Update EntireSystem with current es
+                world_view = update_own_state(current_elevator_system.clone());
+
+                io_to_network_tx.send(world_view.clone());
+
+                let assigner_output = call_assigner(world_view.clone());
+                
+                //update ww
+
+                let es = update_es_from_assigner(current_elevator_system.clone(), assigner_output);
+                io_to_fsm_es_tx.send(es);
             }
-            recv(network_to_io_rx) -> ww => {
-                //let ww = ww.unwrap();
 
-                //Update EntireSystem with ww
+
+            recv(network_to_io_rx) -> incoming_world_view => {
+                let incoming_world_view = incoming_world_view.unwrap();
+
+                world_view = merge_entire_systems(CONFIG.peer.id.to_string(), world_view.clone(), incoming_world_view);
+
+                let assigner_output = call_assigner(world_view.clone());
+                let id_index: usize = SELF_ID.to_string().parse().unwrap();
+                let requests = assigner_output.elevators[id_index].clone().unwrap();
+                //let es  //updated from ww;
+                io_to_fsm_requests_tx.send(requests);
+                //might include new hall orders, send them to FSM
             }
         }
     }

@@ -1,6 +1,6 @@
 [peer]
 id    = 1
-peers = 3
+peers = 2
 
 
 [hardware]
@@ -19,10 +19,10 @@ motor_timeout_s = 10
 
 [network]
 peers       = 3
-# host is set to either localhost/127.0.0.1 or the lab server.
-host        = "127.0.0.1"
+# host is set to either localhost/127.0.0.1 or the lab server(10.100.23.19).
+host        = "10.100.23.19"
 udp_send    = 40012
-udp_recv    = 40013
+udp_recv    = 40012
 
 
 [backup]

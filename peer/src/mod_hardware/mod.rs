@@ -11,12 +11,13 @@ use std::{error::Error,
 
 
 use crate::config::*;
+static SIM: bool = CONFIG.hardware.sim;
+static PORT: i64 = CONFIG.hardware.addr;
 
 pub fn init() {
-    let sim: bool = CONFIG.hardware.sim;
-    let port = CONFIG.hardware.addr;
+    
 
-    let executable: &str = if sim {
+    let executable: &str = if SIM {
         "./../tools/elevatorServers/SimElevatorServer"
     } else {
         "./../tools/elevatorServers/elevatorserver"
@@ -25,14 +26,14 @@ pub fn init() {
 
     if !check_socket() {
         let child = Command::new("setsid")
-            .args(["xterm","-fa", "Monospace","-fs", "16", "-e", executable, "--port", port.to_string().as_str()])
+            .args(["xterm","-fa", "Monospace","-fs", "16", "-e", executable, "--port", PORT.to_string().as_str()])
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn();
 
             match child {
                 Ok(terminal) => {
-                    println!("Successfully opened terminal. \nRunning process at localhost:{}", port);
+                    println!("Successfully opened terminal. \nRunning process at localhost:{}", PORT);
                     let pid = terminal.id();
                     println!("With pid: {:#?}\n", pid);
                     let wait = Duration::from_millis(3000);
@@ -58,13 +59,10 @@ fn check_socket() -> bool {
 
 #[test]
 fn test_hardware() {
-    let sim: bool = CONFIG.hardware.sim;
-    let port = CONFIG.hardware.addr;
-
-    if sim {
-        println!("Opening simulated elevator on port {}", port);
+    if SIM {
+        println!("Openings SIMulated elevator on PORT {}", PORT);
     } else {
-        println!("Opening physical elevator on port {}", port);
+        println!("Opening physical elevator on PORT {}", PORT);
     }
     init();
 }

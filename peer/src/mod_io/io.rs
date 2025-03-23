@@ -1,9 +1,10 @@
 use std::process::Command;
 use std::fs;
+use std::collections::{HashMap};
+
+use tokio::runtime::EnterGuard;
+
 use crate::config::*;
-
-
-
 
 pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
     
@@ -67,4 +68,94 @@ pub fn save_system_state_to_json(sys: EntireSystem) {
             panic!("Failed to write to file: {}", e);
         }
     };
+}
+
+pub fn update_own_state (current_elevator_system: ElevatorSystem) -> EntireSystem {
+    
+    let mut world_view: EntireSystem = EntireSystem::template();  
+
+    let mut i = 0;
+    for val in current_elevator_system.requests.iter() {
+        world_view.hallRequests[i][0] = val[0];
+        world_view.hallRequests[i][1] = val[1];
+        world_view.states.get_mut(CONFIG.peer.id).unwrap().cab_requests[i] = val[2];
+        i+=1;
+
+    }
+
+    world_view.states.get_mut(CONFIG.peer.id).unwrap().behavior = current_elevator_system.status.behavior;
+    world_view.states.get_mut(CONFIG.peer.id).unwrap().floor = current_elevator_system.status.curr_floor as isize;
+    world_view.states.get_mut(CONFIG.peer.id).unwrap().direction = current_elevator_system.status.curr_dirn;
+
+    return world_view;
+}
+
+//Merges world views
+pub fn merge_entire_systems (own_id: String, world_view: EntireSystem, incoming_world_view: EntireSystem) -> EntireSystem {
+    let new_world_view = EntireSystem {
+        hallRequests: merge_hall_requests(world_view.hallRequests, incoming_world_view.hallRequests),
+        states: merge_states(own_id, world_view.states, incoming_world_view.states)
+    };
+
+    return new_world_view;
+}
+
+//Logical OR between all values in the hall_requests vector
+pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<[bool; 2]> { 
+    let new_ww: Vec<[bool; 2]> = wwhr.iter()
+        .zip(iwwhr.iter())
+        .map(|(&a, &b)| [a[0] || b[0], a[1] || b[1]])
+        .collect();
+    
+    return new_ww;
+}
+
+//Merges the states for all elevators in the system. Return new, updates, state.
+//Update only if not self, DDN TF U DOING.
+pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap<String, States>) -> HashMap<String, States> { 
+    wws.into_iter()
+        .filter(|(key, _)| key != &own_id)
+        .map(|(key, mut val1)| {
+            if let Some(val2) = iwws.get(&key) {
+                val1.behavior = val2.behavior;
+                val1.direction = val2.direction;
+                val1.floor = val2.floor;
+                
+                val1.cab_requests = val1.cab_requests.iter()
+                    .zip(&val2.cab_requests)
+                    .map(|(&a, &b)| a || b)
+                    .collect();
+            }
+            (key, val1)
+        })
+        .collect()
+
+    
+    //Asked claude to refactor the code below, dont know if above works but look right (and is a lot cleaner)
+    /* let mut new_wws: HashMap<String, States> = HashMap::new();
+    
+    for ((key1, val1),(key2,val2)) in wws.iter().zip(iwws.iter()) {
+        if *key1 != own_id {
+            new_wws.insert(key1.clone(), val1.clone());
+            new_wws.get_mut(key1).unwrap().behavior = val2.behavior;
+            new_wws.get_mut(key1).unwrap().direction = val2.direction;
+            new_wws.get_mut(key1).unwrap().floor = val2.floor;
+            new_wws.get_mut(key1).unwrap().cab_requests = val1.cab_requests.iter()
+            .zip(val2.cab_requests.iter())
+            .map(|(&a, &b)| a || b)
+            .collect();
+        }
+    };
+
+    return new_wws; */
+}
+
+
+
+pub fn update_es_from_assigner (elevator_system: ElevatorSystem, assigner_output: AssignerOutput) -> ElevatorSystem {
+    let mut es = elevator_system;
+
+    let id: usize = CONFIG.peer.id.parse().expect("Id is not saved in CONFIG as a number!");
+    es.requests = Option::expect(assigner_output.elevators[id].clone(), "The assigner have not done is job! Output is not on the form Vec<Vec<bool>>") ;
+    return es;
 }
