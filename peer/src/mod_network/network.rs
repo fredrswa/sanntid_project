@@ -184,7 +184,7 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(Stri
         match heartbeat_socket.recv(&mut buffer) {
             Ok(n_bytes) => {
                 let id = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-                //println!("Heartbeat received from: {}", id);
+                println!("Heartbeat received from: {}", id);
 
                 heartbeats.insert(id.clone(), Instant::now());
 
