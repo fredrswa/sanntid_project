@@ -104,12 +104,16 @@ pub fn udp_create_socket(addr: &String) -> UdpSocket {
  // Message contain the entire system state
 pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<EntireSystem>) {
     let mut buffer = [0; 1024];
-
+    socket.set_nonblocking(true).expect("Failed to set non-blocking!");
     loop {
         let (n_bytes, _src) = match socket.recv_from(&mut buffer){
-            Ok((n_bytes, _src)) => (n_bytes, _src),
-            Err(e) => {
-                panic!("An error occurred when recieving from UdpSocket: {}", e);
+            Ok((_n_bytes, _src)) => (_n_bytes, _src),
+            Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                thread::sleep(Duration::from_millis(100));
+                continue;
+            },
+            Err(_) => {
+                panic!()
             }
         };
 

@@ -110,7 +110,7 @@ pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<
 //Merges the states for all elevators in the system. Return new, updates, state.
 //Update only if not self, DDN TF U DOING.
 pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap<String, States>) -> HashMap<String, States> { 
-    wws.into_iter()
+    let mut merged_states: HashMap<String, States>  = wws.into_iter()
         .filter(|(key, _)| key != &own_id)
         .map(|(key, mut val1)| {
             if let Some(val2) = iwws.get(&key) {
@@ -125,7 +125,11 @@ pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap
             }
             (key, val1)
         })
-        .collect()
+        .collect();
+
+    merged_states.insert(own_id.clone(), iwws[&own_id.clone()].clone());
+
+    merged_states
 
     
     //Asked claude to refactor the code below, dont know if above works but look right (and is a lot cleaner)

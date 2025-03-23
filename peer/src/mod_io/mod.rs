@@ -84,6 +84,7 @@ pub fn run(
                 world_view = merge_entire_systems(CONFIG.peer.id.to_string(), world_view.clone(), iww);
 
                 let assigner_output = call_assigner(world_view.clone());
+                println!("{:#?}", assigner_output);
                 
                 let requests = assigner_output.elevators[SELF_ID].clone();
                 //let es  //updated from ww;
