@@ -31,7 +31,7 @@ impl EntireSystem {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ElevatorSystem {
     pub elevator: Elevator,
     pub requests: Vec<Vec<bool>>,

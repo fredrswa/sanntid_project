@@ -1,11 +1,11 @@
 [peer]
-id    = "1"
+id    = "2"
 peers = 2
 
 
 [hardware]
 addr        = 15657
-sim         = false
+sim         = true
 num_floors  = 4
 
 

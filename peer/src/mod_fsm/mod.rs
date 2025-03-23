@@ -73,6 +73,7 @@ pub fn run(
             recv(io_to_fsm_requests_rx) -> updated_request_vector => {
                 if let Ok(req) = updated_request_vector {
                     es.requests = req;
+                    println!("{:#?}", es);
                 }
             }
             recv(io_to_fsm_es_rx) -> updated_es => {
