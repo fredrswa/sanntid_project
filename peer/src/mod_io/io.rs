@@ -137,25 +137,6 @@ pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap
     merged_states.insert(own_id.clone(), iwws[&own_id.clone()].clone());
 
     return merged_states;
-
-    
-    //Asked claude to refactor the code below, dont know if above works but look right (and is a lot cleaner)
-    /* let mut new_wws: HashMap<String, States> = HashMap::new();
-    
-    for ((key1, val1),(key2,val2)) in wws.iter().zip(iwws.iter()) {
-        if *key1 != own_id {
-            new_wws.insert(key1.clone(), val1.clone());
-            new_wws.get_mut(key1).unwrap().behavior = val2.behavior;
-            new_wws.get_mut(key1).unwrap().direction = val2.direction;
-            new_wws.get_mut(key1).unwrap().floor = val2.floor;
-            new_wws.get_mut(key1).unwrap().cab_requests = val1.cab_requests.iter()
-            .zip(val2.cab_requests.iter())
-            .map(|(&a, &b)| a || b)
-            .collect();
-        }
-    };
-
-    return new_wws; */
 }
 
 

@@ -58,39 +58,46 @@ pub fn run(
             // * if hall: Trigger assigner and network, wait for confirmation to take order.
             }
 
-            //Gets elevator system from FSM
-            //Uses the elevator system to update knowlegde about own world view
-            //Uses world view to call the assigner, updating who takes which order
-            //Send the updated hall orders back to the FSM
+            /* Gets elevator system from FSM
+               Uses the elevator system to update knowlegde about own world view
+               Uses world view to call the assigner, updating who takes which order
+               Send the updated hall orders back to the FSM */
             recv(fsm_to_io_es_rx) -> current_es => {
-                let current_elevator_system: ElevatorSystem = current_es.unwrap();
+                if let Ok(current_elevator_system) = current_es {
+                    world_view = update_own_state(world_view, current_elevator_system.clone());
 
-                world_view = update_own_state(world_view, current_elevator_system.clone());
+                    let _ = match io_to_network_tx.send(world_view.clone()) {
+                        Ok(ok) => ok,
+                        Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
+                    };
 
-                io_to_network_tx.send(world_view.clone());
+                    let assigner_output = call_assigner(world_view.clone());
+                    
+                    let es = update_es_from_assigner(current_elevator_system.clone(), assigner_output);
 
-                let assigner_output = call_assigner(world_view.clone());
-                
-                //update ww
-
-                let es = update_es_from_assigner(current_elevator_system.clone(), assigner_output);
-
-                io_to_fsm_es_tx.send(es);
+                    let _ = match io_to_fsm_es_tx.send(es) {
+                        Ok(ok) => ok,
+                        Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
+                    };
+                }
             }
 
-
+            /* Handles incoming world view from another peer
+               Merges incoming world view with its own
+               Calls the assigner with the new world view
+               Gives FSM the updated requests from the assigner */
             recv(network_to_io_rx) -> incoming_world_view => {
                 if let Ok(iww) = incoming_world_view {
+                    world_view = merge_entire_systems(world_view.clone(), iww);
 
-                world_view = merge_entire_systems(world_view.clone(), iww);
-
-                let assigner_output = call_assigner(world_view.clone());
-                //println!("{:#?}", assigner_output);
-                
-                let requests = assigner_output.elevators[SELF_ID].clone();
-                
-                io_to_fsm_requests_tx.send(requests);
-                //might include new hall orders, sends them to FSM
+                    let assigner_output = call_assigner(world_view.clone());
+                    
+                    let requests = assigner_output.elevators[SELF_ID].clone();
+                    
+                    let _ = match io_to_fsm_requests_tx.send(requests) {
+                        Ok(ok) => ok,
+                        Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
+                    };
                 }
             }
         }
