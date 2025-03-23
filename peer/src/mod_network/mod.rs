@@ -9,7 +9,6 @@ use std::sync::Arc;
 ///Crates
 use crate::config::*;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
-use crate::mod_io::io::{call_assigner, save_system_state_to_json};
 
 static SELF_ID: &str = CONFIG.peer.id;
 static HOST: &str = CONFIG.network.host;

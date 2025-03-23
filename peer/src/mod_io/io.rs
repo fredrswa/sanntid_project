@@ -1,8 +1,6 @@
 use std::process::Command;
 use std::fs;
-use std::collections::{HashMap};
-
-use tokio::runtime::EnterGuard;
+use std::collections::HashMap;
 
 use crate::config::*;
 
@@ -49,27 +47,6 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
     }; 
 
     return new_states;
-}
-
-pub fn save_system_state_to_json(sys: EntireSystem) {
-    let save_path = "./mod_io/system_state.json";
-    
-    let argument = match serde_json::to_string(&sys) {
-        Ok(json) => json,
-        Err(e) => {
-            panic!("Failed to serialize JSON: {}", e);
-        }
-    }; 
-
-    let result = match fs::write(save_path, argument) {
-        Ok(result) => { 
-            println!("JSON succesfully written: {:#?}", result);
-            result
-        }
-        Err(e) => {
-            panic!("Failed to write to file: {}", e);
-        }
-    };
 }
 
 //Updates its own world view according to its own elevator system, given to the IO module by FSM module.
