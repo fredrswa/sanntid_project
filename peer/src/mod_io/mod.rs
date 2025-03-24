@@ -14,7 +14,8 @@ use driver_rust::elevio::poll as sensor_polling;
 use crossbeam_channel as cbc;
 use io::call_assigner;
 use std::thread::spawn;
-use std::time::Duration;
+use std::time::{Duration, Instant};
+use chrono::{DateTime, Utc};
 //use hardware::init_elevator;
 
 
@@ -23,19 +24,23 @@ static SELF_ID: &str = CONFIG.peer.id;
 pub fn run(
     es: &mut ElevatorSystem, 
     call_button_from_io_tx: &cbc::Sender<sensor_polling::CallButton>,
-    network_to_io_rx: &cbc::Receiver<EntireSystem>,
-    io_to_network_tx: &cbc::Sender<EntireSystem>,
+    network_to_io_rx: &cbc::Receiver<TimestampsEntireSystem>,
+    io_to_network_tx: &cbc::Sender<TimestampsEntireSystem>,
     
     io_to_fsm_requests_tx: &cbc::Sender<Vec<Vec<bool>>>,
     
     fsm_to_io_es_rx: &cbc::Receiver<ElevatorSystem>,
     io_to_fsm_es_tx: &cbc::Sender<ElevatorSystem>,
+
+    timestamps_to_io_rx: &cbc::Receiver<Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>>,
     ){
 
     let mut world_view = EntireSystem {
         hallRequests: LAST_SEEN_STATES.hallRequests.clone(),
         states: LAST_SEEN_STATES.states.clone(), 
     };
+
+    let mut created_completed_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
 
     // println!("{:#?}", world_view);
 
@@ -69,7 +74,7 @@ pub fn run(
                 if let Ok(current_elevator_system) = current_es {
                     world_view = update_own_state(world_view, current_elevator_system.clone());
 
-                    let _ = match io_to_network_tx.send(world_view.clone()) {
+                    let _ = match io_to_network_tx.send(TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()}) {
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
                     };
@@ -91,7 +96,7 @@ pub fn run(
                Gives FSM the updated requests from the assigner */
             recv(network_to_io_rx) -> incoming_world_view => {
                 if let Ok(iww) = incoming_world_view {
-                    world_view = merge_entire_systems(world_view.clone(), iww);
+                    world_view = merge_entire_systems(world_view.clone(), iww.es);
 
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());
@@ -103,6 +108,11 @@ pub fn run(
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
                     };
+                }
+            }
+            recv(timestamps_to_io_rx) -> timestamps => {
+                if let Ok(new_timestamps) = timestamps {
+                    created_completed_timestamps = new_timestamps;
                 }
             }
         }

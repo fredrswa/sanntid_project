@@ -1,5 +1,6 @@
 use std::process::Command;
 use std::collections::HashMap;
+use std::cmp::max;
 
 use crate::config::*;
 
@@ -86,7 +87,6 @@ pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<
         .zip(iwwhr.iter())
         .map(|(&a, &b)| [a[0] || b[0], a[1] || b[1]])
         .collect();
-    
     return new_ww;
 }
 
@@ -122,4 +122,76 @@ pub fn update_es_from_assigner (elevator_system: ElevatorSystem, assigner_output
 
     es.requests = assigner_output.elevators[CONFIG.peer.id].clone() ;
     return es;
+}
+
+
+pub fn merge_timestamps (own_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>, incoming_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>) ->  Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> {
+    
+    let mut new_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
+    
+    i = 0;
+    for (ot, it) in own_timestamps.iter().zip(incoming_timestamps.iter()) {
+        
+        if ot.0[0] > it.0[0] {
+            new_timestamps[i][0][0] = ot.0[0]
+        } else {
+            new_timestamps[i][0][0] = it.0[0]
+        }
+
+        if ot.0[1] > it.0[1] {
+            new_timestamps[i][0][1] = ot.0[1]
+        } else {
+            new_timestamps[i][0][1] = it.0[1]
+        }
+        
+        if ot.1[0] > it.1[0] {
+            new_timestamps[i][0][0] = ot.1[0]
+        } else {
+            new_timestamps[i][0][0] = it.1[0]
+        }
+
+        if ot.1[1] > it.1[1] {
+            new_timestamps[i][0][1] = ot.1[1]
+        } else {
+            new_timestamps[i][0][1] = it.1[1]
+        }
+
+     
+        i+=1; 
+    }
+
+    return new_timestamps;
+}
+
+
+pub fn merge_timestamps(
+    own_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>,
+    incoming_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>,
+) -> Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> {
+    let num_floors = own_timestamps.len().max(incoming_timestamps.len()); // Handle different lengths
+    let mut new_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![Vec::new(); num_floors];
+
+    for i in 0..num_floors {
+        let own_floor = own_timestamps.get(i).unwrap_or(&vec![]); // Handle missing floors
+        let incoming_floor = incoming_timestamps.get(i).unwrap_or(&vec![]);
+
+        let mut merged_floor = Vec::new();
+        
+        for (own, incoming) in own_floor.iter().zip(incoming_floor.iter()) {
+            let start_time = max(own.0, incoming.0); // Keep the most recent start time
+            let end_time = max(own.1, incoming.1);   // Keep the most recent end time
+            merged_floor.push((start_time, end_time));
+        }
+
+        // If one vector is longer, append the remaining timestamps
+        if own_floor.len() > incoming_floor.len() {
+            merged_floor.extend_from_slice(&own_floor[incoming_floor.len()..]);
+        } else if incoming_floor.len() > own_floor.len() {
+            merged_floor.extend_from_slice(&incoming_floor[own_floor.len()..]);
+        }
+
+        new_timestamps[i] = merged_floor;
+    }
+
+    new_timestamps
 }

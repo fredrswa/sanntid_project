@@ -1,4 +1,6 @@
 use std::vec;
+use std::time::{Duration, Instant};
+use chrono::{Utc, DateTime};
 
 use crate::config::*;
 
@@ -135,4 +137,16 @@ pub fn is_completed (elevator_before: ElevatorSystem, elevator_after: ElevatorSy
   }
 
   return completed_array;
+}
+
+pub fn update_timestamps (completed_array: Vec<Vec<bool>>) -> Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> {
+
+  let mut new_created_completed_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
+  
+  for val in completed_array.iter().enumerate() {
+    if val.1[0] == true {new_created_completed_timestamps[val.0][0] = (Utc::now()-Duration::from_secs(1), Utc::now());}
+    if val.1[1] == true {new_created_completed_timestamps[val.0][1] = (Utc::now()-Duration::from_secs(1), Utc::now());}
+  }
+
+  return new_created_completed_timestamps;
 }

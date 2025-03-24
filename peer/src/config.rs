@@ -2,12 +2,14 @@
 use std::net::IpAddr;
 use std::u8;
 use std::fmt;
+use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
 use std::{fs, os::unix::raw::ino_t};
 use serde_json;
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 use std::env;
+use std::time::Instant;
 
 use driver_rust::elevio::elev::Elevator;
 
@@ -20,15 +22,6 @@ static_toml::static_toml! {
     ///choices for testing locally
     pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_2.toml"); }
 
-impl EntireSystem {
-    pub fn template() -> EntireSystem {
-        let es = EntireSystem {
-            hallRequests: vec![[false; 2]; CONFIG.elevator.num_floors as usize],
-            states: HashMap::new(),
-        };
-    es
-    }
-}
 
 
 #[derive(Clone, Debug)]
@@ -63,6 +56,20 @@ pub struct EntireSystem {
     pub hallRequests: Vec<[bool; 2]>,
     pub states: HashMap<String, States>,
 } 
+impl EntireSystem {
+    pub fn template() -> EntireSystem {
+        let es = EntireSystem {
+            hallRequests: vec![[false; 2]; CONFIG.elevator.num_floors as usize],
+            states: HashMap::new(),
+        };
+    es
+    }
+}
+pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
+    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
+    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
+});
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct States {
     pub behavior: Behavior,
@@ -71,10 +78,12 @@ pub struct States {
     pub cabRequests: Vec<bool>,
 }
 
-pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
-    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct TimestampsEntireSystem {
+    pub es: EntireSystem,
+    #[serde(serialize_with = "serialize_millis", deserialize_with = "deserialize_millis")]
+    pub timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>, 
+}
 
 //Dynamically sized struct, makes it possible with an arbitrary number of elevators
 //#[derive(serde::Deserialize, Debug)]

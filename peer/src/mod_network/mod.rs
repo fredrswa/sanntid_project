@@ -16,16 +16,16 @@ static UDP_SEND_PORT: &str = CONFIG.network.udp_send;
 
 pub fn run(
     //Communication with IO module
-    network_to_io_tx: &cbc::Sender<EntireSystem>,
-    io_to_network_rx: &cbc::Receiver<EntireSystem>,) {
+    network_to_io_tx: &cbc::Sender<TimestampsEntireSystem>,
+    io_to_network_rx: &cbc::Receiver<TimestampsEntireSystem>,) {
     
     println!("Running network module");
     let socket = Arc::new(udp_create_socket(&UDP_RECV_PORT.to_string()));
     socket.set_broadcast(true).unwrap();
 
     /* ########################### Udp #################################################################################### */
-    let (udp_sender_tx, udp_sender_rx) = cbc::unbounded::<EntireSystem>();
-    let (udp_listener_tx, udp_listener_rx) = cbc::unbounded::<EntireSystem>();
+    let (udp_sender_tx, udp_sender_rx) = cbc::unbounded::<TimestampsEntireSystem>();
+    let (udp_listener_tx, udp_listener_rx) = cbc::unbounded::<TimestampsEntireSystem>();
     let udp_socket = Arc::clone(&socket);
     
     let udp_send_socket = Arc::clone(&udp_socket);

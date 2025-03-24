@@ -12,14 +12,14 @@ pub mod timer;          //Timer for generating timout and handling door_open tim
 ///Crates
 use crate::config::*;                   //Config has every struct
 use crate::mod_fsm::timer::Timer;       
-use crate::mod_fsm::requests::is_completed;
+use crate::mod_fsm::requests::{is_completed, update_timestamps};
 
 ///
 use crossbeam_channel as cbc;
 use driver_rust::elevio::poll as sensor_polling;
 use std::{thread::{sleep, spawn}, time::Instant, vec};
 use core::time::Duration;
-
+use chrono::{Utc, DateTime};
 
 /// Runs the FSM_module
 /// - Interacts with IO to handle and generate order
@@ -29,7 +29,8 @@ pub fn run(
     timout_tx: &cbc::Sender<Timeout_type>,
     fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
     io_to_fsm_es_rx: &cbc::Receiver<ElevatorSystem>,
-    io_to_fsm_requests_rx: &cbc::Receiver<Vec<Vec<bool>>>
+    io_to_fsm_requests_rx: &cbc::Receiver<Vec<Vec<bool>>>,
+    timestamps_to_io_tx: &cbc::Sender< Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>>
     ) {
 
 
@@ -48,7 +49,7 @@ pub fn run(
 
     /* ########################### Hall Requests Timestamps ########################################################## */
     
-    let mut created_completed_timestamps: Vec<Vec<(Instant, Instant)>> = vec![vec![(Instant::now(), Instant::now()); 3]; CONFIG.elevator.num_floors as usize];
+    let mut created_completed_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
 
     /* ############################################################################################################### */
 
@@ -63,7 +64,7 @@ pub fn run(
 
                     let button_type = call_to_button_type(call_button.call);
 
-                    created_completed_timestamps[button_type as usize][call_button.floor as usize] = (Instant::now(), Instant::now()-Duration::from_secs(1));
+                    created_completed_timestamps[button_type as usize][call_button.floor as usize] = (Utc::now(), Utc::now()-Duration::from_secs(1));
 
                     es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
                 }
@@ -77,8 +78,9 @@ pub fn run(
 
                     let completed_array = is_completed(es_before, es.clone());
 
-                    //check change before after -> change equals cleared
-                    //Upadate timestamps if changed
+                    created_completed_timestamps = update_timestamps(completed_array);
+                    
+                    timestamps_to_io_tx.send(created_completed_timestamps.clone());
 
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
                 }
