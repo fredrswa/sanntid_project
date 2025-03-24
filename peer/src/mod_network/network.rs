@@ -19,9 +19,10 @@ use crate::config::*;
 const TIMEOUT_MS: u64 = 5000; // how long before we consider an elevator dead
 const CHECK_INTERVAL_MS: u64 = 1000; // how often we check for dead elevators
 
-static host: &str = CONFIG.network.host;
-static udp_recv_port: &str = CONFIG.network.udp_recv;
-static udp_send_port: &str = CONFIG.network.udp_send;
+static UDP_RECV_PORT: &str = CONFIG.network.udp_recv;
+static UDP_SEND_PORT: &str = CONFIG.network.udp_send;
+static HB_SLEEP_TIME: u64  = CONFIG.network.hb_time as u64;
+static ST_SLEEP_TIME: u64  = CONFIG.network.state_time as u64;
 
 pub fn udp_create_socket(addr: &String) -> UdpSocket {
     let socket = match UdpSocket::bind(addr) {
@@ -150,7 +151,7 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
                     }    
                 };
         
-                    match socket.send_to(json_msg.as_bytes(), udp_send_port.to_string()) {
+                    match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
                         Ok(ok) => ok,//Ack send to io
                         Err(e) => {
                             panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
@@ -169,7 +170,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io
     let hb_bytes = hb_str.as_bytes();
     loop {
             
-            match heartbeat_socket.send_to( hb_bytes, udp_send_port.to_string()){
+            match heartbeat_socket.send_to( hb_bytes, UDP_SEND_PORT.to_string()){
                 Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat");}
             };

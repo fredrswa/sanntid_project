@@ -35,10 +35,9 @@ mod mod_hardware;
 /// INCLUDES
 use std::{env, 
           io::Result, 
-          net::UdpSocket,
           time::Duration,
           thread::{spawn, sleep}};
-use crossbeam_channel::{select, unbounded, Sender, Receiver};
+use crossbeam_channel::{select, unbounded};
 
 /// DRIVER
 use driver_rust::elevio::poll as sensor_polling;
@@ -86,7 +85,9 @@ fn main() -> Result<()> {
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
-
+    std::panic::set_hook(Box::new(|panic_info| {
+        std::process::exit(1);
+    }));
 
     // SPAWN MODULES
     {

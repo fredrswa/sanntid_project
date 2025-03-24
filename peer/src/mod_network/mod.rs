@@ -11,7 +11,6 @@ use crate::config::*;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
 
 static SELF_ID: &str = CONFIG.peer.id;
-static HOST: &str = CONFIG.network.host;
 static UDP_RECV_PORT: &str = CONFIG.network.udp_recv;
 static UDP_SEND_PORT: &str = CONFIG.network.udp_send;
 
