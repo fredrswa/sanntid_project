@@ -97,8 +97,6 @@ pub fn run(
                     io_to_backup_state_tx.send(world_view.clone());
                     let assigner_output = call_assigner(world_view.clone());
                     
-
-
                     let requests = assigner_output.elevators[SELF_ID].clone();
                     
                     let _ = match io_to_fsm_requests_tx.send(requests) {

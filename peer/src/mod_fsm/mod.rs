@@ -12,11 +12,12 @@ pub mod timer;          //Timer for generating timout and handling door_open tim
 ///Crates
 use crate::config::*;                   //Config has every struct
 use crate::mod_fsm::timer::Timer;       
+use crate::mod_fsm::requests::is_completed;
 
 ///
 use crossbeam_channel as cbc;
 use driver_rust::elevio::poll as sensor_polling;
-use std::thread::{spawn, sleep};
+use std::{thread::{sleep, spawn}, time::Instant, vec};
 use core::time::Duration;
 
 
@@ -45,6 +46,13 @@ pub fn run(
     }
     /* ############################################################################################################### */
 
+    /* ########################### Hall Requests Timestamps ########################################################## */
+    
+    let mut created_completed_timestamps: Vec<Vec<(Instant, Instant)>> = vec![vec![(Instant::now(), Instant::now()); 3]; CONFIG.elevator.num_floors as usize];
+
+    /* ############################################################################################################### */
+
+
     es.init();
 
     loop {
@@ -52,12 +60,25 @@ pub fn run(
             recv(call_from_io_rx) -> cb_message => {
                 if let Ok(call_button) = cb_message {
                     println!{"{}", &es};
-                    es.on_request_button_press(&mut timer, call_button.floor as usize, call_to_button_type(call_button.call));
+
+                    let button_type = call_to_button_type(call_button.call);
+
+                    created_completed_timestamps[button_type as usize][call_button.floor as usize] = (Instant::now(), Instant::now()-Duration::from_secs(1));
+
+                    es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
                 }
             }
             recv(floor_sensor_rx) -> fs_message => {
                 if let Ok(floor) = fs_message {
+
+                    let es_before = es.clone();
+
                     es.on_floor_arrival(&mut timer, floor as usize);
+
+                    let completed_array = is_completed(es_before, es.clone());
+
+                    //check change before after -> change equals cleared
+                    //Upadate timestamps if changed
 
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
                 }

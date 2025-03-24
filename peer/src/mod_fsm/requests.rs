@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::config::*;
 
 
@@ -119,4 +121,18 @@ pub fn requests_clear_at_current_floor(es: &mut ElevatorSystem) {
 
     Dirn::Stop => {}
   }
+}
+
+//Checks if to elevator systems are different. If different, an order has been cleared.
+pub fn is_completed (elevator_before: ElevatorSystem, elevator_after: ElevatorSystem) -> Vec<Vec<bool>> {
+  
+  let mut completed_array = vec![vec![false; 2]; CONFIG.elevator.num_floors as usize];
+
+  //Iterates through all fllor, checks if HallUp or HallDown has changed, if changed set true else false
+  for floor in (elevator_before.requests.iter().zip(elevator_after.requests.iter())).enumerate() {
+    completed_array[floor.0][0] = floor.1.0[0] != floor.1.1[0];
+    completed_array[floor.0][1] = floor.1.0[1] != floor.1.1[1];  
+  }
+
+  return completed_array;
 }
