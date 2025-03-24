@@ -6,7 +6,7 @@ peers = 2
 [hardware]
 addr        = 15657
 sim         = true
-num_floors  = 4
+load_time   = 3000
 
 
 [elevator]

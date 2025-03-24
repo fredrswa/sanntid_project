@@ -18,12 +18,12 @@ static_toml::static_toml! {
     // pub static CONFIG = include_toml!("Config.toml"); }
 
     ///choices for testing locally
-    pub static CONFIG = include_toml!("config_files/config_peer_local_2.toml"); }
+    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_2.toml"); }
 
 impl EntireSystem {
     pub fn template() -> EntireSystem {
         let es = EntireSystem {
-            hallRequests: vec![[true; 2]; CONFIG.elevator.num_floors as usize],
+            hallRequests: vec![[false; 2]; CONFIG.elevator.num_floors as usize],
             states: HashMap::new(),
         };
     es

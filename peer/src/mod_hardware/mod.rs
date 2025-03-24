@@ -1,32 +1,36 @@
-
-
-
-
 //Standard Library
 use std::{error::Error, 
         process::{exit, Child, Command, Stdio},
         thread::sleep,
         time::Duration,
         net::UdpSocket};
-
+use driver_rust::elevio::elev::Elevator;
 
 use crate::config::*;
 static SIM: bool = CONFIG.hardware.sim;
 static PORT: i64 = CONFIG.hardware.addr;
+static LOAD_TIME: i64 = CONFIG.hardware.load_time;
+static NUM_FLOORS: i64 = CONFIG.elevator.num_floors;
 
 pub fn init() {
-    
+    let sim_executable: &str =  "./../tools/elevatorServers/SimElevatorServer";
+    let phy_executable: &str =  "./../tools/elevatorServers/elevatorserver";
+    let port = PORT.to_string();
+    let num_floors = NUM_FLOORS.to_string();
 
-    let executable: &str = if SIM {
-        "./../tools/elevatorServers/SimElevatorServer"
-    } else {
-        "./../tools/elevatorServers/elevatorserver"
+    let args  = match SIM {
+        true => vec!["xterm","-fa", "Monospace","-fs", "16", "-e", sim_executable, 
+        "--port", port.as_str(), 
+        "--numfloors", num_floors.as_str()],
+        false => vec!["xterm","-fa", "Monospace","-fs", "16", "-e", phy_executable, 
+        "--port", port.as_str()]
     };
+
 
 
     if !check_socket() {
         let child = Command::new("setsid")
-            .args(["xterm","-fa", "Monospace","-fs", "16", "-e", executable, "--port", PORT.to_string().as_str()])
+            .args(args)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn();
@@ -36,7 +40,7 @@ pub fn init() {
                     println!("Successfully opened terminal. \nRunning process at localhost:{}", PORT);
                     let pid = terminal.id();
                     println!("With pid: {:#?}\n", pid);
-                    let wait = Duration::from_millis(3000);
+                    let wait = Duration::from_millis(LOAD_TIME as u64);
                     sleep(wait);
                 }
 
@@ -50,7 +54,7 @@ pub fn init() {
 
 
 fn check_socket() -> bool {
-    if UdpSocket::bind(CONFIG.hardware.addr.to_string()).is_ok() {
+    if Elevator::init(CONFIG.elevator.addr, 4).is_ok() {
         true
     } else {
         false

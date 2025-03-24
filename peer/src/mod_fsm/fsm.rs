@@ -27,8 +27,7 @@ impl ElevatorSystem {
           requests: vec![vec![false; 3]; CONFIG.elevator.num_floors as usize],
           status: Status::new(),
         }
-    }
-    
+    }    
     pub fn init(&mut self) {
         self.status.curr_floor = self.elevator.floor_sensor().unwrap_or(u8::MAX) as usize;
         println!("Floor {}", self.status.curr_floor);
