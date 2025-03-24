@@ -49,20 +49,9 @@ fn main() -> Result<()> {
 
     { spawn(move || run_modules(timeout_tx)); }
 
- 
-
-    let ss = EntireSystem::template();
-    let pri_send = UdpSocket::bind(CONFIG.backup.pri_send.to_string()).expect("Could'nt setup receiver");
-    let ss_serialized = serde_json::to_string(&ss).unwrap();
-    let sec_recv = CONFIG.backup.sec_recv;
-
 
     //Recovery Scripts
     loop{
-        sleep(Duration::from_millis(CONFIG.backup.sleep_dur_milli as u64));
-
-        pri_send.send_to(ss_serialized.as_bytes(),  sec_recv);
-        //println!("Sent: {}", ss_serialized);
         select! {
             recv(timeout_rx) -> timout_struct => {
                 

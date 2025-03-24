@@ -12,6 +12,7 @@ use std::{
 
 use serde_json;
 use static_toml;
+use crossbeam_channel::Receiver;
 
 
 
@@ -20,6 +21,7 @@ use crate::config::*;
 
 static SLEEP_MILLI: u64 = CONFIG.backup.sleep_dur_milli as u64;
 static BACKUP_ADDR: &str = CONFIG.backup.sec_recv;
+static PRIMARY_ADDR: &str = CONFIG.backup.pri_send;
 static MAX_ATTEMPTS: i64 = CONFIG.backup.attempts;
 
 
@@ -77,6 +79,26 @@ pub fn backup_state() -> EntireSystem{
     }
 }
 
+
+pub fn send_latest_primary(latest_updated_state: Receiver<EntireSystem>) {
+    let dur = Duration::from_millis(SLEEP_MILLI);
+
+    let pri_send = UdpSocket::bind(CONFIG.backup.pri_send.to_string()).expect("Could'nt setup receiver");
+
+    let mut ww = EntireSystem::template();
+    let mut serialized = serde_json::to_string(&ww).unwrap();
+    loop {
+        sleep(dur);
+        ww = match latest_updated_state.try_recv() {
+            Ok(sys) => sys,
+            _ => ww,
+        };
+
+        serialized = serde_json::to_string(&ww).unwrap();
+        pri_send.send_to(serialized.as_bytes(), BACKUP_ADDR);
+    }
+
+}
 
 pub fn spawn_secondary() {
     let id = CONFIG.peer.id.to_string();

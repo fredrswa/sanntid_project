@@ -44,7 +44,6 @@ pub fn run(
     let send_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
     let receive_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
 
-
     // SPAWN HEATBEAT FUNCTIONS
     {spawn(move || send_heartbeat(&send_heartbeat_socket, &SELF_ID.to_string()))};
     {spawn(move || receive_hearbeat(&receive_heartbeat_socket, udp_heartbeat_tx))};

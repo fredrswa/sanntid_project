@@ -6,6 +6,7 @@ pub mod io;
 
 ///
 use crate::config::*;
+use crate::mod_backup::send_latest_primary;
 use crate::mod_io::io::{merge_entire_systems, update_own_state, update_es_from_assigner};
 use driver_rust::elevio::poll as sensor_polling;
 
@@ -41,10 +42,12 @@ pub fn run(
     /* ########################### Call Button ################################################################################## */
     let poll_period = Duration::from_millis(25);
 
-    let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>(); 
+    let (call_button_tx, call_button_rx) = cbc::unbounded::<sensor_polling::CallButton>();
+    let (io_to_backup_state_tx, io_to_backup_state_rx) = cbc::unbounded::<EntireSystem>(); 
     {
        let elevator = es.elevator.clone();
-       spawn(move || sensor_polling::call_buttons(elevator, call_button_tx, poll_period)); 
+       spawn(move || sensor_polling::call_buttons(elevator, call_button_tx, poll_period));
+       spawn(move || send_latest_primary(io_to_backup_state_rx)); 
     }
     /* ########################################################################################################################## */
 
@@ -90,8 +93,12 @@ pub fn run(
                 if let Ok(iww) = incoming_world_view {
                     world_view = merge_entire_systems(world_view.clone(), iww);
 
+                    // Try here first
+                    io_to_backup_state_tx.send(world_view.clone());
                     let assigner_output = call_assigner(world_view.clone());
                     
+
+
                     let requests = assigner_output.elevators[SELF_ID].clone();
                     
                     let _ = match io_to_fsm_requests_tx.send(requests) {

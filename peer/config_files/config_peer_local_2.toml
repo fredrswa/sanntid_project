@@ -1,6 +1,6 @@
 [peer]
 id    = "2"
-peers = 3
+peers = 2
 
 
 [hardware]
@@ -21,12 +21,12 @@ motor_timeout_s = 10
 peers       = 3
 # host is set to either localhost/127.0.0.1 or the lab server.
 host        = "0.0.0.0"
-udp_send    = 2000
-udp_recv    = 2002
+udp_send    = "0.0.0.0:2000"
+udp_recv    = "0.0.0.0:2002"
 
 
 [backup]
 pri_send        = "localhost:4101"
 sec_recv        = "localhost:4102"
 attempts        = 3
-sleep_dur_milli = 1000
+sleep_dur_milli = 100
