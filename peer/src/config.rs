@@ -215,19 +215,28 @@ impl fmt::Display for ElevatorSystem {
     }
 }
 
-impl fmt::Display for EntireSystem {
+impl fmt::Display for TimestampsEntireSystem {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         
         // Format the EntireSystem part
         write!(f, "EntireSystem:\n")?;
         write!(f, "Hall Requests:\n")?;
-        for hall_request in &self.hallRequests {
+        for hall_request in &self.es.hallRequests {
             write!(f, "{:?}\n", hall_request)?;
         }
 
         write!(f, "States:\n")?;
-        for (key, state) in &self.states {
+        for (key, state) in &self.es.states {
             write!(f, "{}: {:?}\n", key, state.cabRequests)?;
+        }
+
+        write!(f, "\nTimestamps:\n")?;
+        for row in &self.timestamps {
+            write!(f, "[")?;
+            for tuple in row {
+                write!(f, "({},{}) ", tuple.0, tuple.1)?;
+            }
+            write!(f, "]\n")?;
         }
 
         Ok(())

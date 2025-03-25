@@ -72,9 +72,9 @@ pub fn run(
                Send the updated hall orders back to the FSM */
             recv(fsm_to_io_es_rx) -> current_es => {
                 if let Ok(current_elevator_system) = current_es {
-                    world_view = update_own_state(world_view, current_elevator_system.clone());
+                    world_view = update_own_state(world_view, current_elevator_system.clone(), created_completed_timestamps.clone());
 
-                    println!("{}", world_view);
+                    println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
 
                     let _ = match io_to_network_tx.send(TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()}) {
                         Ok(ok) => ok,
@@ -103,7 +103,7 @@ pub fn run(
 
                     world_view = merge_entire_systems(world_view.clone(), iww.es, created_completed_timestamps.clone());
                     
-                    println!("{}", world_view);
+                    println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
                     
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());
@@ -119,7 +119,7 @@ pub fn run(
             }
             recv(timestamps_to_io_rx) -> timestamps => {
                 if let Ok(new_timestamps) = timestamps {
-                    created_completed_timestamps = new_timestamps;
+                    created_completed_timestamps = merge_timestamps(created_completed_timestamps, new_timestamps);
                 }
             }
         }

@@ -50,14 +50,14 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
 }
 
 //Updates its own world view according to its own elevator system, given to the IO module by FSM module.
-pub fn update_own_state (world_view: EntireSystem, current_elevator_system: ElevatorSystem) -> EntireSystem {
+pub fn update_own_state (world_view: EntireSystem, current_elevator_system: ElevatorSystem, created_completed_timestamps: Vec<Vec<(i64, i64)>>) -> EntireSystem {
     let mut world_view = world_view;
+
+    world_view.hallRequests = decide_hall_requests(created_completed_timestamps);
 
     //Sets a hall request button to TRUE if either the world view or the elevator system thinks there is a call
     //Updates cab requests in world view according to elevator system 
     for (i, val) in current_elevator_system.requests.iter().enumerate() {
-        world_view.hallRequests[i][0] |= val[0];
-        world_view.hallRequests[i][1] |= val[1];
         if let Some(state) = world_view.states.get_mut(CONFIG.peer.id) {
             state.cabRequests[i] = val[2];
         }
@@ -78,14 +78,14 @@ pub fn merge_entire_systems (
     created_completed_timestamps: Vec<Vec<(i64, i64)>>
 ) -> EntireSystem {
     let new_world_view = EntireSystem {
-        hallRequests: merge_hall_requests(created_completed_timestamps),
+        hallRequests: decide_hall_requests(created_completed_timestamps),
         states: merge_states(CONFIG.peer.id.to_string(), world_view.states, incoming_world_view.states)
     };
     return new_world_view;
 }
 
-//Logical OR between all values in the hall_requests vector
-pub fn merge_hall_requests(created_completed_timestamps: Vec<Vec<(i64, i64)>>,) -> Vec<[bool; 2]> {
+//Decides which hallRequests that are still active by using timestamps
+pub fn decide_hall_requests(created_completed_timestamps: Vec<Vec<(i64, i64)>>,) -> Vec<[bool; 2]> {
     // Iterate over each inner vector in created_completed_timestamps
     let new_ww: Vec<[bool; 2]> = created_completed_timestamps.iter()
         .map(|timestamps| {

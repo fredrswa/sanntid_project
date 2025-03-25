@@ -83,7 +83,9 @@ pub fn run(
 
                     let completed_array = is_completed(es_before, es.clone());
 
-                    created_completed_timestamps = update_timestamps(completed_array);
+                    println!("Completed Arrya: {:#?}", completed_array);
+
+                    created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
                     
                     timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
