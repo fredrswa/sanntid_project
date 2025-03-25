@@ -68,7 +68,7 @@ pub fn run(
                     let now = Utc::now().timestamp_millis();
                     created_completed_timestamps[floor][button_type as usize] = (now, now - 1000);
                         
-                    es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
+                    //es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
 
                     timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
@@ -83,7 +83,7 @@ pub fn run(
 
                     let completed_array = is_completed(es_before, es.clone());
 
-                    println!("Completed Arrya: {:#?}", completed_array);
+                    println!("Completed Array: {:#?}", completed_array);
 
                     created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
                     
@@ -102,14 +102,14 @@ pub fn run(
             recv(io_to_fsm_requests_rx) -> updated_request_vector => {
                 if let Ok(req) = updated_request_vector {
                     es.requests = req;
-                    println!("{:#?}", es);
+                    es.new_requests(&mut timer);
                 }
             }
-            recv(io_to_fsm_es_rx) -> updated_es => {
+            /* recv(io_to_fsm_es_rx) -> updated_es => {
                 if let Ok(upt) = updated_es {
                     *es = upt.clone();
                 }
-            }
+            } */
             default => {sleep(poll_period);}
         }
         if timer.is_expired() && !es.status.door_blocked {

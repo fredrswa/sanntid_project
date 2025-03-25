@@ -59,6 +59,14 @@ impl ElevatorSystem {
         }
     }
 
+    pub fn set_all_lights_system(&mut self, system_requests: Vec<Vec<bool>>){
+      for floor in 0..NUM_FLOORS {
+          for btn in 0..NUM_BUTTONS {
+              self.elevator.call_button_light(floor as u8, btn as u8, system_requests[floor as usize][btn as usize]);
+          }
+      }
+  }
+
     pub fn on_request_button_press(&mut self, timer: &mut Timer, btn_floor: usize, btn_type: ButtonType) {
         match self.status.behavior {
             Behavior::DoorOpen => {
@@ -124,6 +132,38 @@ impl ElevatorSystem {
     }
     
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
+        match self.status.behavior {
+          Behavior::DoorOpen => {
+            if self.status.door_blocked {
+              timer.start();
+            } else {
+              let db_pair: DirnBehaviorPair = requests_choose_direction(self);
+              self.status.curr_dirn = db_pair.direction;
+              self.status.behavior = db_pair.behavior;
+      
+              requests_clear_at_current_floor(self);
+              self.set_all_lights();
+              
+              match self.status.behavior {
+                Behavior::DoorOpen => {
+                  timer.start();
+                }
+                Behavior::Moving => {
+                  self.elevator.door_light(false);
+                  self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
+                }
+                Behavior::Idle => {
+                  self.elevator.door_light(false);
+                }
+              }
+            }
+          }
+          _=> {}
+        }
+    }      
+
+
+    pub fn new_requests(&mut self, timer: &mut Timer) {
         match self.status.behavior {
           Behavior::DoorOpen => {
             if self.status.door_blocked {

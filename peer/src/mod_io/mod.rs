@@ -83,9 +83,9 @@ pub fn run(
 
                     let assigner_output = call_assigner(world_view.clone());
                     
-                    let es = update_es_from_assigner(current_elevator_system.clone(), assigner_output);
-
-                    let _ = match io_to_fsm_es_tx.send(es) {
+                    let requests = assigner_output.elevators[SELF_ID].clone();
+                    
+                    let _ = match io_to_fsm_requests_tx.send(requests) {
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
                     };
