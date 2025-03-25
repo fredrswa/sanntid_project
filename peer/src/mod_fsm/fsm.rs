@@ -190,7 +190,24 @@ impl ElevatorSystem {
               }
             }
           }
-          _=> {}
+        Behavior::Moving => {}
+        Behavior::Idle => {
+            let db_pair: DirnBehaviorPair = requests_choose_direction(self);
+            self.status.curr_dirn = db_pair.direction;
+            self.status.behavior = db_pair.behavior;
+            match self.status.behavior {
+              Behavior::DoorOpen => {
+                self.elevator.door_light(true);
+                timer.start();
+                requests_clear_at_current_floor(self);
+              }
+              Behavior::Moving => {
+                self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
+              }
+              Behavior::Idle => {}  
+              
         }
-    }        
+      }
+    }
+  }        
 }

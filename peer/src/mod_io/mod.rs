@@ -72,6 +72,7 @@ pub fn run(
                Send the updated hall orders back to the FSM */
             recv(fsm_to_io_es_rx) -> current_es => {
                 if let Ok(current_elevator_system) = current_es {
+
                     world_view = update_own_state(world_view, current_elevator_system.clone(), created_completed_timestamps.clone());
 
                     println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
@@ -83,7 +84,9 @@ pub fn run(
 
                     let assigner_output = call_assigner(world_view.clone());
                     
+                    
                     let requests = assigner_output.elevators[SELF_ID].clone();
+                    println!("{:#?}", requests);
                     
                     let _ = match io_to_fsm_requests_tx.send(requests) {
                         Ok(ok) => ok,
