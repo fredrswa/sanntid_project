@@ -1,6 +1,9 @@
+//! Backup module for single peer
+// Runs as a secondary process, listening to the primary process.
+// If the primary process dies, the secondary process takes over.
 
 
-#[allow(dead_code)]
+/// Standar Library
 use std::{
         thread::sleep, 
         time::Duration, 
@@ -9,15 +12,17 @@ use std::{
         io,
         collections::HashMap};
 
-
+/// External Crates
 use serde_json;
 use static_toml;
 use crossbeam_channel::Receiver;
+
+
+/// Internal Modules
 use crate::mod_hardware;
-
-
-//config.rs has configuration og structs and debug
 use crate::config::*;
+
+/// Redefine config values for simplicity
 static SELF_ID: &str = CONFIG.peer.id;
 static SLEEP_MILLI: u64 = CONFIG.backup.sleep_dur_milli as u64;
 static BACKUP_ADDR: &str = CONFIG.backup.sec_recv;
@@ -26,8 +31,8 @@ static MAX_ATTEMPTS: i64 = CONFIG.backup.attempts;
 
 
 
-//Implement bincode (use bincode;) to reduce sending size if time and needed.
-
+/// backup_state() : loops when primary sends states, will take over 
+// when primary dies.
 pub fn backup_state() -> (EntireSystem, Option<ElevatorSystem>){
     println!("Starting this process as secondary");
 
@@ -85,7 +90,7 @@ pub fn backup_state() -> (EntireSystem, Option<ElevatorSystem>){
 pub fn send_latest_primary(latest_updated_state: Receiver<EntireSystem>) {
     let dur = Duration::from_millis(SLEEP_MILLI);
 
-    let pri_send = UdpSocket::bind(CONFIG.backup.pri_send.to_string()).expect("Could'nt setup receiver");
+    let pri_send = UdpSocket::bind(PRIMARY_ADDR.to_string()).expect("Could'nt setup receiver");
 
     let mut ww = EntireSystem::template();
     let mut serialized = serde_json::to_string(&ww).unwrap();
