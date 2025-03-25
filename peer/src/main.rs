@@ -85,9 +85,9 @@ fn main() -> Result<()> {
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
-    // std::panic::set_hook(Box::new(|panic_info| {
-    //     std::process::exit(1);
-    // }));
+    std::panic::set_hook(Box::new(|panic_info| {
+         std::process::exit(1);
+    }));
 
     // SPAWN MODULES
     {
