@@ -1,12 +1,12 @@
 [peer]
-id    = "2"
+id    = "1"
 peers = 2
 
 
 [hardware]
 addr        = 15657
 sim         = true
-load_time   = 3000
+load_time   = 1000
 
 
 [elevator]
@@ -20,13 +20,13 @@ motor_timeout_s = 10
 [network]
 peers       = 3
 # host is set to either localhost/127.0.0.1 or the lab server(10.100.23.19).
-host        = "0.0.0.0"
 udp_send    = "255.255.255.255:20012"
 udp_recv    = "0.0.0.0:20012"
-
+hb_time     = 100
+state_time  = 200
 
 [backup]
 pri_send        = "localhost:4000"
 sec_recv        = "localhost:4001"
 attempts        = 3
-sleep_dur_milli = 1000
+sleep_dur_milli = 100
