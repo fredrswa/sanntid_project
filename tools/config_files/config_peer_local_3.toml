@@ -1,32 +1,32 @@
 [peer]
-id    = 3
+id    = "3"
 peers = 3
 
 
 [hardware]
 addr        = 15659
 sim         = true
-num_floors  = 4
-
+load_time   = 1000
 
 [elevator]
 addr            = "localhost:15659"
 num_floors      = 4
 door_open_s     = 3
-door_timout_s   = 10
-motor_timeout_s = 10
+door_timout_s   = 4
+motor_timeout_s = 4
 
 
 [network]
-peers       = 3
+peers       = 2
 # host is set to either localhost/127.0.0.1 or the lab server.
-host        = "127.0.0.1"
-udp_send    = 40012
-udp_recv    = 40015
+udp_send    = "0.0.0.0:2000"
+udp_recv    = "0.0.0.0:2003"
+hb_time     = 100
+state_time  = 200
 
 
 [backup]
-pri_send        = "localhost:40004"
-sec_recv        = "localhost:40005"
+pri_send        = "localhost:4097"
+sec_recv        = "localhost:4098"
 attempts        = 3
 sleep_dur_milli = 1000

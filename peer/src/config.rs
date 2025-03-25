@@ -19,7 +19,7 @@ static_toml::static_toml! {
     // pub static CONFIG = include_toml!("Config.toml"); }
 
     /// choices for testing locally
-    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_2.toml"); }
+    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_3.toml"); }
 
 
 
