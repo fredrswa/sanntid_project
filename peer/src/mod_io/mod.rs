@@ -74,6 +74,8 @@ pub fn run(
                 if let Ok(current_elevator_system) = current_es {
                     world_view = update_own_state(world_view, current_elevator_system.clone());
 
+                    println!("{}", world_view);
+
                     let _ = match io_to_network_tx.send(TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()}) {
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
@@ -101,7 +103,7 @@ pub fn run(
 
                     world_view = merge_entire_systems(world_view.clone(), iww.es, created_completed_timestamps.clone());
                     
-                    println!("{:#?}", world_view);
+                    println!("{}", world_view);
                     
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());

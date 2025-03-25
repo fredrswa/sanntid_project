@@ -214,3 +214,22 @@ impl fmt::Display for ElevatorSystem {
         Ok(())
     }
 }
+
+impl fmt::Display for EntireSystem {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        
+        // Format the EntireSystem part
+        write!(f, "EntireSystem:\n")?;
+        write!(f, "Hall Requests:\n")?;
+        for hall_request in &self.hallRequests {
+            write!(f, "{:?}\n", hall_request)?;
+        }
+
+        write!(f, "States:\n")?;
+        for (key, state) in &self.states {
+            write!(f, "{}: {:?}\n", key, state.cabRequests)?;
+        }
+
+        Ok(())
+    }
+}
