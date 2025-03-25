@@ -1,6 +1,5 @@
 use std::vec;
-use std::time::{Duration, Instant};
-use chrono::{Utc, DateTime};
+use chrono::Utc;
 
 use crate::config::*;
 
@@ -133,7 +132,7 @@ pub fn is_completed (elevator_before: ElevatorSystem, elevator_after: ElevatorSy
   //Iterates through all fllor, checks if HallUp or HallDown has changed, if changed set true else false
   for floor in (elevator_before.requests.iter().zip(elevator_after.requests.iter())).enumerate() {
     completed_array[floor.0][0] = floor.1.0[0] != floor.1.1[0];
-    completed_array[floor.0][1] = floor.1.0[1] != floor.1.1[1];  
+    completed_array[floor.0][1] = floor.1.0[1] != floor.1.1[1]; 
   }
 
   return completed_array;
