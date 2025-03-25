@@ -30,7 +30,7 @@ pub fn run(
     fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
     io_to_fsm_es_rx: &cbc::Receiver<ElevatorSystem>,
     io_to_fsm_requests_rx: &cbc::Receiver<Vec<Vec<bool>>>,
-    timestamps_to_io_tx: &cbc::Sender< Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>>
+    timestamps_to_io_tx: &cbc::Sender< Vec<Vec<(i64, i64)>>>
     ) {
 
 
@@ -49,7 +49,7 @@ pub fn run(
 
     /* ########################### Hall Requests Timestamps ########################################################## */
     
-    let mut created_completed_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
+    let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(Utc::now().timestamp_millis(), Utc::now().timestamp_millis()); 3]; CONFIG.elevator.num_floors as usize];
 
     /* ############################################################################################################### */
 
@@ -64,7 +64,7 @@ pub fn run(
 
                     let button_type = call_to_button_type(call_button.call);
 
-                    created_completed_timestamps[button_type as usize][call_button.floor as usize] = (Utc::now(), Utc::now()-Duration::from_secs(1));
+                    created_completed_timestamps[button_type as usize][call_button.floor as usize] = (Utc::now().timestamp_millis(), Utc::now().timestamp_millis()-1000);
 
                     es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
                 }

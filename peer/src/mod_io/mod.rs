@@ -7,7 +7,7 @@ pub mod io;
 ///
 use crate::config::*;
 use crate::mod_backup::send_latest_primary;
-use crate::mod_io::io::{merge_entire_systems, update_own_state, update_es_from_assigner};
+use crate::mod_io::io::{merge_entire_systems, update_own_state, update_es_from_assigner, merge_timestamps};
 use driver_rust::elevio::poll as sensor_polling;
 
 ///Includes
@@ -32,7 +32,7 @@ pub fn run(
     fsm_to_io_es_rx: &cbc::Receiver<ElevatorSystem>,
     io_to_fsm_es_tx: &cbc::Sender<ElevatorSystem>,
 
-    timestamps_to_io_rx: &cbc::Receiver<Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>>,
+    timestamps_to_io_rx: &cbc::Receiver<Vec<Vec<(i64, i64)>>>,
     ){
 
     let mut world_view = EntireSystem {
@@ -40,7 +40,7 @@ pub fn run(
         states: LAST_SEEN_STATES.states.clone(), 
     };
 
-    let mut created_completed_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
+    let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(Utc::now().timestamp_millis(), Utc::now().timestamp_millis()); 3]; CONFIG.elevator.num_floors as usize];
 
     // println!("{:#?}", world_view);
 
@@ -96,7 +96,10 @@ pub fn run(
                Gives FSM the updated requests from the assigner */
             recv(network_to_io_rx) -> incoming_world_view => {
                 if let Ok(iww) = incoming_world_view {
-                    world_view = merge_entire_systems(world_view.clone(), iww.es);
+
+                    created_completed_timestamps = merge_timestamps(created_completed_timestamps, iww.timestamps);
+
+                    world_view = merge_entire_systems(world_view.clone(), iww.es, created_completed_timestamps.clone());
 
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());

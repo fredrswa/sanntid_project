@@ -72,21 +72,27 @@ pub fn update_own_state (world_view: EntireSystem, current_elevator_system: Elev
 }
 
 //Merges its own world view with an incoming world view from another peer
-pub fn merge_entire_systems (world_view: EntireSystem, incoming_world_view: EntireSystem) -> EntireSystem {
+pub fn merge_entire_systems (
+    world_view: EntireSystem, 
+    incoming_world_view: EntireSystem, 
+    created_completed_timestamps: Vec<Vec<(i64, i64)>>
+) -> EntireSystem {
     let new_world_view = EntireSystem {
-        hallRequests: merge_hall_requests(world_view.hallRequests, incoming_world_view.hallRequests),
+        hallRequests: merge_hall_requests(created_completed_timestamps),
         states: merge_states(CONFIG.peer.id.to_string(), world_view.states, incoming_world_view.states)
     };
-
     return new_world_view;
 }
 
 //Logical OR between all values in the hall_requests vector
-pub fn merge_hall_requests (wwhr: Vec<[bool; 2]>, iwwhr: Vec<[bool; 2]>) -> Vec<[bool; 2]> { 
-    let new_ww: Vec<[bool; 2]> = wwhr.iter()
-        .zip(iwwhr.iter())
-        .map(|(&a, &b)| [a[0] || b[0], a[1] || b[1]])
+pub fn merge_hall_requests(created_completed_timestamps: Vec<Vec<(i64, i64)>>,) -> Vec<[bool; 2]> {
+    // Iterate over each inner vector in created_completed_timestamps
+    let new_ww: Vec<[bool; 2]> = created_completed_timestamps.iter()
+        .map(|timestamps| {
+            [timestamps[0].0 > timestamps[0].1, timestamps[1].0 > timestamps[1].1]
+        })
         .collect();
+
     return new_ww;
 }
 
@@ -125,55 +131,16 @@ pub fn update_es_from_assigner (elevator_system: ElevatorSystem, assigner_output
 }
 
 
-pub fn merge_timestamps (own_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>, incoming_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>) ->  Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> {
-    
-    let mut new_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![vec![(Utc::now(), Utc::now()); 3]; CONFIG.elevator.num_floors as usize];
-    
-    i = 0;
-    for (ot, it) in own_timestamps.iter().zip(incoming_timestamps.iter()) {
-        
-        if ot.0[0] > it.0[0] {
-            new_timestamps[i][0][0] = ot.0[0]
-        } else {
-            new_timestamps[i][0][0] = it.0[0]
-        }
-
-        if ot.0[1] > it.0[1] {
-            new_timestamps[i][0][1] = ot.0[1]
-        } else {
-            new_timestamps[i][0][1] = it.0[1]
-        }
-        
-        if ot.1[0] > it.1[0] {
-            new_timestamps[i][0][0] = ot.1[0]
-        } else {
-            new_timestamps[i][0][0] = it.1[0]
-        }
-
-        if ot.1[1] > it.1[1] {
-            new_timestamps[i][0][1] = ot.1[1]
-        } else {
-            new_timestamps[i][0][1] = it.1[1]
-        }
-
-     
-        i+=1; 
-    }
-
-    return new_timestamps;
-}
-
-
 pub fn merge_timestamps(
-    own_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>,
-    incoming_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>,
-) -> Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> {
-    let num_floors = own_timestamps.len().max(incoming_timestamps.len()); // Handle different lengths
-    let mut new_timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>> = vec![Vec::new(); num_floors];
+    own_timestamps: Vec<Vec<(i64, i64)>>,
+    incoming_timestamps: Vec<Vec<(i64, i64)>>,
+) -> Vec<Vec<(i64, i64)>> {
 
-    for i in 0..num_floors {
-        let own_floor = own_timestamps.get(i).unwrap_or(&vec![]); // Handle missing floors
-        let incoming_floor = incoming_timestamps.get(i).unwrap_or(&vec![]);
+    let mut merged_timestamps: Vec<Vec<(i64, i64)>> = vec![Vec::new(); CONFIG.elevator.num_floors as usize ];
+
+    for i in 0..CONFIG.elevator.num_floors {
+        let own_floor = own_timestamps.get(i as usize).unwrap();
+        let incoming_floor = incoming_timestamps.get(i as usize).unwrap();
 
         let mut merged_floor = Vec::new();
         
@@ -183,15 +150,8 @@ pub fn merge_timestamps(
             merged_floor.push((start_time, end_time));
         }
 
-        // If one vector is longer, append the remaining timestamps
-        if own_floor.len() > incoming_floor.len() {
-            merged_floor.extend_from_slice(&own_floor[incoming_floor.len()..]);
-        } else if incoming_floor.len() > own_floor.len() {
-            merged_floor.extend_from_slice(&incoming_floor[own_floor.len()..]);
-        }
-
-        new_timestamps[i] = merged_floor;
+        merged_timestamps[i as usize] = merged_floor;
     }
 
-    new_timestamps
+    return merged_timestamps;
 }

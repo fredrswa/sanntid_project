@@ -83,7 +83,7 @@ fn main() -> Result<()> {
     let (fsm_to_io_es_tx, fsm_to_io_es_rx) = unbounded::<ElevatorSystem>();
     let (io_to_fsm_es_tx, io_to_fsm_es_rx) = unbounded::<ElevatorSystem>();
 
-    let (timestamps_to_io_tx, timestamps_to_io_rx) = unbounded::<Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>>();
+    let (timestamps_to_io_tx, timestamps_to_io_rx) = unbounded::<Vec<Vec<(i64, i64)>>>();
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 

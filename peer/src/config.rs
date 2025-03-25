@@ -81,8 +81,7 @@ pub struct States {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct TimestampsEntireSystem {
     pub es: EntireSystem,
-    #[serde(serialize_with = "serialize_millis", deserialize_with = "deserialize_millis")]
-    pub timestamps: Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>, 
+    pub timestamps: Vec<Vec<(i64, i64)>>, 
 }
 
 //Dynamically sized struct, makes it possible with an arbitrary number of elevators
