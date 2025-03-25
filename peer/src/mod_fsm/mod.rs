@@ -60,7 +60,7 @@ pub fn run(
         cbc::select! {
             recv(call_from_io_rx) -> cb_message => {
                 if let Ok(call_button) = cb_message {
-                    println!{"{}", &es};
+                    // println!{"{}", &es};
                     
                     let button_type = call_to_button_type(call_button.call);
                     let floor = call_button.floor as usize;

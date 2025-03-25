@@ -107,7 +107,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io
     loop {
             
             match heartbeat_socket.send_to( hb_bytes, UDP_SEND_PORT.to_string()){
-                Ok(_) => println!(""),//println!("Heartbeat sent to: {}", peer_address),
+                Ok(_) => { },//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat");}
             };
         
@@ -129,7 +129,7 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(Stri
         match heartbeat_socket.recv(&mut buffer) {
             Ok(n_bytes) => {
                 let id = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-                println!("Heartbeat received from: {}", id);
+                // println!("Heartbeat received from: {}", id);
 
                 heartbeats.insert(id.clone(), Instant::now());
 

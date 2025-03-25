@@ -100,7 +100,9 @@ pub fn run(
                     created_completed_timestamps = merge_timestamps(created_completed_timestamps, iww.timestamps);
 
                     world_view = merge_entire_systems(world_view.clone(), iww.es, created_completed_timestamps.clone());
-
+                    
+                    println!("{:#?}", world_view);
+                    
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());
                     let assigner_output = call_assigner(world_view.clone());
