@@ -33,8 +33,9 @@ mod mod_hardware;
 /// INCLUDES
 use std::{env, 
           io::Result, 
-          time::Duration,
+          time::{Duration, Instant},
           thread::{spawn, sleep}};
+use chrono::{DateTime, Utc};
 use crossbeam_channel::{select, unbounded};
 
 /// DRIVER
@@ -72,14 +73,15 @@ fn main() -> Result<()> {
     // CHANNELS
     let (io_call_tx,io_call_rx) = unbounded::<sensor_polling::CallButton>();
 
-    let (network_to_io_tx, network_to_io_rx) = unbounded::<EntireSystem>();
-    let (io_to_network_tx, io_to_network_rx) = unbounded::<EntireSystem>();
+    let (network_to_io_tx, network_to_io_rx) = unbounded::<TimestampsEntireSystem>();
+    let (io_to_network_tx, io_to_network_rx) = unbounded::<TimestampsEntireSystem>();
     
     let (io_to_fsm_requests_tx, io_to_fsm_requests_rx) = unbounded::<Vec<Vec<bool>>>();
     
     let (fsm_to_io_es_tx, fsm_to_io_es_rx) = unbounded::<ElevatorSystem>();
     let (io_to_fsm_es_tx, io_to_fsm_es_rx) = unbounded::<ElevatorSystem>();
 
+    let (timestamps_to_io_tx, timestamps_to_io_rx) = unbounded::<Vec<Vec<(DateTime<Utc>, DateTime<Utc>)>>>();
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
@@ -98,7 +100,8 @@ fn main() -> Result<()> {
             &timeout_tx,
             &fsm_to_io_es_tx,
             &io_to_fsm_es_rx,
-            &io_to_fsm_requests_rx
+            &io_to_fsm_requests_rx,
+            &timestamps_to_io_tx
         );});
         
         // IO MODULE
@@ -112,6 +115,7 @@ fn main() -> Result<()> {
             &io_to_fsm_requests_tx,
             &fsm_to_io_es_rx,
             &io_to_fsm_es_tx,
+            &timestamps_to_io_rx,
         );});
         
         // NETWORK MODULE
