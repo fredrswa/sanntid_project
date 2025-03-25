@@ -73,7 +73,7 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireS
 }
 
 
-                                             //Hva skal egentlig sendes?
+                            
 pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
     loop {
         cbc::select! {
@@ -86,7 +86,8 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
                         panic!("Failed to serialize message to send over Udp!: {}", e)
                     }    
                 };
-        
+                
+                //Send more than once
                 match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
                     Ok(ok) => ok,//Ack send to io
                     Err(e) => {

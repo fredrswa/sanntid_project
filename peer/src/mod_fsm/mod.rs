@@ -69,6 +69,9 @@ pub fn run(
                     created_completed_timestamps[floor][button_type as usize] = (now, now - 1000);
                         
                     es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
+
+                    timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
+                    fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
                 }
             }
             recv(floor_sensor_rx) -> fs_message => {
@@ -82,8 +85,7 @@ pub fn run(
 
                     created_completed_timestamps = update_timestamps(completed_array);
                     
-                    timestamps_to_io_tx.send(created_completed_timestamps.clone());
-
+                    timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
                 }
             }
