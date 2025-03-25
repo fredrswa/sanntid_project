@@ -5,7 +5,7 @@ peers = 2
 
 [hardware]
 addr        = 15658
-sim         = false
+sim         = true
 load_time   = 1000
 
 [elevator]
@@ -17,7 +17,7 @@ motor_timeout_s = 10
 
 
 [network]
-peers       = 3
+peers       = 2
 # host is set to either localhost/127.0.0.1 or the lab server.
 udp_send    = "0.0.0.0:2000"
 udp_recv    = "0.0.0.0:2002"
