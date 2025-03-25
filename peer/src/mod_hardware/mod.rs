@@ -19,10 +19,10 @@ pub fn init() {
     let num_floors = NUM_FLOORS.to_string();
 
     let args  = match SIM {
-        true => vec!["xterm","-fa", "Monospace","-fs", "16", "-e", sim_executable, 
+        true => vec!["xterm","-fs", "10", "-e", sim_executable, 
         "--port", port.as_str(), 
         "--numfloors", num_floors.as_str()],
-        false => vec!["xterm","-fa", "Monospace","-fs", "16", "-e", phy_executable, 
+        false => vec!["xterm","-fs", "10", "-e", phy_executable, 
         "--port", port.as_str()]
     };
 

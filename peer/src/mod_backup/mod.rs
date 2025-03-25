@@ -51,7 +51,7 @@ pub fn backup_state() -> (EntireSystem, Option<ElevatorSystem>){
     loop {
         //Do not just 
         sleep(sleep_dur);
-        println!("Secondary Loop: attempt {}", attempts);
+        // println!("Secondary Loop: attempt {}", attempts);
         //Makes sure we are not stuck in this loop and not incrementing attempts.
         backup_socket.set_nonblocking(true).expect("Backup: Failed to set non_blocking");
         match backup_socket.recv_from(&mut buffer) {
@@ -61,7 +61,7 @@ pub fn backup_state() -> (EntireSystem, Option<ElevatorSystem>){
 
                 if let Ok(parsed) = serde_json::from_str::<EntireSystem>(&received.trim()) {
                     world_view = parsed;
-                    println!("Received valid state from primary");
+                    //println!("Received valid state from primary");
                     attempts = 0; // We have a good state, reset attempts.
                 } else {
                     attempts += 1; //We count invalid messages towards attempt.
@@ -107,7 +107,7 @@ pub fn send_latest_primary(latest_updated_state: Receiver<EntireSystem>) {
 
 }
 
-pub fn spawn_secondary() {
+pub fn spawn_secondary_build() {
     let id = CONFIG.peer.id.to_string();
     let primary = "false".to_string();
 
@@ -122,4 +122,18 @@ pub fn spawn_secondary() {
         .stderr(Stdio::null())  // Suppress stderr
         .spawn()
         .expect("Failed to start secondary process in new xterm terminal. Start it yourself with cargo run -- false");
+}
+pub fn spawn_secondary_exe() {
+    let id = CONFIG.peer.id.to_string();
+    let primary = "false".to_string();
+    let path = "./../peer/target/debug/peer";
+    let _secondary = Command::new("setsid")
+        .arg("xterm")
+        .arg("-e")
+        .arg(path)
+        .arg(primary)
+        .stdout(Stdio::null())  // Avoid blocking by suppressing stdout
+        .stderr(Stdio::null())  // Suppress stderr
+        .spawn()
+        .expect("Failed to start secondary process in new xterm terminal. Start it yourself with cargo run false");
 }

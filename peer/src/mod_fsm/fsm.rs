@@ -24,7 +24,7 @@ impl ElevatorSystem {
         ElevatorSystem {          
           elevator,
           //Requests size is dictated at runtime, therefore it is a vector.
-          requests: vec![vec![false; 3]; CONFIG.elevator.num_floors as usize],
+          requests: vec![vec![false; 4]; NUM_FLOORS as usize],
           status: Status::new(),
         }
     }    

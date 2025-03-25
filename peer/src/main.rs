@@ -64,7 +64,7 @@ fn main() -> Result<()> {
         elev_sys = Some(ElevatorSystem::new());
     }
 
-    mod_backup::spawn_secondary();
+    mod_backup::spawn_secondary_exe();
     let elev_sys: ElevatorSystem = elev_sys.unwrap();
 
 
@@ -85,9 +85,9 @@ fn main() -> Result<()> {
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
-    std::panic::set_hook(Box::new(|panic_info| {
-        std::process::exit(1);
-    }));
+    // std::panic::set_hook(Box::new(|panic_info| {
+    //     std::process::exit(1);
+    // }));
 
     // SPAWN MODULES
     {
