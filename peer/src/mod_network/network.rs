@@ -75,26 +75,42 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireS
 
                             
 pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
+    
+    let mut world_view = EntireSystem {
+        hallRequests: LAST_SEEN_STATES.hallRequests.clone(),
+        states: LAST_SEEN_STATES.states.clone(), 
+    };
+
+    let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(0, 1); 3]; CONFIG.elevator.num_floors as usize];
+
+    let mut curr_sys = TimestampsEntireSystem{ es: world_view, timestamps: created_completed_timestamps};
+
+
     loop {
         sleep(Duration::from_millis(25));
         cbc::select! {
             recv(udp_sender_rx) -> sys => {
                 let sys = sys.unwrap();
                 
-                let json_msg = match serde_json::to_string(&sys){
-                    Ok(json_msg) => json_msg,
-                    Err(e) => {
-                        panic!("Failed to serialize message to send over Udp!: {}", e)
-                    }    
-                };
+                if curr_sys != sys {
+                    curr_sys = sys;
+                    let json_msg = match serde_json::to_string(&curr_sys){
+                        Ok(json_msg) => json_msg,
+                        Err(e) => {
+                            panic!("Failed to serialize message to send over Udp!: {}", e)
+                        }    
+                    };
+                    
+                    //Send more than once
+                    match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
+                        Ok(ok) => ok,//Ack send to io
+                        Err(e) => {
+                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
+                        }
+                    };
+                }
+
                 
-                //Send more than once
-                match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
-                    Ok(ok) => ok,//Ack send to io
-                    Err(e) => {
-                        panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
-                    }
-                };
             }
         }
     }  

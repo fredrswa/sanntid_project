@@ -19,7 +19,7 @@ static_toml::static_toml! {
     // pub static CONFIG = include_toml!("Config.toml"); }
 
     /// choices for testing locally
-    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_3.toml"); }
+    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_2.toml"); }
 
 
 
@@ -49,7 +49,7 @@ impl Status {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub struct EntireSystem {
     pub hallRequests: Vec<[bool; 2]>,
@@ -69,7 +69,7 @@ pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
     serde_json::from_str(&config_str).expect("JSON was not well-formatted")
 });
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct States {
     pub behavior: Behavior,
     pub floor: isize,
@@ -77,7 +77,7 @@ pub struct States {
     pub cabRequests: Vec<bool>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct TimestampsEntireSystem {
     pub es: EntireSystem,
     pub timestamps: Vec<Vec<(i64, i64)>>, 
@@ -100,7 +100,7 @@ pub enum Timeout_type {
 
 ///////////////FSM////////////////////
 
-#[derive(Copy, Clone, Serialize, Debug,Deserialize)]
+#[derive(Copy, Clone, Serialize, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Behavior {
     Idle,
@@ -115,7 +115,7 @@ pub enum ButtonType {
     Cab = 2,
 }
 
-#[derive(Copy, Clone, Serialize, Deserialize)]
+#[derive(Copy, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum Dirn{
     Up = 1,

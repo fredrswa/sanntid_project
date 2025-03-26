@@ -39,6 +39,7 @@ pub fn requests_here(es: &ElevatorSystem) -> bool {
 }
 
 pub fn requests_choose_direction(es: &ElevatorSystem) -> DirnBehaviorPair {
+
   match es.status.curr_dirn {
     Dirn::Down => {
       if requests_below(es) {

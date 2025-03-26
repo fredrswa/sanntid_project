@@ -56,6 +56,8 @@ pub fn run(
 
     es.init();
 
+    let es2 = es.clone();
+
     loop {
         cbc::select! {
             recv(io_to_fsm_requests_rx) -> updated_request_vector => {
@@ -70,8 +72,6 @@ pub fn run(
                         }
                       }
                     //es.execute_new_requests(&mut timer);
-                
-                
                 }
             }
             recv(call_from_io_rx) -> cb_message => {
@@ -120,7 +120,7 @@ pub fn run(
                 }
             }
             
-            default => {sleep(poll_period);}
+            
         }
         if timer.is_expired() && !es.status.door_blocked {
             es.on_door_timeout(&mut timer);
