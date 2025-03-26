@@ -19,7 +19,7 @@ static_toml::static_toml! {
     // pub static CONFIG = include_toml!("Config.toml"); }
 
     /// choices for testing locally
-    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_2.toml"); }
+    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_1.toml"); }
 
 
 
@@ -197,7 +197,7 @@ impl fmt::Debug for ClearRequestVariant {
     }
 }
 
-impl fmt::Display for ElevatorSystem {
+/* impl fmt::Display for ElevatorSystem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
        
         write!(f, "     ")?;
@@ -212,6 +212,35 @@ impl fmt::Display for ElevatorSystem {
             write!(f, "\n")?;
         }
         Ok(())
+    }
+} */
+
+
+impl fmt::Display for ElevatorSystem {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut requests_str = String::new();
+        for (floor, buttons) in self.requests.iter().enumerate() {
+            requests_str.push_str(&format!(
+                "  Floor {}: [{}]\n",
+                floor,
+                buttons
+                    .iter()
+                    .map(|&b| if b { "X" } else { " " }) // "X" for active requests, " " for none
+                    .collect::<Vec<_>>()
+                    .join(" | ")
+            ));
+        }
+
+        write!(
+            f,
+            "Requests:\n{}\nStatus:\n  Floor: {}\n  Direction: {:?}\n  Behavior: {:?}\n  Door Blocked: {}\n  Clear Requests: {:?}",
+            requests_str,
+            self.status.curr_floor,
+            self.status.curr_dirn,
+            self.status.behavior,
+            self.status.door_blocked,
+            self.status.clear_requests
+        )
     }
 }
 

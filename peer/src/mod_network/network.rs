@@ -73,7 +73,6 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireS
 }
 
 
-                            
 pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
     
     let mut world_view = EntireSystem {
@@ -84,7 +83,6 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
     let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(0, 1); 3]; CONFIG.elevator.num_floors as usize];
 
     let mut curr_sys = TimestampsEntireSystem{ es: world_view, timestamps: created_completed_timestamps};
-
 
     loop {
         sleep(Duration::from_millis(25));
@@ -109,8 +107,6 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
                         }
                     };
                 }
-
-                
             }
         }
     }  

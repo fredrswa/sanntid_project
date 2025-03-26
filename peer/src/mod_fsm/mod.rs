@@ -56,8 +56,6 @@ pub fn run(
 
     es.init();
 
-    let es2 = es.clone();
-
     loop {
         cbc::select! {
             recv(io_to_fsm_requests_rx) -> updated_request_vector => {
@@ -72,6 +70,8 @@ pub fn run(
                         }
                       }
                     //es.execute_new_requests(&mut timer);
+
+                    println!("{}", es.clone());
                 }
             }
             recv(call_from_io_rx) -> cb_message => {
@@ -91,6 +91,8 @@ pub fn run(
                     timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
                     sleep(Duration::from_millis(10));
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
+
+                    println!("{}", es.clone());
                 }
             }
             recv(floor_sensor_rx) -> fs_message => {
@@ -109,6 +111,8 @@ pub fn run(
                     timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
                     sleep(Duration::from_millis(10));
                     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
+
+                    println!("{}", es.clone());
                 }
             }
             recv(obstruction_rx) -> ob_message => {
@@ -119,8 +123,10 @@ pub fn run(
                     es.status.door_blocked = obs;
                 }
             }
-            
-            
+
+
+            default => {sleep(poll_period);}
+
         }
         if timer.is_expired() && !es.status.door_blocked {
             es.on_door_timeout(&mut timer);

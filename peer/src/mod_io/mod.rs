@@ -77,7 +77,7 @@ pub fn run(
                Send the updated hall orders back to the FSM */
             recv(fsm_to_io_es_rx) -> current_es => {
                 if let Ok(current_elevator_system) = current_es {
-
+                    
                     world_view = update_own_state(world_view, current_elevator_system.clone(), created_completed_timestamps.clone());
 
                     //println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
@@ -111,16 +111,11 @@ pub fn run(
 
                     created_completed_timestamps = merge_timestamps(created_completed_timestamps, iww.timestamps);
 
+
                     world_view = merge_entire_systems(world_view.clone(), iww.es, created_completed_timestamps.clone());
                     
                     //println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
                     
-
-                    let _ = match io_to_network_tx.send(TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()}) {
-                        Ok(ok) => ok,
-                        Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
-                    };
-
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());
                     let assigner_output = call_assigner(world_view.clone());
@@ -133,6 +128,7 @@ pub fn run(
                     };
                 }
             }
+
             default => {sleep(Duration::from_millis(25))}
             
         }
