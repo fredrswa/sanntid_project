@@ -19,7 +19,7 @@ fn main() {
     loop {
         let (amt, src) = socket.recv_from(&mut buf).expect("Failed to receive data");
         let msg = String::from_utf8_lossy(&buf[..amt]);
-        println!("Received {} bytes from {}: {}", msg, src, msg);
+        //println!("Received {} bytes from {}: {}", msg, src, msg);
 
         let src_str = src.to_string();
         if peers.insert(src_str.clone()) {
@@ -32,7 +32,7 @@ fn main() {
                     continue;
                 }
                 socket.send_to(msg.as_bytes(), peer).expect("Failed to send packet");
-                println!("Forwared packet to {}", peer);
+                //println!("Forwared packet to {}", peer);
             }
         }
     

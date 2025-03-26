@@ -76,6 +76,7 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireS
                             
 pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
     loop {
+        sleep(Duration::from_millis(25));
         cbc::select! {
             recv(udp_sender_rx) -> sys => {
                 let sys = sys.unwrap();

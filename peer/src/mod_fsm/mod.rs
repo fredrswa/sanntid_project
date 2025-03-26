@@ -61,7 +61,17 @@ pub fn run(
             recv(io_to_fsm_requests_rx) -> updated_request_vector => {
                 if let Ok(req) = updated_request_vector {
                     es.update_requets(req);
-                    es.execute_new_requests(&mut timer);
+                    
+                    for floor in 0..es.elevator.num_floors {
+                        for button in 0..3 {
+                          if es.requests[floor as usize][button.clone()] {
+                            es.on_request_button_press(&mut timer, floor as usize, call_to_button_type(button as u8));
+                          }
+                        }
+                      }
+                    //es.execute_new_requests(&mut timer);
+                
+                
                 }
             }
             recv(call_from_io_rx) -> cb_message => {
