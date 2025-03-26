@@ -149,3 +149,4 @@ pub fn update_timestamps (completed_array: Vec<Vec<bool>>, created_completed_tim
 
   return new_created_completed_timestamps;
 }
+

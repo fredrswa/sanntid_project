@@ -4,16 +4,17 @@
 /// Sub Modules
 pub mod io;
 
+use crate::config::config::backup::sleep_dur_milli;
 ///
 use crate::config::*;
 use crate::mod_backup::send_latest_primary;
-use crate::mod_io::io::{merge_entire_systems, update_own_state, update_es_from_assigner, merge_timestamps};
+use crate::mod_io::io::{merge_entire_systems, update_own_state, merge_timestamps};
 use driver_rust::elevio::poll as sensor_polling;
 
 ///Includes
 use crossbeam_channel as cbc;
 use io::call_assigner;
-use std::thread::spawn;
+use std::thread::{spawn, sleep};
 use std::time::{Duration, Instant};
 use chrono::{DateTime, Utc};
 //use hardware::init_elevator;
@@ -40,7 +41,7 @@ pub fn run(
         states: LAST_SEEN_STATES.states.clone(), 
     };
 
-    let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(Utc::now().timestamp_millis(), Utc::now().timestamp_millis()); 3]; CONFIG.elevator.num_floors as usize];
+    let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(0, 1); 3]; CONFIG.elevator.num_floors as usize];
 
     // println!("{:#?}", world_view);
 
@@ -65,7 +66,11 @@ pub fn run(
             // * if cab: Trigger order and network
             // * if hall: Trigger assigner and network, wait for confirmation to take order.
             }
-
+            recv(timestamps_to_io_rx) -> timestamps => {
+                if let Ok(new_timestamps) = timestamps {
+                    created_completed_timestamps = merge_timestamps(created_completed_timestamps, new_timestamps);
+                }
+            }
             /* Gets elevator system from FSM
                Uses the elevator system to update knowlegde about own world view
                Uses world view to call the assigner, updating who takes which order
@@ -75,18 +80,20 @@ pub fn run(
 
                     world_view = update_own_state(world_view, current_elevator_system.clone(), created_completed_timestamps.clone());
 
-                    println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
+                    //println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
 
                     let _ = match io_to_network_tx.send(TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()}) {
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
                     };
 
+
+                    //Only pass Elevators that are still active from heartbeats.
                     let assigner_output = call_assigner(world_view.clone());
                     
                     
                     let requests = assigner_output.elevators[SELF_ID].clone();
-                    println!("{:#?}", requests);
+                    //println!("{:#?}", requests);
                     
                     let _ = match io_to_fsm_requests_tx.send(requests) {
                         Ok(ok) => ok,
@@ -106,8 +113,14 @@ pub fn run(
 
                     world_view = merge_entire_systems(world_view.clone(), iww.es, created_completed_timestamps.clone());
                     
-                    println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
+                    //println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
                     
+
+                    let _ = match io_to_network_tx.send(TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()}) {
+                        Ok(ok) => ok,
+                        Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
+                    };
+
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());
                     let assigner_output = call_assigner(world_view.clone());
@@ -120,11 +133,8 @@ pub fn run(
                     };
                 }
             }
-            recv(timestamps_to_io_rx) -> timestamps => {
-                if let Ok(new_timestamps) = timestamps {
-                    created_completed_timestamps = merge_timestamps(created_completed_timestamps, new_timestamps);
-                }
-            }
+            default => {sleep(Duration::from_millis(25))}
+            
         }
     }
 }

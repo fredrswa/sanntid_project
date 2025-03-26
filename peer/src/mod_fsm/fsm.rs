@@ -162,52 +162,19 @@ impl ElevatorSystem {
         }
     }      
 
-
-    pub fn new_requests(&mut self, timer: &mut Timer) {
-        match self.status.behavior {
-          Behavior::DoorOpen => {
-            if self.status.door_blocked {
-              timer.start();
-            } else {
-              let db_pair: DirnBehaviorPair = requests_choose_direction(self);
-              self.status.curr_dirn = db_pair.direction;
-              self.status.behavior = db_pair.behavior;
-      
-              requests_clear_at_current_floor(self);
-              self.set_all_lights();
-              
-              match self.status.behavior {
-                Behavior::DoorOpen => {
-                  timer.start();
-                }
-                Behavior::Moving => {
-                  self.elevator.door_light(false);
-                  self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
-                }
-                Behavior::Idle => {
-                  self.elevator.door_light(false);
-                }
-              }
-            }
-          }
-        Behavior::Moving => {}
-        Behavior::Idle => {
-            let db_pair: DirnBehaviorPair = requests_choose_direction(self);
-            self.status.curr_dirn = db_pair.direction;
-            self.status.behavior = db_pair.behavior;
-            match self.status.behavior {
-              Behavior::DoorOpen => {
-                self.elevator.door_light(true);
-                timer.start();
-                requests_clear_at_current_floor(self);
-              }
-              Behavior::Moving => {
-                self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
-              }
-              Behavior::Idle => {}  
-              
+  pub fn execute_new_requests(&mut self, timer: &mut Timer) {
+    for floor in 0..self.elevator.num_floors {
+      for button in 0..3 {
+        if self.requests[floor as usize][button.clone()] {
+          self.on_request_button_press(&mut *timer, floor as usize, call_to_button_type(button as u8));
         }
       }
     }
   }        
+  pub fn update_requets(&mut self, new_hall_requets: Vec<Vec<bool>>) {
+    for floor in 0..self.elevator.num_floors {
+      self.requests[floor as usize][0] = new_hall_requets[floor as usize][0];
+      self.requests[floor as usize][1] = new_hall_requets[floor as usize][1];
+    }
+  }
 }

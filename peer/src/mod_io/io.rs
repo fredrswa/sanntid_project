@@ -53,16 +53,16 @@ pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
 pub fn update_own_state (world_view: EntireSystem, current_elevator_system: ElevatorSystem, created_completed_timestamps: Vec<Vec<(i64, i64)>>) -> EntireSystem {
     let mut world_view = world_view;
 
+    //Sets a hall request button to TRUE if timestamp of created order is newer than completed timestamp
     world_view.hallRequests = decide_hall_requests(created_completed_timestamps);
 
-    //Sets a hall request button to TRUE if either the world view or the elevator system thinks there is a call
     //Updates cab requests in world view according to elevator system 
     for (i, val) in current_elevator_system.requests.iter().enumerate() {
         if let Some(state) = world_view.states.get_mut(CONFIG.peer.id) {
             state.cabRequests[i] = val[2];
         }
     }
-
+    
     //Sets other parameters given by the elevator system
     world_view.states.get_mut(CONFIG.peer.id).unwrap().behavior = current_elevator_system.status.behavior;
     world_view.states.get_mut(CONFIG.peer.id).unwrap().floor = current_elevator_system.status.curr_floor as isize;
@@ -92,44 +92,42 @@ pub fn decide_hall_requests(created_completed_timestamps: Vec<Vec<(i64, i64)>>,)
             [timestamps[0].0 > timestamps[0].1, timestamps[1].0 > timestamps[1].1]
         })
         .collect();
-
     return new_ww;
 }
 
 //Merges the states for all elevators in the system. Used in the update of world views (merge_entire_systems)
 //Update own world view only if not self, DDN TF U DOING.
 pub fn merge_states (own_id: String, wws: HashMap<String, States>, iwws: HashMap<String, States>) -> HashMap<String, States> { 
-    let mut merged_states: HashMap<String, States>  = wws.clone().into_iter()
-        .filter(|(key, _)| key != &own_id)
-        .map(|(key, mut val1)| {
-            if let Some(val2) = iwws.get(&key) {
-                val1.behavior = val2.behavior;
-                val1.direction = val2.direction;
-                val1.floor = val2.floor;
+    let mut merged_states: HashMap<String, States> = HashMap::new();
+    
+    // First, copy all states from our world view
+    for (key, val) in &wws {
+        merged_states.insert(key.clone(), val.clone());
+    }
+    
+    // Then update with states from incoming world view, except our own
+    for (key, incoming_state) in iwws {
+        if key != own_id {
+            if let Some(existing_state) = merged_states.get_mut(&key) {
+                // Update state attributes
+                existing_state.behavior = incoming_state.behavior;
+                existing_state.direction = incoming_state.direction;
+                existing_state.floor = incoming_state.floor;
                 
-                val1.cabRequests = val1.cabRequests.iter()
-                    .zip(&val2.cabRequests)
-                    .map(|(&a, &b)| a || b)
-                    .collect();
+                // IMPORTANT: For other elevators, accept their cab requests
+                // We don't modify or merge cab requests - each elevator owns its own
+                existing_state.cabRequests = incoming_state.cabRequests;
+            } else {
+                // This is a new peer we haven't seen before
+                merged_states.insert(key, incoming_state);
             }
-            (key, val1)
-        })
-        .collect();
-
-    merged_states.insert(own_id.clone(), wws[&own_id.clone()].clone());
-
+        }
+        // CRITICAL: We NEVER update our own cab requests from incoming state
+        // Our cab requests are strictly local and managed by our FSM module
+    }
+    
     return merged_states;
 }
-
-
-//When the assigner is called, update the FSM's requests accordingly
-pub fn update_es_from_assigner (elevator_system: ElevatorSystem, assigner_output: AssignerOutput) -> ElevatorSystem {
-    let mut es = elevator_system;
-
-    es.requests = assigner_output.elevators[CONFIG.peer.id].clone() ;
-    return es;
-}
-
 
 pub fn merge_timestamps(
     own_timestamps: Vec<Vec<(i64, i64)>>,

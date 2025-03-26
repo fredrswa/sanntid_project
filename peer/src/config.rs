@@ -19,7 +19,7 @@ static_toml::static_toml! {
     // pub static CONFIG = include_toml!("Config.toml"); }
 
     /// choices for testing locally
-    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_3.toml"); }
+    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_1.toml"); }
 
 
 
@@ -108,7 +108,7 @@ pub enum Behavior {
     DoorOpen,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ButtonType {
     HallUp = 0,
     HallDown = 1,
