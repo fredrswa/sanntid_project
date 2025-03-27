@@ -88,8 +88,10 @@ impl ElevatorSystem {
             Behavior::Idle => {
               if requests_should_clear_immediately(self, btn_floor, btn_type) {
                 self.elevator.door_light(true);
-                requests_clear_at_current_floor(self);
+                self.status.behavior = Behavior::Idle;
                 timer.start();
+                requests_clear_at_current_floor(self);
+                
               } else {
                 self.requests[btn_floor][btn_type as usize] = true;
                 let db_pair: DirnBehaviorPair = requests_choose_direction(self);
@@ -104,7 +106,8 @@ impl ElevatorSystem {
                   Behavior::Moving => {
                     self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
                   }
-                  Behavior::Idle => {}  
+                  Behavior::Idle => {
+                  }  
                 }
               }
             }
@@ -127,11 +130,13 @@ impl ElevatorSystem {
                     self.status.behavior = Behavior::DoorOpen;
                 }
             }
-            _=> { }
+            _=> {}
         }
     }
     
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
+      println!("{:?}", self.status);
+      println!("Stuck here on_door_timeout()");
         match self.status.behavior {
           Behavior::DoorOpen => {
             if self.status.door_blocked {
@@ -146,6 +151,7 @@ impl ElevatorSystem {
               
               match self.status.behavior {
                 Behavior::DoorOpen => {
+
                   timer.start();
                 }
                 Behavior::Moving => {
@@ -158,7 +164,13 @@ impl ElevatorSystem {
               }
             }
           }
-          _=> {}
+          Behavior::Idle => {
+            println!("Stuck here Idle");
+
+          }
+          Behavior::Moving => {
+            println!("Stuck here Moving");
+          }
         }
     }      
 
