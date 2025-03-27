@@ -12,6 +12,7 @@ use std::{
         io,
         collections::HashMap};
 
+use peer::config::config::elevator;
 /// External Crates
 use serde_json;
 use crossbeam_channel::Receiver;
@@ -86,6 +87,38 @@ pub fn backup_state() -> (EntireSystem, Option<ElevatorSystem>){
 }
 
 
+
+static UDP_RECV: &str = CONFIG.network.udp_recv;
+
+pub fn humble_state() -> (EntireSystem, Option<ElevatorSystem>) {
+    println!("Starting in humble state: Listening on network for latest state");
+    let socket = UdpSocket::bind(UDP_RECV).expect("Could'nt setup receiver");
+    let mut buffer: [u8; 1024] = [0; 1024];
+    let mut world_view: EntireSystem = EntireSystem::template();
+    let mut es = ElevatorSystem::new();
+    let start_time = std::time::Instant::now();
+
+    while start_time.elapsed().as_secs() < 3 {
+        match socket.recv_from(&mut buffer) {
+            Ok((amt, _)) => {
+                let received = String::from_utf8_lossy(&buffer[..amt]);
+                if let Ok(parsed) = serde_json::from_str::<EntireSystem>(&received.trim()) {
+                    world_view = parsed;
+                    drop(socket);
+                    return (world_view, Some(es));
+                }
+            },
+            Err(_) => {
+                continue;
+            }
+        }
+        drop(socket);
+        es.requests = get_recovery_state();
+        return 
+    }
+}
+
+
 pub fn send_latest_primary(latest_updated_state: Receiver<EntireSystem>) {
     let dur = Duration::from_millis(SLEEP_MILLI);
 
@@ -108,13 +141,12 @@ pub fn send_latest_primary(latest_updated_state: Receiver<EntireSystem>) {
 
 
 pub fn spawn_secondary_exe() {
-    let primary = "false".to_string();
     let path = "./peer";
     let _secondary = Command::new("setsid")
         .arg("xterm")
         .arg("-e")
         .arg(path)
-        .arg(primary)
+        .arg(SELF_ID)
         .stdout(Stdio::null())  // Avoid blocking by suppressing stdout
         .stderr(Stdio::null())  // Suppress stderr
         .spawn()

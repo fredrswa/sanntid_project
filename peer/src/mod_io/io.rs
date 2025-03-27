@@ -67,15 +67,15 @@ pub fn update_own_state (world_view: EntireSystem, current_elevator_system: Elev
 
     //Updates cab requests in world view according to elevator system 
     for (i, val) in current_elevator_system.requests.iter().enumerate() {
-        if let Some(state) = world_view.states.get_mut(CONFIG.peer.id) {
+        if let Some(state) = world_view.states.get_mut(&*SELF_ID) {
             state.cabRequests[i] = val[2];
         }
     }
     
     //Sets other parameters given by the elevator system
-    world_view.states.get_mut(CONFIG.peer.id).unwrap().behavior = current_elevator_system.status.behavior;
-    world_view.states.get_mut(CONFIG.peer.id).unwrap().floor = current_elevator_system.status.curr_floor as isize;
-    world_view.states.get_mut(CONFIG.peer.id).unwrap().direction = current_elevator_system.status.curr_dirn;
+    world_view.states.get_mut(&*SELF_ID).unwrap().behavior = current_elevator_system.status.behavior;
+    world_view.states.get_mut(&*SELF_ID).unwrap().floor = current_elevator_system.status.curr_floor as isize;
+    world_view.states.get_mut(&*SELF_ID).unwrap().direction = current_elevator_system.status.curr_dirn;
 
     return world_view;
 }
@@ -88,7 +88,7 @@ pub fn merge_entire_systems (
 ) -> EntireSystem {
     let new_world_view = EntireSystem {
         hallRequests: decide_hall_requests(created_completed_timestamps),
-        states: merge_states(CONFIG.peer.id.to_string(), world_view.states, incoming_world_view.states)
+        states: merge_states(SELF_ID.to_string(), world_view.states, incoming_world_view.states)
     };
     return new_world_view;
 }

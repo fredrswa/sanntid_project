@@ -32,10 +32,28 @@ fn main() -> Result<()> {
 
     if !*PRIMARY 
     {   // Start as backup state
-        (world_view, elev_sys) = mod_backup::backup_state();
+        
     } else {
         
         elev_sys = Some(ElevatorSystem::new());
+    }
+    match *PRIMARY {
+        true => {
+            match *HUMBLE {
+                // HUMBLE PRIMARY
+                true => {
+                    mod_backup::humble_state();
+                }
+                // REGULAR PRIMARY
+                false => {
+                    println!("Starting as primary");
+                }
+            }
+        }
+        // BACKUP
+        false => {
+            (world_view, elev_sys) = mod_backup::backup_state();
+        }
     }
 
     mod_backup::spawn_secondary_exe();

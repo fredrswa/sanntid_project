@@ -3,19 +3,15 @@ pub mod network;
 
 //Includes
 use crossbeam_channel as cbc;
-use std::collections::HashMap;
-use std::thread::{spawn, sleep};
+use std::thread::spawn;
 use std::sync::Arc;
 use core::time::Duration;
 
-use driver_rust::elevio::poll as sensor_polling;
 
 ///Crates
 use crate::config::*;
-use crate::mod_fsm::timer::Timer;
 use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat, between_floors};
 
-static SELF_ID: &str = CONFIG.peer.id;
 static UDP_RECV_PORT: &str = CONFIG.network.udp_recv;
 static UDP_SEND_PORT: &str = CONFIG.network.udp_send;
 

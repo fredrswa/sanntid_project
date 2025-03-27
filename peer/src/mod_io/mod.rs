@@ -20,8 +20,6 @@ use chrono::{DateTime, Utc};
 //use hardware::init_elevator;
 
 
-static SELF_ID: &str = CONFIG.peer.id;
-
 pub fn run(
     mut world_view: EntireSystem,
     es: &mut ElevatorSystem, 
@@ -100,7 +98,7 @@ pub fn run(
                     //////////////////////////
                     es.set_all_lights_world_view(&world_view);
 
-                    let requests = assigner_output.elevators[SELF_ID].clone();
+                    let requests = assigner_output.elevators[&*SELF_ID].clone();
                     //println!("{:#?}", requests);
                     
                     let _ = match io_to_fsm_requests_tx.send(requests) {
@@ -132,7 +130,7 @@ pub fn run(
                     //////////////////////////
                     es.set_all_lights_world_view(&world_view);
 
-                    let requests = assigner_output.elevators[SELF_ID].clone();
+                    let requests = assigner_output.elevators[&*SELF_ID].clone();
                     let _ = match io_to_fsm_requests_tx.send(requests) {
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
