@@ -59,7 +59,7 @@ pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp
         };
 
         let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-    
+
         if n_bytes < 5 {
             udp_to_heartbeat_tx.send(received_msg);
         } 

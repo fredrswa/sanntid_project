@@ -49,7 +49,6 @@ pub fn run(
     let self_id: usize = SELF_ID.to_string().parse().expect("Was not able to parse SELF ID as int");
     connected_peers[self_id] = true;
 
-    let (udp_receive_heartbeat_tx, udp_receive_heartbeat_rx) = cbc::unbounded::<(String, bool)>();
     let (udp_send_heartbeat_tx, udp_send_heartbeat_rx) = cbc::unbounded::<(bool)>();
     let (heartbeat_to_network_tx, heartbeat_to_network_rx) = cbc::unbounded::<(usize, bool)>();
 
@@ -59,8 +58,6 @@ pub fn run(
 
     // SPAWN HEATBEAT FUNCTIONS
     {spawn(move || send_heartbeat(&send_heartbeat_socket, &SELF_ID.to_string(), udp_send_heartbeat_rx))};
-
-
     {spawn(move || receive_hearbeat(udp_to_heartbeat_rx, heartbeat_to_network_tx))};
     /* #################################################################################################################### */
 
@@ -77,12 +74,11 @@ pub fn run(
 
     loop {
         cbc::select! {
-            recv(udp_receive_heartbeat_rx) -> heartbeat => {
+            recv(heartbeat_to_network_rx) -> heartbeat => {
                 let (id, val) = heartbeat.unwrap();
                 
                 println!("ID: {} VAL: {}", id, val);
-                let incoming_id: usize = id.clone().parse().expect("Was not able to parse incoming id as int");
-                connected_peers[incoming_id] = val;
+                connected_peers[id] = val;
                 
                 connected_peers_tx.send(connected_peers);
             }
