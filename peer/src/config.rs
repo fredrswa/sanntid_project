@@ -96,6 +96,11 @@ pub enum Timeout_type {
     network_disconnect = 3,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Recovery {
+    pub cab_requests: Vec<bool>,	
+}
+
 ///////////////FSM////////////////////
 
 #[derive(Copy, Clone, Serialize, Debug, Deserialize, PartialEq)]
