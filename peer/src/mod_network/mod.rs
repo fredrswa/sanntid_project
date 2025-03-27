@@ -20,7 +20,8 @@ pub fn run(
     //Communication with IO module
     network_to_io_tx: &cbc::Sender<TimestampsEntireSystem>,
     io_to_network_rx: &cbc::Receiver<TimestampsEntireSystem>,
-    connected_peers_tx: &cbc::Sender<[bool; CONFIG.network.peers as usize]>,) {
+    connected_peers_tx: &cbc::Sender<[bool; CONFIG.network.peers as usize]>,
+    obstruction_to_io_rx: &cbc::Receiver<bool>,) {
     
     println!("Running network module");
     let socket = Arc::new(udp_create_socket(&UDP_RECV_PORT.to_string()));
@@ -89,11 +90,14 @@ pub fn run(
                     udp_sender_tx.send(sys);
                 }
             }
-
             recv(between_floors_rx) -> bf_message => {
                 if let Ok(between) = bf_message{
-                    println!("Between Floors: {}", between);
                     udp_send_heartbeat_tx.send(between);
+                }
+            }
+            recv(obstruction_to_io_rx) -> ob_message => {
+                if let Ok(obstructed) = ob_message{
+                    udp_send_heartbeat_tx.send(obstructed);
                 }
             }
         }

@@ -30,7 +30,8 @@ pub fn run(
     fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
     io_to_fsm_es_rx: &cbc::Receiver<ElevatorSystem>,
     io_to_fsm_requests_rx: &cbc::Receiver<Vec<Vec<bool>>>,
-    timestamps_to_io_tx: &cbc::Sender< Vec<Vec<(i64, i64)>>>
+    timestamps_to_io_tx: &cbc::Sender<Vec<Vec<(i64, i64)>>>,
+    obstruction_to_io_tx: &cbc::Sender<bool>
     ) {
 
 
@@ -136,8 +137,11 @@ pub fn run(
             }
             recv(obstruction_rx) -> ob_message => {
                 if let Ok(obs) = ob_message {
-                    if !obs {
+                    if obs {
+                        obstruction_to_io_tx.send(true);
+                    } else {
                         timer.start();
+                        obstruction_to_io_tx.send(false);
                     }
                     es.status.door_blocked = obs;
                 }
@@ -146,6 +150,7 @@ pub fn run(
             }
             
             if timer.is_expired() && !es.status.door_blocked {
+
                 let es_before = es.clone();
                     
                 es.on_door_timeout(&mut timer);
