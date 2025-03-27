@@ -14,7 +14,6 @@ use std::{
 
 /// External Crates
 use serde_json;
-use static_toml;
 use crossbeam_channel::Receiver;
 
 
@@ -107,26 +106,10 @@ pub fn send_latest_primary(latest_updated_state: Receiver<EntireSystem>) {
 
 }
 
-pub fn spawn_secondary_build() {
-    let id = CONFIG.peer.id.to_string();
-    let primary = "false".to_string();
 
-
-    let _secondary = Command::new("setsid")
-        .arg("xterm")
-        .arg("-e")
-        .arg("cargo")
-        .arg("run")
-        .arg(primary)
-        .stdout(Stdio::null())  // Avoid blocking by suppressing stdout
-        .stderr(Stdio::null())  // Suppress stderr
-        .spawn()
-        .expect("Failed to start secondary process in new xterm terminal. Start it yourself with cargo run -- false");
-}
 pub fn spawn_secondary_exe() {
-    let id = CONFIG.peer.id.to_string();
     let primary = "false".to_string();
-    let path = "./../peer/target/debug/peer";
+    let path = "./peer";
     let _secondary = Command::new("setsid")
         .arg("xterm")
         .arg("-e")

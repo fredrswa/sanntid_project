@@ -25,7 +25,7 @@ pub fn call_assigner(sys: EntireSystem, connected_peers:[bool; CONFIG.network.pe
     }; 
 
     //Calls the hall_request_assigner, passing it the JSON string
-    let program = "../tools/assigner/hall_request_assigner";
+    let program = "../tools/hall_request_assigner";
     let output = match Command::new(program)
         .arg("-i")
         .arg(&elev_states)
