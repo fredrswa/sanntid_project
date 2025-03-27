@@ -42,7 +42,7 @@ fn main() -> Result<()> {
             match *HUMBLE {
                 // HUMBLE PRIMARY
                 true => {
-                    mod_backup::humble_state();
+                    (world_view, elev_sys) = mod_backup::humble_state();
                 }
                 // REGULAR PRIMARY
                 false => {

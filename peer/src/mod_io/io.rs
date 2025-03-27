@@ -61,21 +61,22 @@ pub fn call_assigner(sys: EntireSystem, connected_peers:[bool; CONFIG.network.pe
 //Updates its own world view according to its own elevator system, given to the IO module by FSM module.
 pub fn update_own_state (world_view: EntireSystem, current_elevator_system: ElevatorSystem, created_completed_timestamps: Vec<Vec<(i64, i64)>>) -> EntireSystem {
     let mut world_view = world_view;
-
     //Sets a hall request button to TRUE if timestamp of created order is newer than completed timestamp
     world_view.hallRequests = decide_hall_requests(created_completed_timestamps);
-
+    let self_id = SELF_ID.to_string();
+    println!("Check self id: {}", self_id);
     //Updates cab requests in world view according to elevator system 
     for (i, val) in current_elevator_system.requests.iter().enumerate() {
-        if let Some(state) = world_view.states.get_mut(&*SELF_ID) {
+        if let Some(state) = world_view.states.get_mut(&self_id) {
             state.cabRequests[i] = val[2];
         }
     }
     
     //Sets other parameters given by the elevator system
-    world_view.states.get_mut(&*SELF_ID).unwrap().behavior = current_elevator_system.status.behavior;
-    world_view.states.get_mut(&*SELF_ID).unwrap().floor = current_elevator_system.status.curr_floor as isize;
-    world_view.states.get_mut(&*SELF_ID).unwrap().direction = current_elevator_system.status.curr_dirn;
+    world_view.states.get_mut(&self_id).unwrap().behavior = current_elevator_system.status.behavior;
+
+    world_view.states.get_mut(&self_id).unwrap().floor = current_elevator_system.status.curr_floor as isize;
+    world_view.states.get_mut(&self_id).unwrap().direction = current_elevator_system.status.curr_dirn;
 
     return world_view;
 }

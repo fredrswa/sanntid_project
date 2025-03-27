@@ -66,11 +66,26 @@ pub struct TimestampsEntireSystem {
 
 impl EntireSystem {
     pub fn template() -> EntireSystem {
+        let mut states = HashMap::new();
+        
+        // Create a default state entry for each peer
+        for peer_id in 0..CONFIG.network.peers {
+            let default_state = States {
+                behavior: Behavior::Idle,
+                floor: 0,
+                direction: Dirn::Stop,
+                cabRequests: vec![false; CONFIG.elevator.num_floors as usize],
+            };
+            
+            states.insert(peer_id.to_string(), default_state);
+        }
+        
         let es = EntireSystem {
             hallRequests: vec![[false; 2]; CONFIG.elevator.num_floors as usize],
-            states: HashMap::new(),
+            states,
         };
-    es
+        
+        es
     }
 }
 

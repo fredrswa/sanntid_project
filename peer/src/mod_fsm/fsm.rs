@@ -211,4 +211,10 @@ impl ElevatorSystem {
       self.requests[floor as usize][1] = new_hall_requets[floor as usize][1];
     }
   }
+  pub fn update_cab_requests_from_backup(&mut self) {
+    let cab_requests = read_cab_backup();
+    for floor in 0..self.elevator.num_floors {
+      self.requests[floor as usize][2] = cab_requests[floor as usize];
+    }
+  }
 }

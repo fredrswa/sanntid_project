@@ -9,10 +9,9 @@ use std::{
         time::Duration, 
         process::{Stdio, Command},
         net::UdpSocket,
-        io,
-        collections::HashMap};
+        io};
 
-use peer::config::config::elevator;
+
 /// External Crates
 use serde_json;
 use crossbeam_channel::Receiver;
@@ -20,10 +19,10 @@ use crossbeam_channel::Receiver;
 
 /// Internal Modules
 use crate::mod_hardware;
+use crate::mod_fsm;
 use crate::config::*;
 
 /// Redefine config values for simplicity
-static SELF_ID: &str = CONFIG.peer.id;
 static SLEEP_MILLI: u64 = CONFIG.backup.sleep_dur_milli as u64;
 static BACKUP_ADDR: &str = CONFIG.backup.sec_recv;
 static PRIMARY_ADDR: &str = CONFIG.backup.pri_send;
@@ -105,6 +104,7 @@ pub fn humble_state() -> (EntireSystem, Option<ElevatorSystem>) {
                 if let Ok(parsed) = serde_json::from_str::<EntireSystem>(&received.trim()) {
                     world_view = parsed;
                     drop(socket);
+                    es.update_cab_requests_from_backup();
                     return (world_view, Some(es));
                 }
             },
@@ -112,10 +112,11 @@ pub fn humble_state() -> (EntireSystem, Option<ElevatorSystem>) {
                 continue;
             }
         }
-        drop(socket);
-        es.requests = get_recovery_state();
-        return 
+        
     }
+    drop(socket);
+    es.update_cab_requests_from_backup();
+    return (world_view, Some(es));
 }
 
 
@@ -146,7 +147,7 @@ pub fn spawn_secondary_exe() {
         .arg("xterm")
         .arg("-e")
         .arg(path)
-        .arg(SELF_ID)
+        .arg(SELF_ID.to_string())
         .stdout(Stdio::null())  // Avoid blocking by suppressing stdout
         .stderr(Stdio::null())  // Suppress stderr
         .spawn()
