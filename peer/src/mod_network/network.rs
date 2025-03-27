@@ -40,11 +40,12 @@ pub fn udp_create_socket(addr: &String) -> UdpSocket {
 }
 
  //Receive UDP messages and send them to the channel
- // Message contain the entire system state
-pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireSystem>) {
+ // Message contains the entire system state or a heartbeat
+pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp_to_world_view_tx: Sender<TimestampsEntireSystem>) {
     let mut buffer = [0; 1024];
+
     socket.set_nonblocking(true).expect("Failed to set non-blocking!");
-    let mut sys_old = Option::<TimestampsEntireSystem>::None;
+    
     loop {
         let (n_bytes, _src) = match socket.recv_from(&mut buffer){
             Ok((_n_bytes, _src)) => (_n_bytes, _src),
@@ -52,36 +53,35 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireS
                 thread::sleep(Duration::from_millis(100));
                 continue;
             },
-            Err(_) => {
-                panic!()
+            Err(e) => {
+                panic!("Error received from udp: {}", e);
             }
         };
 
         let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-        if received_msg.contains("heartbeat") {
-            continue;
+
+        if n_bytes < 5 {
+            udp_to_heartbeat_tx.send(received_msg);
+        } 
+        else {
+            let sys: TimestampsEntireSystem = match serde_json::from_str(&received_msg) {
+                Ok(sys) => sys,
+                Err(e) => {
+                    panic!("Failed to parse incoming state!: {}", e)
+                }
+            };
+        
+            match udp_to_world_view_tx.send(sys.clone()) {
+                Ok(ok) => ok,
+                Err(e) => {panic!("Message was not sent to peer: {}", e)}
+            };
+            //received world view
         }
-
-        let sys: TimestampsEntireSystem = match serde_json::from_str(&received_msg) {
-            Ok(sys) => sys,
-            Err(e) => {
-                panic!("Failed to parse incoming state!: {}", e)
-            }
-        };
-        // if sys_old.clone().unwrap() == sys {
-        //     continue;
-        // }
-
-        match udp_listener_tx.send(sys.clone()) {
-            Ok(ok) => ok,
-            Err(e) => {panic!("Message was not sent to peer: {}", e)}
-        };
-        sys_old = Some(sys);
     }
 }
 
 
-pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
+pub fn udp_send(socket: &UdpSocket, peer_address: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
     
     let mut world_view = EntireSystem {
         hallRequests: LAST_SEEN_STATES.hallRequests.clone(),
@@ -111,7 +111,7 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
                         match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
                             Ok(ok) => ok,//Ack send to io
                             Err(e) => {
-                                panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
+                                panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
                             }
                         };
                     }
@@ -127,9 +127,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
     
     let hb_time = Duration::from_millis(HB_SLEEP_TIME);
     //println!("Sending Heartbeat");
-    let hb_str = format!("heartbeat: {}", peer_id);
-    let hb_bytes = hb_str.as_bytes();
-    
+
     loop {
         select! {
             recv(send_heartbeat_rx) -> send_heartbeat => {
@@ -138,7 +136,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
         }
 
         if !between_floors {
-            match heartbeat_socket.send_to( hb_bytes, UDP_SEND_PORT.to_string()){
+            match heartbeat_socket.send_to( peer_id.as_bytes(), UDP_SEND_PORT.to_string()){
                 Ok(_) => { },//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat: {}", e);}
             };
@@ -149,41 +147,28 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
 }
 
 //Receive heartbeats from all peers to detect dead elevators
-pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(String, bool)>) {
-
-    //HashMap to keep track of heartbeats
+pub fn receive_hearbeat(udp_to_heartbeat_rx: Receiver<String>, heartbeat_to_network_tx: Sender<(usize, bool)>) { 
     let mut heartbeats: HashMap<String, Instant> = HashMap::new();
-    let mut buffer = [0; 1024]; 
-
-    heartbeat_socket.set_nonblocking(true).expect("Failed to set non-blocking!");
 
     loop {
-        sleep(Duration::from_millis(200));
-        match heartbeat_socket.recv(&mut buffer) {
-            Ok(n_bytes) => {
-                let id = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
-                // println!("Heartbeat received from: {}", id);
-
-                heartbeats.insert(id.clone(), Instant::now());
-
-                
-            },
-            //If there is no heartbeat waiting, dont block s.t. heartbeat can not be sent. 
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                //println!("No heartbeat waiting...");
-                thread::sleep(Duration::from_millis(1000));
-            }
-            Err(e) => {
-                eprintln!("An error occured when receiving heartbeat: {}", e);
+        select! {
+            recv(udp_to_heartbeat_rx) -> heartbeat_id => {
+                if let Ok(id) = heartbeat_id {
+                    heartbeats.insert(id.clone(), Instant::now());
+                }
             }
         }
+                
         for (id, time) in &heartbeats {
             if Instant::now() - *time < Duration::from_millis(5000) {
-                heartbeat_tx.send((id.clone(), true)).expect(&format!("Failed to pass heartbeat {} over channel.", &id));
+                let incoming_id: usize = id.clone().parse().expect("Was not able to parse incoming id as int");
+                let _ = heartbeat_to_network_tx.send((incoming_id.clone(), true));
             } else {
-                heartbeat_tx.send((id.clone(), false)).expect(&format!("Failed to pass heartbeat {} over channel.", &id));
+                let incoming_id: usize = id.clone().parse().expect("Was not able to parse incoming id as int");
+                let _ = heartbeat_to_network_tx.send((incoming_id.clone(), false));
             }
         }
+
     }
 }
 

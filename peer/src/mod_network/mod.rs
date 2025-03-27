@@ -32,14 +32,16 @@ pub fn run(
 
     /* ########################### Udp #################################################################################### */
     let (udp_sender_tx, udp_sender_rx) = cbc::unbounded::<TimestampsEntireSystem>();
-    let (udp_listener_tx, udp_listener_rx) = cbc::unbounded::<TimestampsEntireSystem>();
+    let (udp_to_world_view_tx, udp_to_world_view_rx) = cbc::unbounded::<TimestampsEntireSystem>();
+    let (udp_to_heartbeat_tx, udp_to_heartbeat_rx) = cbc::unbounded::<String>();
+    
     let udp_socket = Arc::clone(&socket);
     
     let udp_send_socket = Arc::clone(&udp_socket);
     let udp_receive_socket = Arc::clone(&udp_socket);
 
     {spawn(move || udp_send(&udp_send_socket, UDP_SEND_PORT.to_string(),udp_sender_rx));}
-    {spawn(move || udp_receive(&udp_receive_socket, udp_listener_tx));}
+    {spawn(move || udp_receive(&udp_receive_socket, udp_to_heartbeat_tx, udp_to_world_view_tx));}
     /* #################################################################################################################### */
 
     /* ########################### Hearbeat ############################################################################### */
@@ -47,17 +49,16 @@ pub fn run(
     let self_id: usize = SELF_ID.to_string().parse().expect("Was not able to parse SELF ID as int");
     connected_peers[self_id] = true;
 
-    let (udp_receive_heartbeat_tx, udp_receive_heartbeat_rx) = cbc::unbounded::<(String, bool)>();
     let (udp_send_heartbeat_tx, udp_send_heartbeat_rx) = cbc::unbounded::<(bool)>();
+    let (heartbeat_to_network_tx, heartbeat_to_network_rx) = cbc::unbounded::<(usize, bool)>();
 
     let heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&socket);
     
     let send_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
-    let receive_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
 
     // SPAWN HEATBEAT FUNCTIONS
     {spawn(move || send_heartbeat(&send_heartbeat_socket, &SELF_ID.to_string(), udp_send_heartbeat_rx))};
-    {spawn(move || receive_hearbeat(&receive_heartbeat_socket, udp_receive_heartbeat_tx))};
+    {spawn(move || receive_hearbeat(udp_to_heartbeat_rx, heartbeat_to_network_tx))};
     /* #################################################################################################################### */
 
     /* ########################### Between floor polling ################################################################## */
@@ -73,20 +74,16 @@ pub fn run(
 
     loop {
         cbc::select! {
-            recv(udp_receive_heartbeat_rx) -> heartbeat => {
+            recv(heartbeat_to_network_rx) -> heartbeat => {
                 let (id, val) = heartbeat.unwrap();
-                let incoming_id: usize = id.clone().parse().expect("Was not able to parse incoming id as int");
-                connected_peers[incoming_id] = val;
+                
+                println!("ID: {} VAL: {}", id, val);
+                connected_peers[id] = val;
                 
                 connected_peers_tx.send(connected_peers);
-            // println!("###########");
-            // for (_id, _val) in &ps.connected {
-            //     println!("{}->{}", _id, _val);
-            // }
-            // println!("###########\n");
             }
 
-            recv(udp_listener_rx) -> incoming_sys => {
+            recv(udp_to_world_view_rx) -> incoming_sys => {
                 if let Ok(sys) = incoming_sys {
                     network_to_io_tx.send(sys);
                 }
