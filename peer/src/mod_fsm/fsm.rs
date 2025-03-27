@@ -80,7 +80,7 @@ impl ElevatorSystem {
               if requests_should_clear_immediately(self, btn_floor, btn_type) {
                 self.elevator.door_light(true);
                 requests_clear_at_current_floor(self);
-                timer.start();
+                // timer.start();
               } else {
                 self.requests[btn_floor][btn_type as usize] = true;
               }
@@ -91,8 +91,8 @@ impl ElevatorSystem {
             Behavior::Idle => {
               if requests_should_clear_immediately(self, btn_floor, btn_type) {
                 self.elevator.door_light(true);
-                self.status.behavior = Behavior::Idle; // Changed this from Idle to DoorOpen
-                timer.start();
+                self.status.behavior = Behavior::DoorOpen; // Changed this from Idle to DoorOpen
+                // timer.start();
                 requests_clear_at_current_floor(self);
                 
               } else {
@@ -169,15 +169,7 @@ impl ElevatorSystem {
             }
           }
           Behavior::Idle => {
-            let db_pair: DirnBehaviorPair = requests_choose_direction(self);
-            self.status.curr_dirn = db_pair.direction;
-            self.status.behavior = db_pair.behavior;
-      
-            requests_clear_at_current_floor(self);
-            self.set_all_lights();
-            self.elevator.door_light(false);
             println!("Stuck here Idle");
-
           }
           Behavior::Moving => {
             println!("Stuck here Moving");
