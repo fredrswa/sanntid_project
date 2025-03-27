@@ -129,9 +129,8 @@ pub fn run(
 
         }
         if timer.is_expired() && !es.status.door_blocked {
-            if es.status.behavior == Behavior::DoorOpen {
             es.on_door_timeout(&mut timer);
-            }
+            //Timer expired used
         }
 
         

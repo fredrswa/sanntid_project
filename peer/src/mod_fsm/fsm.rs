@@ -165,6 +165,13 @@ impl ElevatorSystem {
             }
           }
           Behavior::Idle => {
+            let db_pair: DirnBehaviorPair = requests_choose_direction(self);
+            self.status.curr_dirn = db_pair.direction;
+            self.status.behavior = db_pair.behavior;
+      
+            requests_clear_at_current_floor(self);
+            self.set_all_lights();
+            self.elevator.door_light(false);
             println!("Stuck here Idle");
 
           }
