@@ -5,7 +5,19 @@ use std::cmp::max;
 use crate::config::*;
 
 //Calls the hall_request_assigner, responsible for assigning which elevator should take what order
-pub fn call_assigner(sys: EntireSystem) -> AssignerOutput{
+pub fn call_assigner(sys: EntireSystem, connected_peers:[bool; CONFIG.network.peers as usize]) -> AssignerOutput{
+
+    let mut sys = sys;
+    println!("Before: {:#?}", sys);
+
+    //println!("{:#?}", connected_peers);
+    for (id, connected) in connected_peers.iter().enumerate() {
+        if !*connected {
+            sys.states.remove(&format!("{}", id));
+        }
+    }
+
+    println!("After: {:#?}", sys);
 
     //Serializes the world view into a JSON string
     let elev_states = match serde_json::to_string(&sys) {

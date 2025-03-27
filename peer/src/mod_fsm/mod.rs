@@ -154,5 +154,5 @@ pub fn run(
         //     sleep(Duration::from_millis(10));
         //     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
         // }
-    }
+  }
 }

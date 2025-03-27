@@ -8,9 +8,11 @@ use std::net::UdpSocket;
 use std::io;
 use std::thread::sleep;
 ///
-use crossbeam_channel::{Receiver, Sender};
+use crossbeam_channel::{select, Receiver, Sender};
 use crossbeam_channel as cbc;
 use std::thread;
+
+use driver_rust::elevio::elev;
 
 ///Crates
 use crate::config::*;
@@ -120,17 +122,27 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
 } 
 
 //Send heartbeats to all peers to indicate that the elevator is still alive
-pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String) -> std::io::Result<()> {
+pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heartbeat_rx: Receiver<(bool)>) -> std::io::Result<()> {
+    let mut between_floors: bool = true;
+    
     let hb_time = Duration::from_millis(HB_SLEEP_TIME);
     //println!("Sending Heartbeat");
     let hb_str = format!("heartbeat: {}", peer_id);
     let hb_bytes = hb_str.as_bytes();
+    
     loop {
-            
+        select! {
+            recv(send_heartbeat_rx) -> send_heartbeat => {
+                between_floors = send_heartbeat.unwrap();
+            }
+        }
+
+        if !between_floors {
             match heartbeat_socket.send_to( hb_bytes, UDP_SEND_PORT.to_string()){
                 Ok(_) => { },//println!("Heartbeat sent to: {}", peer_address),
-                Err(e) => {eprintln!("Failed to send heartbeat");}
+                Err(e) => {eprintln!("Failed to send heartbeat: {}", e);}
             };
+        }
         
         thread::sleep(hb_time);
     }
@@ -172,6 +184,24 @@ pub fn receive_hearbeat(heartbeat_socket: &UdpSocket, heartbeat_tx: Sender<(Stri
                 heartbeat_tx.send((id.clone(), false)).expect(&format!("Failed to pass heartbeat {} over channel.", &id));
             }
         }
+    }
+}
+
+//Sends true once when the elevator is between floors
+pub fn between_floors(elev: elev::Elevator, ch: cbc::Sender<bool>, period: Duration) {
+    let mut prev: Option<u8> = Some(u8::MAX);
+    loop {
+        let f: Option<u8> = elev.floor_sensor();
+
+        if f.is_none() && f != prev {
+            ch.send(true).unwrap();
+            prev = f;
+        } else if f != prev {
+            ch.send(false).unwrap();
+            prev = f;
+        }
+
+        thread::sleep(period)
     }
 }
 

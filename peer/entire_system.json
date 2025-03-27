@@ -8,6 +8,12 @@
         [false, false]
     ], 
     "states": {
+        "0": {
+            "behavior"     : "idle",
+            "floor"         : 0,
+            "direction"     : "stop",
+            "cabRequests"   : [false, false, false, false]
+        },
         "1": {
             "behavior"     : "idle",
             "floor"         : 0,
@@ -15,12 +21,6 @@
             "cabRequests"   : [false, false, false, false]
         },
         "2": {
-            "behavior"     : "idle",
-            "floor"         : 0,
-            "direction"     : "stop",
-            "cabRequests"   : [false, false, false, false]
-        },
-        "3": {
             "behavior"     : "idle",
             "floor"         : 0,
             "direction"     : "stop",

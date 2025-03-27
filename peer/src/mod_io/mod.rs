@@ -27,7 +27,8 @@ pub fn run(
     call_button_from_io_tx: &cbc::Sender<sensor_polling::CallButton>,
     network_to_io_rx: &cbc::Receiver<TimestampsEntireSystem>,
     io_to_network_tx: &cbc::Sender<TimestampsEntireSystem>,
-    
+    connected_peers_rx: &cbc::Receiver<[bool; CONFIG.network.peers as usize]>,
+
     io_to_fsm_requests_tx: &cbc::Sender<Vec<Vec<bool>>>,
     
     fsm_to_io_es_rx: &cbc::Receiver<ElevatorSystem>,
@@ -43,7 +44,10 @@ pub fn run(
 
     let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(0, 1); 3]; CONFIG.elevator.num_floors as usize];
 
-    // println!("{:#?}", world_view);
+    let mut connected_peers = [false; CONFIG.network.peers as usize];
+    let self_id: usize = SELF_ID.to_string().parse().expect("Was not able to parse SELF ID as int");
+    connected_peers[self_id] = true;
+
 
     /* ########################### Call Button ################################################################################## */
     let poll_period = Duration::from_millis(25);
@@ -71,6 +75,12 @@ pub fn run(
                     created_completed_timestamps = merge_timestamps(created_completed_timestamps, new_timestamps);
                 }
             }
+
+            recv(connected_peers_rx) -> cp_message => {
+                if let Ok(cp) = cp_message {
+                    connected_peers = cp;
+                }
+            }
             /* Gets elevator system from FSM
                Uses the elevator system to update knowlegde about own world view
                Uses world view to call the assigner, updating who takes which order
@@ -88,9 +98,12 @@ pub fn run(
                     };
 
                     //Only pass Elevators that are still active from heartbeats.
-                    let assigner_output = call_assigner(world_view.clone());
+                    let assigner_output = call_assigner(world_view.clone(), connected_peers.clone());
+                    
+                 
                     //////////////////////////
                     es.set_all_lights_world_view(&world_view);
+
                     let requests = assigner_output.elevators[SELF_ID].clone();
                     //println!("{:#?}", requests);
                     
@@ -117,7 +130,7 @@ pub fn run(
                     
                     // Try here first
                     io_to_backup_state_tx.send(world_view.clone());
-                    let assigner_output = call_assigner(world_view.clone());
+                    let assigner_output = call_assigner(world_view.clone(), connected_peers.clone());
                     
 
                     //////////////////////////
