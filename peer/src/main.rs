@@ -3,25 +3,26 @@
 //! System Overview
  
 //! main.rs
-// |->config.rs
-// |   |-> CONFIG              "A compile time global static from Config.toml"
-// |   |-> Structs             "All structs used throughout the project"
-// |->modules
-//     |->mod_hardware
-//     |       |-> mod.rs      "Runs hardware, correct ports"
-//     |->mod_backup
-//     |       |-> mod.rs      "Handles primary state or backup state"
-//     |->mod_io
-//     |       |-> mod.rs      "Logic and communication with modules"
-//     |       |-> io.rs       "functions regarding world_states and assigning"
-//     |->mod_network
-//     |       |-> mod.rs      "network channels and logic"
-//     |       |-> network.rs  "functions: heartbeat, send, recv"
-//     |->mod_fsm
-//     |       |-> mod.rs      "order creation, state and communication with mod_io"
-//     |       |-> fsm.rs      "finite state machine"
-//     |       |-> timer.rs    "timer struct"
-//     |       |-> request.rs  "request handling and updating" 
+//  |-->config.rs
+//  |   |-> CONFIG              "A compile time global static from Config.toml"
+//  |   |-> Structs             "All structs used throughout the project"
+//  |-->modules
+//      |-->mod_hardware
+//      |       |-> mod.rs      "Runs hardware, correct ports"
+//      |-->mod_backup
+//      |       |-> mod.rs      "Handles primary state or backup state"
+//      |-->mod_io
+//      |       |-> mod.rs      "Logic and communication with modules"
+//      |       |-> io.rs       "functions regarding world_states and assigning"
+//      |-->mod_network
+//      |       |-> mod.rs      "network channels and logic"
+//      |       |-> network.rs  "functions: heartbeat, send, recv"
+//      |-->mod_fsm
+//      |       |-> mod.rs      "order creation, state and communication with mod_io"
+//      |       |-> fsm.rs      "finite state machine"
+//      |       |-> timer.rs    "timer struct"
+//      |       |-> request.rs  "request handling and updating" 
+
 
 pub mod config;
 mod mod_fsm;
