@@ -97,11 +97,13 @@ pub fn run(
                         Err(e) => {panic!("Failed to send World View from IO to Network: {}", e)}
                     };
 
-
                     //Only pass Elevators that are still active from heartbeats.
                     let assigner_output = call_assigner(world_view.clone(), connected_peers.clone());
                     
-                    
+                 
+                    //////////////////////////
+                    es.set_all_lights_world_view(&world_view);
+
                     let requests = assigner_output.elevators[SELF_ID].clone();
                     //println!("{:#?}", requests);
                     
@@ -130,8 +132,11 @@ pub fn run(
                     io_to_backup_state_tx.send(world_view.clone());
                     let assigner_output = call_assigner(world_view.clone(), connected_peers.clone());
                     
+
+                    //////////////////////////
+                    es.set_all_lights_world_view(&world_view);
+
                     let requests = assigner_output.elevators[SELF_ID].clone();
-                    
                     let _ = match io_to_fsm_requests_tx.send(requests) {
                         Ok(ok) => ok,
                         Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
@@ -139,7 +144,8 @@ pub fn run(
                 }
             }
 
-            default => {sleep(Duration::from_millis(25))}
+            default => {
+                sleep(Duration::from_millis(25))}
             
         }
     }

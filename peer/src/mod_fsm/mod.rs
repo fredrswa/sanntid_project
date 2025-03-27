@@ -97,7 +97,6 @@ pub fn run(
             }
             recv(floor_sensor_rx) -> fs_message => {
                 if let Ok(floor) = fs_message {
-
                     let es_before = es.clone();
 
                     es.on_floor_arrival(&mut timer, floor as usize);
@@ -123,19 +122,37 @@ pub fn run(
                     es.status.door_blocked = obs;
                 }
             }
-
-
-            default => {sleep(poll_period);}
-
-        }
-        if timer.is_expired() && !es.status.door_blocked {
+            default => {
+                if timer.is_expired() && !es.status.door_blocked {
+                        let es_before = es.clone();
+                        es.on_door_timeout(&mut timer);
+                        timer.expired_used();
             
-            es.on_door_timeout(&mut timer);
-            //Timer expired used
+            
+                        let completed_array = is_completed(es_before, es.clone());
+                        created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
+                    
+                        timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
+                        sleep(Duration::from_millis(10));
+                        fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
+                    }
+                
+                
+                
+                sleep(poll_period);}
         }
+        // if timer.is_expired() && !es.status.door_blocked {
+        //     let es_before = es.clone();
+        //     es.on_door_timeout(&mut timer);
+        //     timer.expired_used();
 
+
+        //     let completed_array = is_completed(es_before, es.clone());
+        //     created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
         
-        // send own state
-        // send confirmation on taken order
-    }
+        //     timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
+        //     sleep(Duration::from_millis(10));
+        //     fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
+        // }
+  }
 }

@@ -1,6 +1,5 @@
 [peer]
 id    = "3"
-peers = 3
 
 
 [hardware]
@@ -17,7 +16,7 @@ motor_timeout_s = 4
 
 
 [network]
-peers       = 2
+peers       = 3
 # host is set to either localhost/127.0.0.1 or the lab server.
 udp_send    = "0.0.0.0:2000"
 udp_recv    = "0.0.0.0:2003"
