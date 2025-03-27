@@ -60,6 +60,10 @@ impl Timer {
         self.timed_out.load(Ordering::Relaxed)
     }
 
+    pub fn expired_used(&self) {
+        self.timed_out.store(false, Ordering::Relaxed);
+    }
+
     /// Cancels the current timer (if running).
     pub fn cancel(&self) {
         self.cancel_flag.store(true, Ordering::Relaxed);
