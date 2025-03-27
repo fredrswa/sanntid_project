@@ -22,7 +22,7 @@ pub static HUMBLE: LazyLock<bool> = LazyLock::new(|| {
 });
 
 static_toml::static_toml! {
-    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_3.toml"); 
+    pub static CONFIG = include_toml!("Config.toml"); 
 }
 
 #[derive(Clone, Debug)]

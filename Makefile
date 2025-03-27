@@ -49,6 +49,7 @@ build_peer1:
 	cp $(CONFIG_DIR)/$(CONFIG1) $(PEER_DIR)/Config.toml
 	cd $(PEER_DIR) && cargo build --release
 	cp $(PEER_DIR)/target/release/peer $(PEER1_DIR)/
+	cd $(PEER_DIR) && cargo clean
 	cp $(CONFIG_DIR)/$(CONFIG1) $(PEER1_DIR)/Config.toml
 	cp $(RECOVERY_FILE) $(PEER1_DIR)/cab_recover.toml
 
@@ -60,6 +61,7 @@ build_peer2:
 	cp $(CONFIG_DIR)/$(CONFIG2) $(PEER_DIR)/Config.toml
 	cd $(PEER_DIR) && cargo build --release
 	cp $(PEER_DIR)/target/release/peer $(PEER2_DIR)/
+	cd $(PEER_DIR) && cargo clean
 	cp $(CONFIG_DIR)/$(CONFIG2) $(PEER2_DIR)/Config.toml
 	cp $(RECOVERY_FILE) $(PEER2_DIR)/cab_recover.toml
 
@@ -71,6 +73,7 @@ build_peer3:
 	cp $(CONFIG_DIR)/$(CONFIG3) $(PEER_DIR)/Config.toml
 	cd $(PEER_DIR) && cargo build --release
 	cp $(PEER_DIR)/target/release/peer $(PEER3_DIR)/
+	cd $(PEER_DIR) && cargo clean
 	cp $(CONFIG_DIR)/$(CONFIG3) $(PEER3_DIR)/Config.toml
 	cp $(RECOVERY_FILE) $(PEER3_DIR)/cab_recover.toml
 
@@ -82,6 +85,7 @@ build_peer_lab:
 	cp $(CONFIG_DIR)/$(CONFIG_LAB) $(PEER_DIR)/Config.toml
 	cd $(PEER_DIR) && cargo build --release
 	cp $(PEER_DIR)/target/release/peer $(PEER_LAB_DIR)/
+	cd $(PEER_DIR) && cargo clean
 	cp $(CONFIG_DIR)/$(CONFIG_LAB) $(PEER_LAB_DIR)/Config.toml
 	cp $(RECOVERY_FILE) $(PEER_LAB_DIR)/cab_recover.toml
 
@@ -95,12 +99,14 @@ copy_tools:
 # Run local peers (starts all three local peers)
 .PHONY: run_local
 run_local:
+	@echo "Starting Simulated Server"
+	cd $(TOOLS_DIR) && setsid xterm -e ./simulated_labserver loopback 0.0 &
 	@echo "Starting peer_1..."
-	cd $(PEER1_DIR) && ./peer 0 primary &
+	cd $(PEER1_DIR) && setsid xterm -e ./peer 0 primary &
 	@echo "Starting peer_2..."
-	cd $(PEER2_DIR) && ./peer 1 primary &
+	cd $(PEER2_DIR) && setsid xterm -e ./peer 1 primary &
 	@echo "Starting peer_3..."
-	cd $(PEER3_DIR) && ./peer 2 primary &
+	cd $(PEER3_DIR) && setsid xterm -e ./peer 2 primary &
 	@echo "All local peers started."
 
 # Run lab peer

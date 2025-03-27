@@ -30,13 +30,6 @@ fn main() -> Result<()> {
 
     let _ = mod_hardware::init();
 
-    if !*PRIMARY 
-    {   // Start as backup state
-        
-    } else {
-        
-        elev_sys = Some(ElevatorSystem::new());
-    }
     match *PRIMARY {
         true => {
             match *HUMBLE {
@@ -47,6 +40,7 @@ fn main() -> Result<()> {
                 // REGULAR PRIMARY
                 false => {
                     println!("Starting as primary");
+                    elev_sys = Some(ElevatorSystem::new());
                 }
             }
         }

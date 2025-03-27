@@ -217,4 +217,10 @@ impl ElevatorSystem {
       self.requests[floor as usize][2] = cab_requests[floor as usize];
     }
   }
+  pub fn update_cab_requests_from_world_view(&mut self, world_view: &EntireSystem) {
+    let old_cab = world_view.states.clone().get_mut(&SELF_ID.to_string()).unwrap().cabRequests.clone();
+    for floor in 0..self.elevator.num_floors {
+      self.requests[floor as usize][2] = old_cab[floor as usize];
+    }
+  }
 }

@@ -78,7 +78,7 @@ pub fn backup_state() -> (EntireSystem, Option<ElevatorSystem>){
             drop(backup_socket); //Allows the next secondary to be spawned securely.
             let _ = mod_hardware::init();
             let mut elevator_sys = ElevatorSystem::new();
-            
+            elevator_sys.update_cab_requests_from_world_view(&world_view);
             return (world_view, Some(elevator_sys));
         }    
 
@@ -94,10 +94,12 @@ pub fn humble_state() -> (EntireSystem, Option<ElevatorSystem>) {
     let socket = UdpSocket::bind(UDP_RECV).expect("Could'nt setup receiver");
     let mut buffer: [u8; 1024] = [0; 1024];
     let mut world_view: EntireSystem = EntireSystem::template();
+    let _ = mod_hardware::init();
     let mut es = ElevatorSystem::new();
     let start_time = std::time::Instant::now();
 
     while start_time.elapsed().as_secs() < 3 {
+        socket.set_nonblocking(true).expect("Failed to set non_blocking");
         match socket.recv_from(&mut buffer) {
             Ok((amt, _)) => {
                 let received = String::from_utf8_lossy(&buffer[..amt]);
@@ -107,6 +109,9 @@ pub fn humble_state() -> (EntireSystem, Option<ElevatorSystem>) {
                     es.update_cab_requests_from_backup();
                     return (world_view, Some(es));
                 }
+            },
+            Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
+                continue;
             },
             Err(_) => {
                 continue;
