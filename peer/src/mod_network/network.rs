@@ -1,6 +1,7 @@
 //Handles peer-to-peer communication between elevators using UDP and JSON-based messages 
 // Detetect dead elevators by sending and receiving heartbeats
 
+use std::cmp::Reverse;
 ///Includes
 use std::collections::HashMap;
 use std::time::{Instant, Duration};
@@ -50,7 +51,6 @@ pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp
         let (n_bytes, _src) = match socket.recv_from(&mut buffer){
             Ok((_n_bytes, _src)) => (_n_bytes, _src),
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                thread::sleep(Duration::from_millis(1));
                 continue;
             },
             Err(e) => {
@@ -61,9 +61,11 @@ pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp
         let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
 
         if n_bytes < 5 {
-            udp_to_heartbeat_tx.send(received_msg);
+            println!("{}",received_msg);
+            udp_to_heartbeat_tx.send(received_msg).expect("Could'nt pass to heartbeat");
         } 
         else {
+            println!("{}",received_msg);
             let sys: TimestampsEntireSystem = match serde_json::from_str(&received_msg) {
                 Ok(sys) => sys,
                 Err(e) => {
@@ -133,6 +135,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
             recv(send_heartbeat_rx) -> send_heartbeat => {
                 between_floors = send_heartbeat.unwrap();
             }
+            default => {}
         }
 
         if !between_floors {
@@ -141,7 +144,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
                 Err(e) => {eprintln!("Failed to send heartbeat: {}", e);}
             };
         }
-        
+
         thread::sleep(hb_time);
     }
 }

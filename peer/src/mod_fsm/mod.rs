@@ -124,7 +124,7 @@ pub fn run(
                     es.status.door_blocked = obs;
                 }
             }
-            default => {sleep(poll_period);}
+            default => {}
             }
             
             if timer.is_expired() && !es.status.door_blocked {
