@@ -54,16 +54,19 @@ impl ElevatorSystem {
     pub fn set_all_lights(&mut self){
         for floor in 0..NUM_FLOORS {
             for btn in 0..NUM_BUTTONS {
-                self.elevator.call_button_light(floor as u8, btn as u8, self.requests[floor as usize][btn as usize]);
+                self.elevator.call_button_light(floor as u8, 2, self.requests[floor as usize][2]);
             }
         }
     }
 
-    pub fn set_all_lights_system(&mut self, system_requests: Vec<Vec<bool>>){
-      for floor in 0..NUM_FLOORS {
-          for btn in 0..NUM_BUTTONS {
-              self.elevator.call_button_light(floor as u8, btn as u8, system_requests[floor as usize][btn as usize]);
-          }
+    pub fn set_all_lights_world_view(&mut self, world_view: &EntireSystem) {
+      // Set hall request lights for all floors
+      for (floor, hall_req) in world_view.hallRequests.iter().enumerate() {
+          // Set HallUp button light (index 0)
+          self.elevator.call_button_light(floor as u8, ButtonType::HallUp as u8, hall_req[0]);
+          
+          // Set HallDown button light (index 1)
+          self.elevator.call_button_light(floor as u8, ButtonType::HallDown as u8, hall_req[1]);
       }
   }
 
@@ -88,7 +91,7 @@ impl ElevatorSystem {
             Behavior::Idle => {
               if requests_should_clear_immediately(self, btn_floor, btn_type) {
                 self.elevator.door_light(true);
-                self.status.behavior = Behavior::Idle;
+                self.status.behavior = Behavior::Idle; // Changed this from Idle to DoorOpen
                 timer.start();
                 requests_clear_at_current_floor(self);
                 
@@ -107,6 +110,7 @@ impl ElevatorSystem {
                     self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
                   }
                   Behavior::Idle => {
+                    self.elevator.door_light(false);
                   }  
                 }
               }
@@ -140,7 +144,7 @@ impl ElevatorSystem {
         match self.status.behavior {
           Behavior::DoorOpen => {
             if self.status.door_blocked {
-              timer.start();
+              // timer.start();
             } else {
               let db_pair: DirnBehaviorPair = requests_choose_direction(self);
               self.status.curr_dirn = db_pair.direction;
@@ -152,7 +156,7 @@ impl ElevatorSystem {
               match self.status.behavior {
                 Behavior::DoorOpen => {
 
-                  timer.start();
+                  // timer.start();
                 }
                 Behavior::Moving => {
                   self.elevator.door_light(false);

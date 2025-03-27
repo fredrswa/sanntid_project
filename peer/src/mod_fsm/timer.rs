@@ -45,6 +45,7 @@ impl Timer {
 
                 // Check if the timeout has elapsed
                 if start.elapsed() >= timeout {
+                    println!("Timer expired");
                     timed_out.store(true, Ordering::Relaxed);
                     break;
                 }

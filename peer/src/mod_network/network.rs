@@ -42,6 +42,7 @@ pub fn udp_create_socket(addr: &String) -> UdpSocket {
 pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireSystem>) {
     let mut buffer = [0; 1024];
     socket.set_nonblocking(true).expect("Failed to set non-blocking!");
+    let mut sys_old = Option::<TimestampsEntireSystem>::None;
     loop {
         let (n_bytes, _src) = match socket.recv_from(&mut buffer){
             Ok((_n_bytes, _src)) => (_n_bytes, _src),
@@ -58,17 +59,22 @@ pub fn udp_receive(socket: &UdpSocket, udp_listener_tx: Sender<TimestampsEntireS
         if received_msg.contains("heartbeat") {
             continue;
         }
+
         let sys: TimestampsEntireSystem = match serde_json::from_str(&received_msg) {
             Ok(sys) => sys,
             Err(e) => {
                 panic!("Failed to parse incoming state!: {}", e)
             }
         };
+        // if sys_old.clone().unwrap() == sys {
+        //     continue;
+        // }
 
-        match udp_listener_tx.send(sys) {
+        match udp_listener_tx.send(sys.clone()) {
             Ok(ok) => ok,
             Err(e) => {panic!("Message was not sent to peer: {}", e)}
         };
+        sys_old = Some(sys);
     }
 }
 
@@ -98,14 +104,15 @@ pub fn udp_send(socket: &UdpSocket, peer_addresses: String, udp_sender_rx: Recei
                             panic!("Failed to serialize message to send over Udp!: {}", e)
                         }    
                     };
-                    
+                    for _ in 0..3{
                     //Send more than once
-                    match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
-                        Ok(ok) => ok,//Ack send to io
-                        Err(e) => {
-                            panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
-                        }
-                    };
+                        match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
+                            Ok(ok) => ok,//Ack send to io
+                            Err(e) => {
+                                panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_addresses, e)
+                            }
+                        };
+                    }
                 }
             }
         }
