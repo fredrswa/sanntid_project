@@ -42,6 +42,7 @@ use crossbeam_channel::{select, unbounded};
 use driver_rust::elevio::poll as sensor_polling;
 /// STRUCTS AND CONFIG
 use config::*;
+use toml::value::Array;
 
 
 /// Main functions
@@ -75,6 +76,8 @@ fn main() -> Result<()> {
 
     let (network_to_io_tx, network_to_io_rx) = unbounded::<TimestampsEntireSystem>();
     let (io_to_network_tx, io_to_network_rx) = unbounded::<TimestampsEntireSystem>();
+
+    let (connected_peers_tx, connected_peers_rx) = unbounded::<[bool; CONFIG.network.peers as usize]>();
     
     let (io_to_fsm_requests_tx, io_to_fsm_requests_rx) = unbounded::<Vec<Vec<bool>>>();
     
@@ -85,9 +88,9 @@ fn main() -> Result<()> {
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
-    std::panic::set_hook(Box::new(|panic_info| {
-         std::process::exit(1);
-    }));
+    // std::panic::set_hook(Box::new(|panic_info| {
+    //      std::process::exit(1);
+    // }));
 
     // SPAWN MODULES
     {
@@ -112,6 +115,7 @@ fn main() -> Result<()> {
             &io_call_tx,
             &network_to_io_rx,
             &io_to_network_tx,
+            &connected_peers_rx,
             &io_to_fsm_requests_tx,
             &fsm_to_io_es_rx,
             &io_to_fsm_es_tx,
@@ -119,12 +123,14 @@ fn main() -> Result<()> {
         );});
         
         // NETWORK MODULE
+        let es3 = elev_sys.clone();
         spawn(move || {mod_network::run(
+            &es3,
             &network_to_io_tx, 
-            &io_to_network_rx
+            &io_to_network_rx,
+            &connected_peers_tx
         );});
     }
-
 
 
     let dur = Duration::from_millis(100);

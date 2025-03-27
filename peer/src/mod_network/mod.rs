@@ -3,21 +3,28 @@ pub mod network;
 
 //Includes
 use crossbeam_channel as cbc;
+use std::collections::HashMap;
 use std::thread::{spawn, sleep};
 use std::sync::Arc;
+use core::time::Duration;
+
+use driver_rust::elevio::poll as sensor_polling;
 
 ///Crates
 use crate::config::*;
-use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat};
+use crate::mod_fsm::timer::Timer;
+use crate::mod_network::network::{udp_create_socket, udp_receive, udp_send, send_heartbeat, receive_hearbeat, between_floors};
 
 static SELF_ID: &str = CONFIG.peer.id;
 static UDP_RECV_PORT: &str = CONFIG.network.udp_recv;
 static UDP_SEND_PORT: &str = CONFIG.network.udp_send;
 
 pub fn run(
+    es: &ElevatorSystem,
     //Communication with IO module
     network_to_io_tx: &cbc::Sender<TimestampsEntireSystem>,
-    io_to_network_rx: &cbc::Receiver<TimestampsEntireSystem>,) {
+    io_to_network_rx: &cbc::Receiver<TimestampsEntireSystem>,
+    connected_peers_tx: &cbc::Sender<[bool; CONFIG.network.peers as usize]>,) {
     
     println!("Running network module");
     let socket = Arc::new(udp_create_socket(&UDP_RECV_PORT.to_string()));
@@ -36,7 +43,12 @@ pub fn run(
     /* #################################################################################################################### */
 
     /* ########################### Hearbeat ############################################################################### */
-    let (udp_heartbeat_tx, udp_heartbeat_rx) = cbc::unbounded::<(String, bool)>();
+    let mut connected_peers = [false; CONFIG.network.peers as usize];
+    let self_id: usize = SELF_ID.to_string().parse().expect("Was not able to parse SELF ID as int");
+    connected_peers[self_id] = true;
+
+    let (udp_receive_heartbeat_tx, udp_receive_heartbeat_rx) = cbc::unbounded::<(String, bool)>();
+    let (udp_send_heartbeat_tx, udp_send_heartbeat_rx) = cbc::unbounded::<(bool)>();
 
     let heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&socket);
     
@@ -44,18 +56,29 @@ pub fn run(
     let receive_heartbeat_socket: Arc<std::net::UdpSocket> = Arc::clone(&heartbeat_socket);
 
     // SPAWN HEATBEAT FUNCTIONS
-    {spawn(move || send_heartbeat(&send_heartbeat_socket, &SELF_ID.to_string()))};
-    {spawn(move || receive_hearbeat(&receive_heartbeat_socket, udp_heartbeat_tx))};
+    {spawn(move || send_heartbeat(&send_heartbeat_socket, &SELF_ID.to_string(), udp_send_heartbeat_rx))};
+    {spawn(move || receive_hearbeat(&receive_heartbeat_socket, udp_receive_heartbeat_tx))};
+    /* #################################################################################################################### */
+
+    /* ########################### Between floor polling ################################################################## */
+    let poll_period = Duration::from_millis(25);
+
+    let (between_floors_tx, between_floors_rx) = cbc::unbounded::<bool>(); 
+    {
+        let elevator = es.elevator.clone();
+        spawn(move || between_floors(elevator, between_floors_tx, poll_period));  
+    }
     /* #################################################################################################################### */
 
 
     loop {
         cbc::select! {
-            recv(udp_heartbeat_rx) -> heartbeat => {
+            recv(udp_receive_heartbeat_rx) -> heartbeat => {
                 let (id, val) = heartbeat.unwrap();
+                let incoming_id: usize = id.clone().parse().expect("Was not able to parse incoming id as int");
+                connected_peers[incoming_id] = val;
                 
-                //ps.connected.insert(id.clone(), val);
-                
+                connected_peers_tx.send(connected_peers);
             // println!("###########");
             // for (_id, _val) in &ps.connected {
             //     println!("{}->{}", _id, _val);
@@ -74,26 +97,13 @@ pub fn run(
                 }
             }
 
-            /* recv(udp_listener_rx) -> udp_message => {
-                if let Ok(message) = udp_message {
-                    if let Ok(new_call_order) = serde_json::from_str::<CallOrder>(&message) {
-                        network_io_neworder_tx.send(new_call_order).unwrap();
-                    } else if let Ok(peer_state) = serde_json::from_str::<PeerState>(&message) {
-                        network_io_peer_state_tx.send(peer_state).unwrap();
-                    }
+            recv(between_floors_rx) -> bf_message => {
+                if let Ok(between) = bf_message{
+                    println!("Between Floors: {}", between);
+                    udp_send_heartbeat_tx.send(between);
                 }
             }
-            recv(udp_heartbeat_dead_rx) -> id => {
-                if CONFIG.id == id.unwrap() {
-                    //
-                } 
-                network_io_redistribute_tx.send(id);
-            } */
-            
-        
-        }
 
-        if true {
         }
     }
 }

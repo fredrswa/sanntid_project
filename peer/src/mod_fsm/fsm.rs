@@ -135,8 +135,6 @@ impl ElevatorSystem {
     }
     
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
-      println!("{:?}", self.status);
-      println!("Stuck here on_door_timeout()");
         match self.status.behavior {
           Behavior::DoorOpen => {
             if self.status.door_blocked {
@@ -172,11 +170,9 @@ impl ElevatorSystem {
             requests_clear_at_current_floor(self);
             self.set_all_lights();
             self.elevator.door_light(false);
-            println!("Stuck here Idle");
 
           }
           Behavior::Moving => {
-            println!("Stuck here Moving");
           }
         }
     }      

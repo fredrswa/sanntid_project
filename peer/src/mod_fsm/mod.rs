@@ -129,6 +129,7 @@ pub fn run(
 
         }
         if timer.is_expired() && !es.status.door_blocked {
+            
             es.on_door_timeout(&mut timer);
             //Timer expired used
         }
@@ -136,9 +137,5 @@ pub fn run(
         
         // send own state
         // send confirmation on taken order
-        
-
-
-
     }
 }
