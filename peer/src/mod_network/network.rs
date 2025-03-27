@@ -123,7 +123,7 @@ pub fn udp_send(socket: &UdpSocket, peer_address: String, udp_sender_rx: Receive
 
 //Send heartbeats to all peers to indicate that the elevator is still alive
 pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heartbeat_rx: Receiver<(bool)>) -> std::io::Result<()> {
-    let mut between_floors: bool = true;
+    let mut between_floors_or_obstruced: bool = true;
     
     let hb_time = Duration::from_millis(HB_SLEEP_TIME);
     //println!("Sending Heartbeat");
@@ -131,12 +131,12 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
     loop {
         select! {
             recv(send_heartbeat_rx) -> send_heartbeat => {
-                between_floors = send_heartbeat.unwrap();
+                between_floors_or_obstruced = send_heartbeat.unwrap();
             }
             default => {}
         }
 
-        if !between_floors {
+        if !between_floors_or_obstruced {
             match heartbeat_socket.send_to( peer_id.as_bytes(), UDP_SEND_PORT.to_string()){
                 Ok(_) => { },//println!("Heartbeat sent to: {}", peer_address),
                 Err(e) => {eprintln!("Failed to send heartbeat: {}", e);}

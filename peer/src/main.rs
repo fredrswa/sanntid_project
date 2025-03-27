@@ -57,6 +57,8 @@ fn main() -> Result<()> {
     let (fsm_to_io_es_tx, fsm_to_io_es_rx) = unbounded::<ElevatorSystem>();
     let (io_to_fsm_es_tx, io_to_fsm_es_rx) = unbounded::<ElevatorSystem>();
 
+    let (obstruction_to_io_tx, obstruction_to_io_rx) = unbounded::<bool>(); 
+
     let (timestamps_to_io_tx, timestamps_to_io_rx) = unbounded::<Vec<Vec<(i64, i64)>>>();
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
@@ -77,7 +79,8 @@ fn main() -> Result<()> {
             &fsm_to_io_es_tx,
             &io_to_fsm_es_rx,
             &io_to_fsm_requests_rx,
-            &timestamps_to_io_tx
+            &timestamps_to_io_tx,
+            &obstruction_to_io_tx
         );});
         
         // IO MODULE
@@ -102,7 +105,8 @@ fn main() -> Result<()> {
             &es3,
             &network_to_io_tx, 
             &io_to_network_rx,
-            &connected_peers_tx
+            &connected_peers_tx,
+            &obstruction_to_io_rx,
         );});
     }
 
