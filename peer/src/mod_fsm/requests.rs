@@ -124,9 +124,10 @@ pub fn requests_clear_at_current_floor(es: &mut ElevatorSystem) {
     Dirn::Stop => {
       if es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] {
         es.requests[es.status.curr_floor as usize][ButtonType::HallDown as usize] = false;
-        
+        println!("CLEARED DOWN");
       } else if es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] {
         es.requests[es.status.curr_floor as usize][ButtonType::HallUp as usize] = false;
+        println!("CLEARED UP");
       }
     }
   }

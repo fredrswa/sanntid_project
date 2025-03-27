@@ -8,7 +8,6 @@ use crate::config::*;
 pub fn call_assigner(sys: EntireSystem, connected_peers:[bool; CONFIG.network.peers as usize]) -> AssignerOutput{
 
     let mut sys = sys;
-    println!("Before: {:#?}", sys);
 
     //println!("{:#?}", connected_peers);
     for (id, connected) in connected_peers.iter().enumerate() {
@@ -16,8 +15,6 @@ pub fn call_assigner(sys: EntireSystem, connected_peers:[bool; CONFIG.network.pe
             sys.states.remove(&format!("{}", id));
         }
     }
-
-    println!("After: {:#?}", sys);
 
     //Serializes the world view into a JSON string
     let elev_states = match serde_json::to_string(&sys) {

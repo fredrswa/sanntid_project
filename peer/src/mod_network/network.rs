@@ -50,7 +50,7 @@ pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp
         let (n_bytes, _src) = match socket.recv_from(&mut buffer){
             Ok((_n_bytes, _src)) => (_n_bytes, _src),
             Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                thread::sleep(Duration::from_millis(100));
+                thread::sleep(Duration::from_millis(1));
                 continue;
             },
             Err(e) => {
