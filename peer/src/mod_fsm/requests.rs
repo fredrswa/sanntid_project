@@ -1,5 +1,7 @@
 use std::vec;
-use chrono::Utc;
+use chrono::{naive::serde::ts_microseconds::deserialize, Utc};
+use std::fs::File;
+use std::io::prelude::*;
 
 use crate::config::*;
 
@@ -159,3 +161,22 @@ pub fn update_timestamps (completed_array: Vec<Vec<bool>>, created_completed_tim
   return new_created_completed_timestamps;
 }
 
+pub fn cab_backup (cab_requests: Vec<bool>) {
+  	let cab_recovery = Recovery { cab_requests };
+    
+  	let toml_string = toml::to_string(&cab_recovery).expect("Failed to serialize into TOML string");
+    
+  	let mut file = File::create("cab_recover.toml").expect("Failed to create TOML file");
+  	file.write_all(toml_string.as_bytes()).expect("Failed to write to TOML file");
+}
+
+pub fn read_cab_backup () -> Vec<bool> {
+	// Example of reading it back
+	let mut file = File::open("cab_recover.toml").expect("Failed to open TOML file");
+	let mut toml_content = String::new();
+	file.read_to_string(&mut toml_content).expect("Failed to read content of TOML file into string");
+
+	let cab_recovery: Recovery = toml::from_str(&toml_content).expect("Failed to deserialize from TOML into struct");
+
+	return cab_recovery.cab_requests;
+}

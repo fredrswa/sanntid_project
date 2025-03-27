@@ -12,7 +12,7 @@ pub mod timer;          //Timer for generating timout and handling door_open tim
 ///Crates
 use crate::config::*;                   //Config has every struct
 use crate::mod_fsm::timer::Timer;       
-use crate::mod_fsm::requests::{is_completed, update_timestamps};
+use crate::mod_fsm::requests::{is_completed, update_timestamps, cab_backup};
 
 ///
 use crossbeam_channel as cbc;
@@ -75,11 +75,17 @@ pub fn run(
                     let completed_array = is_completed(es_before, es.clone());
 
                     if completed_array.clone().iter().flatten().any(|&x| x) {
+                        let cab_requests: Vec<bool> = es.requests.iter()
+                            .filter_map(|row| row.get(2).copied())
+                            .collect();
+
+                        cab_backup(cab_requests);
+                        
                         created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
                       
-                    timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
-                    sleep(Duration::from_millis(10));
-                    fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
+                        timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
+                        sleep(Duration::from_millis(10));
+                        fsm_to_io_tx.send(es.clone()).expect("Could not send state from FSM to IO");
                     }
                 }
             }
@@ -94,6 +100,12 @@ pub fn run(
 
                     if button_type == ButtonType::Cab {
                         es.on_request_button_press(&mut timer, call_button.floor as usize, button_type);
+
+                        let cab_requests: Vec<bool> = es.requests.iter()
+                            .filter_map(|row| row.get(2).copied())
+                            .collect();
+
+                        cab_backup(cab_requests);
                     }    
                     
                     timestamps_to_io_tx.send(created_completed_timestamps.clone()).expect("Could not send timestamps from FSM to IO");
@@ -108,6 +120,12 @@ pub fn run(
                     es.on_floor_arrival(&mut timer, floor as usize);
 
                     let completed_array = is_completed(es_before, es.clone());
+
+                    let cab_requests: Vec<bool> = es.requests.iter()
+                            .filter_map(|row| row.get(2).copied())
+                            .collect();
+
+                    cab_backup(cab_requests);
 
                     created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
                     
@@ -134,6 +152,12 @@ pub fn run(
                 timer.expired_used();
                     
                 let completed_array = is_completed(es_before, es.clone());
+
+                let cab_requests: Vec<bool> = es.requests.iter()
+                    .filter_map(|row| row.get(2).copied())
+                    .collect();
+
+                cab_backup(cab_requests);
 
                 created_completed_timestamps = update_timestamps(completed_array, created_completed_timestamps.clone());
                     
