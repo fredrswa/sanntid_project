@@ -23,6 +23,7 @@ use chrono::{DateTime, Utc};
 static SELF_ID: &str = CONFIG.peer.id;
 
 pub fn run(
+    mut world_view: EntireSystem,
     es: &mut ElevatorSystem, 
     call_button_from_io_tx: &cbc::Sender<sensor_polling::CallButton>,
     network_to_io_rx: &cbc::Receiver<TimestampsEntireSystem>,
@@ -36,11 +37,6 @@ pub fn run(
 
     timestamps_to_io_rx: &cbc::Receiver<Vec<Vec<(i64, i64)>>>,
     ){
-
-    let mut world_view = EntireSystem {
-        hallRequests: LAST_SEEN_STATES.hallRequests.clone(),
-        states: LAST_SEEN_STATES.states.clone(), 
-    };
 
     let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(0, 1); 3]; CONFIG.elevator.num_floors as usize];
 

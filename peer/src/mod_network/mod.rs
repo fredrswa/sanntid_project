@@ -100,7 +100,6 @@ pub fn run(
                     udp_send_heartbeat_tx.send(between);
                 }
             }
-
         }
     }
 }

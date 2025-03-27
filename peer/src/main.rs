@@ -1,29 +1,6 @@
 
 #![crate_name = "peer"]
-//! System Overview
- 
-//! main.rs
-//  |-->config.rs
-//  |   |-> CONFIG              "A compile time global static from Config.toml"
-//  |   |-> Structs             "All structs used throughout the project"
-//  |-->modules
-//      |-->mod_hardware
-//      |       |-> mod.rs      "Runs hardware, correct ports"
-//      |-->mod_backup
-//      |       |-> mod.rs      "Handles primary state or backup state"
-//      |-->mod_io
-//      |       |-> mod.rs      "Logic and communication with modules"
-//      |       |-> io.rs       "functions regarding world_states and assigning"
-//      |-->mod_network
-//      |       |-> mod.rs      "network channels and logic"
-//      |       |-> network.rs  "functions: heartbeat, send, recv"
-//      |-->mod_fsm
-//      |       |-> mod.rs      "order creation, state and communication with mod_io"
-//      |       |-> fsm.rs      "finite state machine"
-//      |       |-> timer.rs    "timer struct"
-//      |       |-> request.rs  "request handling and updating" 
-
-
+/// MODULES
 pub mod config;
 mod mod_fsm;
 mod mod_io;
@@ -34,31 +11,26 @@ mod mod_hardware;
 /// INCLUDES
 use std::{env, 
           io::Result, 
-          time::{Duration, Instant},
+          time::Duration,
           thread::{spawn, sleep}};
-use chrono::{DateTime, Utc};
 use crossbeam_channel::{select, unbounded};
 
 /// DRIVER
 use driver_rust::elevio::poll as sensor_polling;
+
 /// STRUCTS AND CONFIG
 use config::*;
-use toml::value::Array;
-
 
 /// Main functions
 fn main() -> Result<()> {
-    //Command line argument
-    let args: Vec<String> = env::args().collect();
-    let primary: bool = args.get(1).expect("No arguments passed").parse().unwrap(); //A nice line of code
-
+    println!("ID:{} Primary: {} Humble:{}", *SELF_ID, *PRIMARY, *HUMBLE);
     //Handle primary/backup logic
     let mut world_view: EntireSystem = EntireSystem::template();
     let mut elev_sys: Option<ElevatorSystem> = None;
 
     let _ = mod_hardware::init();
 
-    if !primary 
+    if !*PRIMARY 
     {   // Start as backup state
         (world_view, elev_sys) = mod_backup::backup_state();
     } else {
@@ -112,6 +84,7 @@ fn main() -> Result<()> {
         let mut es2 = elev_sys.clone();
         spawn(move || {mod_io::run(
             // IO CHANNELS
+            world_view,
             &mut es2, 
             &io_call_tx,
             &network_to_io_rx,

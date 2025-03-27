@@ -1,6 +1,5 @@
 [peer]
 id    = "2"
-peers = 2
 
 
 [hardware]

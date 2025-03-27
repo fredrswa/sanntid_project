@@ -1,21 +1,29 @@
-
 use std::u8;
 use std::fmt;
-use chrono::{DateTime, Utc};
 use serde::{Serialize, Deserialize};
-use std::{fs, os::unix::raw::ino_t};
-use serde_json;
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use std::collections::HashMap;
-use std::env;
-use std::time::Instant;
 
 use driver_rust::elevio::elev::Elevator;
 
+pub static SELF_ID: LazyLock<String> = LazyLock::new(|| {
+    let args: Vec<String> = std::env::args().collect();
+    args.get(1).expect("No argument provided").clone()
+});
+
+pub static PRIMARY: LazyLock<bool> = LazyLock::new(|| {
+    let args: Vec<String> = std::env::args().collect();
+    args.get(2).map_or(false, |x| x == "primary" || x == "humble")
+});
+
+pub static HUMBLE: LazyLock<bool> = LazyLock::new(|| {
+    let args: Vec<String> = std::env::args().collect();
+    args.get(2).map_or(false, |x| x == "humble")
+});
+
 static_toml::static_toml! {
-    // pub static CONFIG = include_toml!("Config.toml"); }
-    /// choices for testing locally
-    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_3.toml"); }
+    pub static CONFIG = include_toml!("./../tools/config_files/config_peer_local_3.toml"); 
+}
 
 #[derive(Clone, Debug)]
 pub struct ElevatorSystem {
@@ -49,6 +57,13 @@ pub struct EntireSystem {
     pub hallRequests: Vec<[bool; 2]>,
     pub states: HashMap<String, States>,
 } 
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct TimestampsEntireSystem {
+    pub es: EntireSystem,
+    pub timestamps: Vec<Vec<(i64, i64)>>, 
+}
+
 impl EntireSystem {
     pub fn template() -> EntireSystem {
         let es = EntireSystem {
@@ -58,10 +73,7 @@ impl EntireSystem {
     es
     }
 }
-pub static LAST_SEEN_STATES: Lazy<EntireSystem> = Lazy::new(|| {
-    let config_str = fs::read_to_string("./entire_system.json").expect("Unable to read config file");
-    serde_json::from_str(&config_str).expect("JSON was not well-formatted")
-});
+
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct States {
@@ -71,14 +83,6 @@ pub struct States {
     pub cabRequests: Vec<bool>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
-pub struct TimestampsEntireSystem {
-    pub es: EntireSystem,
-    pub timestamps: Vec<Vec<(i64, i64)>>, 
-}
-
-//Dynamically sized struct, makes it possible with an arbitrary number of elevators
-//#[derive(serde::Deserialize, Debug)]
 #[derive(Serialize, Deserialize, Debug)]
 pub struct AssignerOutput {
     pub elevators: HashMap<String, Vec<Vec<bool>>>,
@@ -187,24 +191,6 @@ impl fmt::Debug for ClearRequestVariant {
         }
     }
 }
-
-/* impl fmt::Display for ElevatorSystem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-       
-        write!(f, "     ")?;
-        println!("\tHU, \tHD, \tCab");
-        
-        write!(f, "\n")?;
-        for (floor, row) in self.requests.iter().enumerate().rev() {
-            write!(f, "F{}\t: ", floor + 1)?;
-            for &request in row.iter() {
-            write!(f, "{}\t ", if request { "X" } else { " " })?;
-            }
-            write!(f, "\n")?;
-        }
-        Ok(())
-    }
-} */
 
 
 impl fmt::Display for ElevatorSystem {

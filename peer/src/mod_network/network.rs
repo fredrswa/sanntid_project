@@ -83,13 +83,11 @@ pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp
 
 pub fn udp_send(socket: &UdpSocket, peer_address: String, udp_sender_rx: Receiver<TimestampsEntireSystem>) {  
     
-    let mut world_view = EntireSystem {
-        hallRequests: LAST_SEEN_STATES.hallRequests.clone(),
-        states: LAST_SEEN_STATES.states.clone(), 
-    };
+  
 
     let mut created_completed_timestamps: Vec<Vec<(i64, i64)>> = vec![vec![(0, 1); 3]; CONFIG.elevator.num_floors as usize];
-
+    
+    let mut world_view = EntireSystem::template();
     let mut curr_sys = TimestampsEntireSystem{ es: world_view, timestamps: created_completed_timestamps};
 
     loop {
