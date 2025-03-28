@@ -104,12 +104,11 @@ fn main() -> Result<()> {
             world_view,
             &mut es2, 
             &io_call_tx,
+            &io_to_fsm_requests_tx,
+            &fsm_to_io_es_rx,
             &network_to_io_rx,
             &io_to_network_tx,
             &connected_peers_rx,
-            &io_to_fsm_requests_tx,
-            &fsm_to_io_es_rx,
-            &io_to_fsm_es_tx,
             &timestamps_to_io_rx,
         );});
         
