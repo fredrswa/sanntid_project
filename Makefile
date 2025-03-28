@@ -20,7 +20,7 @@ CONFIG3 := config_peer_local_3.toml
 CONFIG_LAB := config_peer_lab.toml
 
 # Recovery file
-RECOVERY_FILE := $(PEER_DIR)/src/cab_recover.toml
+RECOVERY_FILE := $(PEER_DIR)/cab_recover.toml
 
 # Assigner and server directories
 ASSIGNER_DIR := $(TOOLS_DIR)/

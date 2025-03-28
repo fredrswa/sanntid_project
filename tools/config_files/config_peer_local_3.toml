@@ -1,10 +1,11 @@
 [hardware]
-addr        = 15659
-sim         = true
+addr        = 15657
+sim         = false
 load_time   = 1000
 
+
 [elevator]
-addr            = "localhost:15659"
+addr            = "localhost:15657"
 num_floors      = 4
 door_open_s     = 3
 door_timout_s   = 4
@@ -12,16 +13,15 @@ motor_timeout_s = 4
 
 
 [network]
-peers       = 3
-# host is set to either localhost/127.0.0.1 or the lab server.
-udp_send    = "0.0.0.0:2000"
-udp_recv    = "0.0.0.0:2003"
+peers       = 2
+# host is set to either localhost/127.0.0.1 or the lab server(10.100.23.19).
+udp_send    = "255.255.255.255:20012"
+udp_recv    = "0.0.0.0:20012"
 hb_time     = 200
 state_time  = 200
 
-
 [backup]
-pri_send        = "localhost:4097"
-sec_recv        = "localhost:4098"
+pri_send        = "localhost:4000"
+sec_recv        = "localhost:4001"
 attempts        = 3
-sleep_dur_milli = 1000
+sleep_dur_milli = 100
