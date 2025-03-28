@@ -19,7 +19,7 @@ For testing multiple peers we need to simulate the networking properties of the 
 ```bash
 ./simulate_labserver loopback 0.0
 ```
-If we want to simulate order loopback, just pass ```loopback``` as an argument, and to simulate packetloss pass a float.
+If we want to simulate order loopback, just pass ```loopback``` as an argument, and to simulate packetloss pass a float (ex. ```0.5 = 50%``` packetloss).
 ### Hall Request Assigner
 A given binary which based on the given states of the system redistributes order to the working peers.
 ```bash
