@@ -1,7 +1,6 @@
-//! Initializes system state, sets up module communication channels, and spawns all modules
 
 #![crate_name = "peer"]
-/// Modules
+/// MODULES
 pub mod config;
 mod mod_fsm;
 mod mod_io;
@@ -9,19 +8,18 @@ mod mod_network;
 mod mod_backup;
 mod mod_hardware;
 
-/// Standard Library
-use std::{io::Result, 
-    time::Duration,
-    thread::{spawn, sleep}};
-
-/// External Crates
+/// INCLUDES
+use std::{env, 
+          io::Result, 
+          time::Duration,
+          thread::{spawn, sleep}};
 use crossbeam_channel::{select, unbounded};
 
-/// Internal Crates
-use config::*;
-
-/// Driver
+/// DRIVER
 use driver_rust::elevio::poll as sensor_polling;
+
+/// STRUCTS AND CONFIG
+use config::*;
 
 /// Main functions
 fn main() -> Result<()> {

@@ -1,4 +1,4 @@
-//! IO Module | 
+//! IO Module
 //! Responsible for handling all input operations.
 //! Communicates with the assigner and network to align world views. 
 //! Uses world views to generate orders for fsm.

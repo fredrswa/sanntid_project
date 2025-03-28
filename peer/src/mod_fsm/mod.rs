@@ -1,4 +1,4 @@
-//! FSM Module |
+//! FSM Module  |   
 //! This module handles the operation of the finite state machine (elevator)
 
 /// Sub Modules (created from handout)

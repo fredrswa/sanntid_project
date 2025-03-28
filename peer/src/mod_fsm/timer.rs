@@ -1,4 +1,4 @@
-//! Timer Submodule
+//! Timer Submodule |   
 //! Defines a timer that runs in a separate thread and supports start, cancel, and timeout checks
 
 /// Standard Library

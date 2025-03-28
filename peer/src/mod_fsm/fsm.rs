@@ -1,4 +1,4 @@
-//! Finite State Machine (FSM) submodule | 
+//! Finite State Machine (FSM) Submodule	|	
 //! Defines the FSM logic for one elevator, including request handling, light, button and floor logic
 
 /// External Crates
