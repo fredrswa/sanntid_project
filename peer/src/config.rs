@@ -1,27 +1,41 @@
-use std::u8;
-use std::fmt;
-use serde::{Serialize, Deserialize};
-use std::sync::LazyLock;
-use std::collections::HashMap;
+//! Configuration file
+//! Contains: Structs, File imports and Debug prints for the entire program
 
+
+/// Standard Library 
+use std::{
+    u8,
+    fmt,
+    sync::LazyLock,
+    collections::HashMap};
+
+/// External Crates
+use serde::{Serialize, Deserialize};
 use driver_rust::elevio::elev::Elevator;
 
+/// SELF_ID | Read lazily from command line
 pub static SELF_ID: LazyLock<String> = LazyLock::new(|| {
     let args: Vec<String> = std::env::args().collect();
     args.get(1).expect("No argument provided").clone()
 });
 
+
+/// Primary bool | Read lazily from command line
 pub static PRIMARY: LazyLock<bool> = LazyLock::new(|| {
     let args: Vec<String> = std::env::args().collect();
     args.get(2).map_or(false, |x| x == "primary" || x == "humble")
 });
 
+
+/// Humble bool | Read lazily from command line
 pub static HUMBLE: LazyLock<bool> = LazyLock::new(|| {
     let args: Vec<String> = std::env::args().collect();
     args.get(2).map_or(false, |x| x == "humble")
 });
 
+
 static_toml::static_toml! {
+    #[doc = "CONFIG file | Read from config.toml into the static CONFIG"]
     pub static CONFIG = include_toml!("Config.toml"); 
 }
 
@@ -63,7 +77,7 @@ pub struct TimestampsEntireSystem {
     pub es: EntireSystem,
     pub timestamps: Vec<Vec<(i64, i64)>>, 
 }
-
+//Creates a template of an EntireSystem, used on inits.
 impl EntireSystem {
     pub fn template() -> EntireSystem {
         let mut states = HashMap::new();
@@ -89,7 +103,6 @@ impl EntireSystem {
     }
 }
 
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct States {
     pub behavior: Behavior,
@@ -107,7 +120,6 @@ pub enum Timeout_type {
     fsm_obstruction = 0,
     fsm_doortimeout = 1,
     fsm_powerloss   = 2,
-
     network_disconnect = 3,
 }
 
@@ -116,7 +128,7 @@ pub struct Recovery {
     pub cab_requests: Vec<bool>,	
 }
 
-///////////////FSM////////////////////
+/// FSM Structs
 
 #[derive(Copy, Clone, Serialize, Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -162,8 +174,7 @@ pub fn call_to_button_type(call: u8) -> ButtonType {
     }
 }
 
-
-///////////////DEBUGS////////////////////
+/// Debug Prints
 
 impl fmt::Debug for ButtonType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
