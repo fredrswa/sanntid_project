@@ -1,5 +1,4 @@
 //! This module handles the operation of the finite state machine (elevator)
-//! Or
 
 
 /// Sub Modules (created from handout)
@@ -8,23 +7,24 @@ pub mod requests;       //Handles logic regarding requests
 pub mod timer;          //Timer for generating timout and handling door_open time and obstruction.
       //Handles hardware interaction
 
+/// Standard Library
+use std::{thread::{sleep, spawn}, vec};
 
-///Crates
+/// Internal Crates
 use crate::config::*;                   //Config has every struct
 use crate::mod_fsm::timer::Timer;       
 use crate::mod_fsm::requests::{is_completed, update_timestamps, cab_backup};
 
-///
+/// External Crates
 use crossbeam_channel as cbc;
 use driver_rust::elevio::poll as sensor_polling;
-use std::{thread::{sleep, spawn}, vec};
 use core::time::Duration;
 use chrono::Utc;
 
+
 /// Runs the FSM_module
-/// - Interacts with IO to handle and generate order
 pub fn run(
-    es: &mut ElevatorSystem,
+    es: &mut ElevatorSystem, 
     call_from_io_rx: &cbc::Receiver<sensor_polling::CallButton>,
     timout_tx: &cbc::Sender<Timeout_type>,
     fsm_to_io_tx: &cbc::Sender<ElevatorSystem>,
