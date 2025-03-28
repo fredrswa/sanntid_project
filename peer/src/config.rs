@@ -1,7 +1,6 @@
 //! Configuration file
 //! Contains: Structs, File imports and Debug prints for the entire program
 
-
 /// Standard Library 
 use std::{
     u8,
