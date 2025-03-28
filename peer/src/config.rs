@@ -1,3 +1,7 @@
+//! Configuration module | 
+//! Configuration module for the entire system.
+
+
 use std::u8;
 use std::fmt;
 use serde::{Serialize, Deserialize};

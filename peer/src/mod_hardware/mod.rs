@@ -1,26 +1,34 @@
-//Standard Library
+//! Hardware Module
+
+/// Standard Library
 use std::{error::Error, 
         process::{exit, Child, Command, Stdio},
         thread::sleep,
         time::Duration,
         net::UdpSocket};
+/// External Crates
 use driver_rust::elevio::elev::Elevator;
 
+/// Internal Crates
 use crate::config::*;
+
+/// Configurations
 static SIM: bool = CONFIG.hardware.sim;
 static PORT: i64 = CONFIG.hardware.addr;
 static LOAD_TIME: i64 = CONFIG.hardware.load_time;
 static NUM_FLOORS: i64 = CONFIG.elevator.num_floors;
 
-pub fn init() {
-    // Location to executables, similary in release build.
+/// Init | Initialize the hardware
+pub fn init () {
+
+    // Executables
     let sim_executable: &str =  "./../tools/SimElevatorServer";
     let phy_executable: &str =  "./../tools/elevatorserver";
     let port = PORT.to_string();
     let num_floors = NUM_FLOORS.to_string();
 
 
-
+    // Command Line Arguments
     let args  = match SIM {
         true => vec!["xterm","-fs", "10", "-e", sim_executable, 
         "--port", port.as_str(), 
@@ -28,6 +36,7 @@ pub fn init() {
         false => vec!["xterm","-fs", "10", "-e", phy_executable, 
         "--port", port.as_str()]
     };
+
     // Only spawns if hardware is not already running
     if !check_socket() {
         let child = Command::new("setsid")
@@ -53,7 +62,7 @@ pub fn init() {
     }  
 
 
-// Check if the socket is already open
+/// Check Socket | Check if the socket is already open
 fn check_socket() -> bool {
     if Elevator::init(CONFIG.elevator.addr, 4).is_ok() {
         true
@@ -63,7 +72,7 @@ fn check_socket() -> bool {
 }
 
 
-// Test function
+/// Test function
 #[test]
 fn test_hardware() {
     if SIM {

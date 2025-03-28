@@ -1,3 +1,4 @@
+//! Timer Submodule
 //! Defines a timer that runs in a separate thread and supports start, cancel, and timeout checks
 
 /// Standard Library
@@ -5,7 +6,7 @@ use std::{
     sync::atomic::{AtomicBool, Ordering},
     sync::Arc,
     thread,
-    time::Duration;
+    time::Duration,
 };
 
 #[derive(Clone)]
