@@ -11,7 +11,8 @@ Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid)
 
 2. Navigate to the project directory.
 
-3. ```bash
+3. Install dependencies:
+    ```bash
     # Install rust and cargo
     sudo apt-get install rustc
     sudo apt-get install cargo
@@ -34,7 +35,7 @@ release/
     ├── elevatorserver
     └── SimElevatorServer
 ```
-*Using Makefile*
+**Using Makefile**
 
 Commands: 
 ```bash
@@ -47,10 +48,10 @@ make run_local  # runs sim peers and ./simulate_labserver
 ```bash
 ./peer <id> <startupstate>
 ```
- - ```<id>``` is a integer from ```0 -> num_peers```. Specify each peer with a different id.
- - ```startupstate = primary/humble``` or defaults to backup. 
+ - ```<id>``` is a integer from ```0 <= id < num_peers```. Specify each peer with a different id.
+ - ```<startupstate> = primary/humble``` or defaults to backup. 
     - ```primary:``` use when initializing all elevators
-    - ```humble:``` use when all peers are running and this peer is to rejoin a already running system.
+    - ```humble:``` use when peers are running and this peer is to rejoin a already running system. Will safely rejoin the system without overwriting good information.
 
 If this is handled properly, running one of these commands will run the entire system correctly with backup states and correct recovery startup.
 
@@ -63,46 +64,77 @@ The goal is to develop software that manages n elevators operating simultaneousl
 
 Each elevator maintains a shared worldview of the system and communicates using message passing between these modules.
 
+**Structure**
 
-## FSM-Module
+We have based to code structure on Rust's module implementation. With modules as folders with mod.rs within them.
+```
+peer/
+├── src/                     
+│   ├── mod_hardware/
+│   │   └── mod.rs
+│   │
+│   ├── mod_backup/
+│   │   └── mod.rs
+│   │
+│   ├── mod_fsm/
+│   │   ├── mod.rs
+│   │   ├── fsm.rs
+│   │   ├── timer.rs
+│   │   └── requests.rs
+│   │
+│   ├── mod_io/
+│   │   ├── mod.rs
+│   │   └── io.rs
+│   │
+│   ├── mod_network/ 
+│   │   ├── mod.rs
+│   │   └── network.rs   
+│   │
+│   ├── main.rs
+│   ├── config.rs          
+│   └── lib.rs    
+│
+├── cab_recover.toml
+├── Config.toml
+└── Cargo.toml
+```
+
+
+### Main
+
+ 1. Check/spawn hardware
+ 2. Setup channels between modules
+ 3. Spawn modules in their respective state
+ 4. Loop for fault tolerance
+
+### FSM-Module
 
 This module handles the logic of a single elevator, including:
-
-Light and button operations
-
-Door control and timers
-
-Handling and processing elevator requests
-
-Communicates with the IO module using channels.
+ - Light and button operations
+ - Door control and timers
+ - Handling and processing elevator requests
+ - Communicates with the IO module using channels.
 
 
-## IO-Module
+### IO-Module
 
 The IO module is responsible for:
-
-Storing and retrieving system states.
-
-Assigning hall requests based on the hall_request_assigner.
-
-Communicating accepted requests to the FSM module and state updates to the network module.
+ - Storing and retrieving system states.
+ - Assigning hall requests based on the hall_request_assigner.
+ - Communicating accepted requests to the FSM module and state updates to the network module.
 
 
 
-## Network-Module
-
-Handles peer-to-peer communication between elevators using UDP and JSON-based messages : udp_send and udp_receive. 
-
-Ensures that each elevator has a synchronized worldview of the system.
-
-It is responsible for sendign and recieving heartbeats, to detect dead elevators: send_heartbeat and receive_hearbeat.
-
+### Network-Module
 Sends other elevator states to IO using channels
-
-## MAIN
-
-Run all modules
-
-Opens channels between modules
+Handles peer-to-peer networking using ```udp```:
+- Ensure that each peer has a synchronized view of it's peers
+- Sending and receiving heartbeats to monitor peer health.
+- Uses serde_json to serialize and deserialize messages.
+### Backup-Module
+Reponsible for the startup states and recovery of orders
+- Ensures initalizing a system is done well
+- Ensures rejoining peer is done well
+- Ensures a crashing program can restart itself
 
 
