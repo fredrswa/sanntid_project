@@ -1,3 +1,6 @@
+# Clearly AI generated, but not part of the project. 
+# Just to speed up the testing environment.
+# VERY USEFULL WHEN TESTING FROM HOME
 # Makefile for Elevator Peer System
 # Builds release folders with four different configurations
 
