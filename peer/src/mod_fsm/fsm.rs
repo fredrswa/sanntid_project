@@ -1,33 +1,34 @@
+//! Defines the FSM logic for one elevator, including request handling, light, button and floor logic
 
-// ^ Driver
+/// External Crates
 use driver_rust::elevio::elev::Elevator;
 
-// ^ Crates
-use crate::config::*;
-
-// ^ mod_fsm
+/// Internal Crates
+use crate::config::*;                   //Config has every struct
 use super::requests::*;
 use super::timer::Timer;
 
+/// CONFIG
 static NUM_FLOORS: i32 = CONFIG.elevator.num_floors as i32;
 static NUM_BUTTONS: i32 = 3;
 
 impl ElevatorSystem {
     pub fn new() -> ElevatorSystem {
         let elevator = match Elevator::init(CONFIG.elevator.addr, CONFIG.elevator.num_floors as u8) {
-          Ok(elev) => elev,
-          Err(_) => {
-            panic!("mod_fsm-fsm: Could'nt connect to elevator");
-          },
+        	Ok(elev) => elev,
+        	Err(_) => {
+            	panic!("mod_fsm-fsm: Could'nt connect to elevator");
+          	},
         };
 
         ElevatorSystem {          
-          elevator,
-          //Requests size is dictated at runtime, therefore it is a vector.
-          requests: vec![vec![false; 4]; NUM_FLOORS as usize],
-          status: Status::new(),
+        	elevator,
+          	//Requests size is dictated at runtime, therefore it is a vector.
+          	requests: vec![vec![false; 4]; NUM_FLOORS as usize],
+          	status: Status::new(),
         }
-    }    
+    } 
+
     pub fn init(&mut self) {
         self.status.curr_floor = self.elevator.floor_sensor().unwrap_or(u8::MAX) as usize;
         println!("Floor {}", self.status.curr_floor);
@@ -51,81 +52,82 @@ impl ElevatorSystem {
         self.status.behavior = Behavior::Moving;
     }
 
-    pub fn set_all_lights(&mut self){
+    pub fn set_cab_lights(&mut self){
         for floor in 0..NUM_FLOORS {
-            for btn in 0..NUM_BUTTONS {
-                self.elevator.call_button_light(floor as u8, 2, self.requests[floor as usize][2]);
-            }
-        }
+          	self.elevator.call_button_light(floor as u8, 2, self.requests[floor as usize][2]);
+      }
     }
 
+    /// Sets HallUp and HallDown button lights based on the global world view of hall requests
     pub fn set_all_lights_world_view(&mut self, world_view: &EntireSystem) {
-      // Set hall request lights for all floors
-      for (floor, hall_req) in world_view.hallRequests.iter().enumerate() {
-          // Set HallUp button light (index 0)
-          self.elevator.call_button_light(floor as u8, ButtonType::HallUp as u8, hall_req[0]);
+      	// Set hall request lights for all floors
+      	for (floor, hall_req) in world_view.hallRequests.iter().enumerate() {
+          	// Set HallUp button light (index 0)
+          	self.elevator.call_button_light(floor as u8, ButtonType::HallUp as u8, hall_req[0]);
           
-          // Set HallDown button light (index 1)
-          self.elevator.call_button_light(floor as u8, ButtonType::HallDown as u8, hall_req[1]);
-      }
-  }
+          	// Set HallDown button light (index 1)
+          	self.elevator.call_button_light(floor as u8, ButtonType::HallDown as u8, hall_req[1]);
+      	}
+   	}
 
+    // Handles button presses based on the current elevator state
     pub fn on_request_button_press(&mut self, timer: &mut Timer, btn_floor: usize, btn_type: ButtonType) {
         match self.status.behavior {
             Behavior::DoorOpen => {
-              if self.status.door_blocked {
-                timer.start();
-              
-              }
+              	if self.status.door_blocked {
+                	timer.start();
+              	}
         
-              if requests_should_clear_immediately(self, btn_floor, btn_type) {
-                self.elevator.door_light(true);
-                requests_clear_at_current_floor(self);
-                timer.start();
+              	if requests_should_clear_immediately(self, btn_floor, btn_type) {
+                	self.elevator.door_light(true);
+                	requests_clear_at_current_floor(self);
+                	timer.start();
               
-              } else {
-                self.requests[btn_floor][btn_type as usize] = true;
-              
-              }
+              	} else {
+                	self.requests[btn_floor][btn_type as usize] = true;
+              	}
             }
-            Behavior::Moving => {
-              self.requests[btn_floor][btn_type as usize] = true;
-            }
-            Behavior::Idle => {
-              if requests_should_clear_immediately(self, btn_floor, btn_type) {
-                self.elevator.door_light(true);
-                self.status.behavior = Behavior::DoorOpen; // Changed this from Idle to DoorOpen
-              
-                requests_clear_at_current_floor(self);
-                timer.start();
-                
-              } else {
-                self.requests[btn_floor][btn_type as usize] = true;
-                let db_pair: DirnBehaviorPair = requests_choose_direction(self);
-                self.status.curr_dirn = db_pair.direction;
-                self.status.behavior = db_pair.behavior;
-                match self.status.behavior {
-                  Behavior::DoorOpen => {
-                    self.elevator.door_light(true);
-                    timer.start();
-                  
-                    requests_clear_at_current_floor(self);
-                  }
-                  Behavior::Moving => {
-                    self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
-                  
-                  }
-                  Behavior::Idle => {
-                    self.elevator.door_light(false);
-                  
-                  }  
-                }
-              }
-            }
-          }
-          self.set_all_lights();
-    }
 
+            Behavior::Moving => {
+            	self.requests[btn_floor][btn_type as usize] = true;
+            }
+
+            Behavior::Idle => {
+              	if requests_should_clear_immediately(self, btn_floor, btn_type) {
+                	self.elevator.door_light(true);
+                	self.status.behavior = Behavior::DoorOpen; 
+              
+                	requests_clear_at_current_floor(self);
+                	timer.start();
+                
+              	} else {
+                	self.requests[btn_floor][btn_type as usize] = true;
+                	let db_pair: DirnBehaviorPair = requests_choose_direction(self);
+                	self.status.curr_dirn = db_pair.direction;
+                	self.status.behavior = db_pair.behavior;
+
+                match self.status.behavior {
+                  	Behavior::DoorOpen => {
+                    	self.elevator.door_light(true);
+                    	timer.start();
+                  
+                    	requests_clear_at_current_floor(self);
+                  	}
+                  	Behavior::Moving => {
+                    	self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
+                  	}
+
+                  	Behavior::Idle => {
+                    	self.elevator.door_light(false);
+                  		}  
+                	}
+            	}
+        	}
+    	}
+    	self.set_cab_lights();
+	}
+
+    // Updates floor status and handles requests if the elevator should stop
     pub fn on_floor_arrival(&mut self, timer: &mut Timer, new_floor: usize) {
         self.status.curr_floor = new_floor;
         self.elevator.floor_indicator(self.status.curr_floor as u8);
@@ -138,89 +140,79 @@ impl ElevatorSystem {
                     requests_clear_at_current_floor(self);
                     timer.start();
                   
-                    self.set_all_lights();
+                    self.set_cab_lights();
                     self.status.behavior = Behavior::DoorOpen;
                 }
             }
-            _=> {}
+        _ => {}
         }
     }
-    
+
+    //Handles behavior after door timeout, continuing movement if appropriate
     pub fn on_door_timeout(&mut self, timer: &mut Timer) {
         match self.status.behavior {
-          Behavior::DoorOpen => {
+            Behavior::DoorOpen => {
             if self.status.door_blocked {
-              timer.start();
+              	timer.start();
             
             } else {
-              let db_pair: DirnBehaviorPair = requests_choose_direction(self);
-              self.status.curr_dirn = db_pair.direction;
-              self.status.behavior = db_pair.behavior;
+              	let db_pair: DirnBehaviorPair = requests_choose_direction(self);
+              	self.status.curr_dirn = db_pair.direction;
+              	self.status.behavior = db_pair.behavior;
             
       
-              requests_clear_at_current_floor(self);
-              self.set_all_lights();
+              	requests_clear_at_current_floor(self);
+              	self.set_cab_lights();
               
-              match self.status.behavior {
-                Behavior::DoorOpen => {
-                  timer.start();
-                
-                }
-                Behavior::Moving => {
-                  self.elevator.door_light(false);
-                  self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
-                
-                }
-                Behavior::Idle => {
-                  self.elevator.door_light(false);
-                
-                }
-              }
-            }
-          }
-          Behavior::Idle => {
-          
-           // let db_pair: DirnBehaviorPair = requests_choose_direction(self);
-            //self.status.curr_dirn = db_pair.direction;
-            //self.status.behavior = db_pair.behavior;
-      
-            //requests_clear_at_current_floor(self);
-            //self.set_all_lights();
-            //self.elevator.door_light(false);
+              	match self.status.behavior {
+                	Behavior::DoorOpen => {
+                  	timer.start();
+                	}
 
-            println!("Stuck here Idle");
-          }
-          Behavior::Moving => {
-          
-          }
+                	Behavior::Moving => {
+                  		self.elevator.door_light(false);
+                  		self.elevator.motor_direction(self.status.curr_dirn.clone() as u8);
+                	}
+
+                	Behavior::Idle => {
+                  		self.elevator.door_light(false);
+                	}
+        		}
+        	}
+    	}
+        	Behavior::Idle => {}
+        	Behavior::Moving => {}
         }
     }      
 
-  pub fn execute_new_requests(&mut self, timer: &mut Timer) {
-    for floor in 0..self.elevator.num_floors {
-      for button in 0..3 {
-        if self.requests[floor as usize][button.clone()] {
-          self.on_request_button_press(&mut *timer, floor as usize, call_to_button_type(button as u8));
-        }
-      }
-    }
-  }        
-  pub fn update_requets(&mut self, new_hall_requets: Vec<Vec<bool>>) {
-    for floor in 0..self.elevator.num_floors {
-      self.requests[floor as usize][0] = new_hall_requets[floor as usize][0];
-      self.requests[floor as usize][1] = new_hall_requets[floor as usize][1];
-    }
-  }
-  pub fn update_cab_requests_from_backup(&mut self) {
-    let cab_requests = read_cab_backup();
-    for floor in 0..self.elevator.num_floors {
-      self.requests[floor as usize][2] = cab_requests[floor as usize];
-    }
-  }
-  pub fn update_cab_requests_from_world_view(&mut self, world_view: &EntireSystem) {
-    let old_cab = world_view.states.clone().get_mut(&SELF_ID.to_string()).unwrap().cabRequests.clone();
-    for floor in 0..self.elevator.num_floors {
-      self.requests[floor as usize][2] = old_cab[floor as usize];
-    }
-  }
+  	pub fn execute_new_requests(&mut self, timer: &mut Timer) {
+    	for floor in 0..self.elevator.num_floors {
+      		for button in 0..3 {
+        		if self.requests[floor as usize][button.clone()] {
+          		self.on_request_button_press(&mut *timer, floor as usize, call_to_button_type(button as u8));
+        		}
+      		}
+    	}
+  	}  
+
+  	pub fn update_requets(&mut self, new_hall_requets: Vec<Vec<bool>>) {
+    	for floor in 0..self.elevator.num_floors {
+      		self.requests[floor as usize][0] = new_hall_requets[floor as usize][0];
+      		self.requests[floor as usize][1] = new_hall_requets[floor as usize][1];
+    	}
+  	}
+
+  	pub fn update_cab_requests_from_backup(&mut self) {
+    	let cab_requests = read_cab_backup();
+    	for floor in 0..self.elevator.num_floors {
+      		self.requests[floor as usize][2] = cab_requests[floor as usize];
+    	}
+  	}
+
+  	pub fn update_cab_requests_from_world_view(&mut self, world_view: &EntireSystem) {
+    	let old_cab = world_view.states.clone().get_mut(&SELF_ID.to_string()).unwrap().cabRequests.clone();
+    	for floor in 0..self.elevator.num_floors {
+      	self.requests[floor as usize][2] = old_cab[floor as usize];
+    	}
+  	}
 }

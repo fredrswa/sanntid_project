@@ -1,8 +1,12 @@
-// timer.rs
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
-use std::thread;
-use std::time::Duration;
+//! Defines a timer that runs in a separate thread and supports start, cancel, and timeout checks
+
+/// Standard Library
+use std::{
+    sync::atomic::{AtomicBool, Ordering},
+    sync::Arc,
+    thread,
+    time::Duration;
+};
 
 #[derive(Clone)]
 pub struct Timer {
@@ -50,7 +54,6 @@ impl Timer {
                     break;
                 }
 
-                // Sleep briefly to avoid busy-waiting
                 thread::sleep(Duration::from_millis(25));
             }
         });
