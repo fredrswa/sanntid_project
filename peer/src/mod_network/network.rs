@@ -61,11 +61,9 @@ pub fn udp_receive (socket: &UdpSocket, udp_to_heartbeat_tx: Sender<String>, udp
         let received_msg = String::from_utf8_lossy(&buffer[..n_bytes]).to_string();
 
         if n_bytes < 5 {
-            println!("{}",received_msg);
             udp_to_heartbeat_tx.send(received_msg).expect("Could'nt pass to heartbeat");
         } 
         else {
-            println!("{}",received_msg);
             let sys: TimestampsEntireSystem = match serde_json::from_str(&received_msg) {
                 Ok(sys) => sys,
                 Err(e) => {

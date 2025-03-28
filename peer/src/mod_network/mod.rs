@@ -3,7 +3,8 @@ pub mod network;
 
 //Includes
 use crossbeam_channel as cbc;
-use std::thread::spawn;
+use peer::config::config::backup::sleep_dur_milli;
+use std::thread::{spawn, sleep};
 use std::sync::Arc;
 use core::time::Duration;
 
@@ -73,11 +74,12 @@ pub fn run(
         cbc::select! {
             recv(heartbeat_to_network_rx) -> heartbeat => {
                 let (id, val) = heartbeat.unwrap();
+                if id.to_string() != *SELF_ID {
+                    connected_peers[id] = val;
+                    connected_peers_tx.send(connected_peers);
+                }
+                // println!("ID: {} VAL: {}", id, val);
                 
-                println!("ID: {} VAL: {}", id, val);
-                connected_peers[id] = val;
-                
-                connected_peers_tx.send(connected_peers);
             }
 
             recv(udp_to_world_view_rx) -> incoming_sys => {
@@ -100,6 +102,7 @@ pub fn run(
                     udp_send_heartbeat_tx.send(obstructed);
                 }
             }
+            //default => { }
         }
     }
 }

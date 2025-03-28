@@ -54,7 +54,7 @@ pub fn run(
        spawn(move || send_latest_primary(io_to_backup_state_rx)); 
     }
     /* ########################################################################################################################## */
-
+    let self_id = SELF_ID.to_string();
     loop {
         cbc::select! {
             recv(call_button_rx) -> cb_message => {
@@ -71,8 +71,18 @@ pub fn run(
             }
 
             recv(connected_peers_rx) -> cp_message => {
+                let prev = connected_peers.clone();
                 if let Ok(cp) = cp_message {
                     connected_peers = cp;
+                }
+                if prev != connected_peers {
+                    let assigner_output = call_assigner(world_view.clone(), connected_peers.clone());
+                    let requests = assigner_output.elevators[&self_id].clone();
+                    
+                    let _ = match io_to_fsm_requests_tx.send(requests) {
+                        Ok(ok) => ok,
+                        Err(e) => {panic!("Failed to send Elevator System from IO to FSM: {}", e)}
+                    };
                 }
             }
             /* Gets elevator system from FSM
@@ -123,7 +133,8 @@ pub fn run(
                     //println!("{}", TimestampsEntireSystem{es: world_view.clone(), timestamps: created_completed_timestamps.clone()});
                     
                     // Try here first
-                    io_to_backup_state_tx.send(world_view.clone());
+                    let _ = io_to_backup_state_tx.send(world_view.clone());
+
                     let assigner_output = call_assigner(world_view.clone(), connected_peers.clone());
                     
 
@@ -138,9 +149,7 @@ pub fn run(
                 }
             }
 
-            default => {
-                sleep(Duration::from_millis(25))}
-            
+            default => {sleep(Duration::from_millis(25))}
         }
     }
 }
