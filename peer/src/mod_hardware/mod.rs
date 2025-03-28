@@ -1,4 +1,5 @@
-//! Hardware Module
+//! Hardware Module |
+//! This module handles the operation and check of hardware.
 
 /// Standard Library
 use std::{error::Error, 
@@ -6,6 +7,7 @@ use std::{error::Error,
         thread::sleep,
         time::Duration,
         net::UdpSocket};
+        
 /// External Crates
 use driver_rust::elevio::elev::Elevator;
 

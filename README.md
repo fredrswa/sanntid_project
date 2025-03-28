@@ -2,6 +2,13 @@
 
 Project and exercies completed in the course TTK4145 Real-Time Systems (Sanntid) at NTNU.
 
+For extended code documentation run:
+
+```bash
+cargo doc --document-private-items --open
+```
+Which will generate the code documentation based on the formatted documentation in the code.
+
 # Install and Running Instructions 
 
 1. Clone the repository:

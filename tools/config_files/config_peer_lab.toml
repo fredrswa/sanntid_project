@@ -8,8 +8,8 @@ load_time   = 1000
 addr            = "localhost:15657"
 num_floors      = 4
 door_open_s     = 3
-door_timout_s   = 10
-motor_timeout_s = 10
+door_timout_s   = 4
+motor_timeout_s = 4
 
 
 [network]
