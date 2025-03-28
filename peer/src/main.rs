@@ -75,15 +75,16 @@ fn main() -> Result<()> {
 
     let (timeout_tx, timeout_rx) = unbounded::<Timeout_type>();
 
-    // std::panic::set_hook(Box::new(|panic_info| {
-    //      std::process::exit(1);
-    // }));
+    std::panic::set_hook(Box::new(|panic_info| {
+        std::process::exit(1);
+    }));
 
     // SPAWN MODULES
     {
         // FSM MODULE
         let mut es1 = elev_sys.clone();
-        spawn(move || {mod_fsm::run(
+        spawn(move || 
+            {mod_fsm::run(
             // FSM CHANNELS
             &mut es1,
             &io_call_rx,
@@ -97,7 +98,8 @@ fn main() -> Result<()> {
         
         // IO MODULE
         let mut es2 = elev_sys.clone();
-        spawn(move || {mod_io::run(
+        spawn(move || 
+            {mod_io::run(
             // IO CHANNELS
             world_view,
             &mut es2, 
@@ -113,13 +115,17 @@ fn main() -> Result<()> {
         
         // NETWORK MODULE
         let es3 = elev_sys.clone();
-        spawn(move || {mod_network::run(
+        spawn(move || {
+            loop {
+            mod_network::run(
             &es3,
             &network_to_io_tx, 
             &io_to_network_rx,
             &connected_peers_tx,
-            &obstruction_to_io_rx,
-        );});
+            &obstruction_to_io_rx);
+            
+            sleep(Duration::from_secs(30));}
+            println!("Whoops, broke the whole loop");});
     }
 
 

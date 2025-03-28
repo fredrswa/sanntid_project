@@ -109,7 +109,9 @@ pub fn udp_send(socket: &UdpSocket, peer_address: String, udp_sender_rx: Receive
                         match socket.send_to(json_msg.as_bytes(), UDP_SEND_PORT.to_string()) {
                             Ok(ok) => ok,//Ack send to io
                             Err(e) => {
-                                panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
+                                 // panic!("Failed to send message {:#?} on adress {:#?}: \n {}", json_msg, peer_address, e)
+                                 println!("Network disconnected, trying again in 30 seconds");
+                                 break;
                             }
                         };
                     }
@@ -137,7 +139,7 @@ pub fn send_heartbeat(heartbeat_socket: &UdpSocket, peer_id: &String, send_heart
         if !between_floors_or_obstruced {
             match heartbeat_socket.send_to( peer_id.as_bytes(), UDP_SEND_PORT.to_string()){
                 Ok(_) => { },//println!("Heartbeat sent to: {}", peer_address),
-                Err(e) => {eprintln!("Failed to send heartbeat: {}", e);}
+                Err(e) => { }, //eprintln!("Failed to send heartbeat: {}", e);}
             };
         }
 

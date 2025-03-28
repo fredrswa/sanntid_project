@@ -1,2 +1,1 @@
-[recovery]
-cab_requests = [[]]
+cab_requests = [false, false, false, false]
