@@ -1,7 +1,7 @@
-//! # Backup Module
-//! Handles startup states of the system
-//! State : Secondary
-//! State : Humble
+//! Backup Module
+// Handles startup states of the system
+// State : Secondary
+// State : Humble
 
 
 /// Standard Library
